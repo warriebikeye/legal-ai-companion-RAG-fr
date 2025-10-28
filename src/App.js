@@ -77,7 +77,7 @@ function App() {
         <div className='upperSide'>
           <div className='uppersideTop'>
             <img src={gptLogo} alt='Logo' className='logo'/>
-            <span className='brand'>Dennis - AI</span>
+            <span className='brand'>DeeBee -Your legal AI</span>
           </div>
           <button className='midBtn'>
             <img src={addBtn} alt='New Chat' className='addBtn'/>New Chat
