@@ -1,9 +1,9 @@
 import './App.css';
-import { useState, useEffect, useRef } from 'react'; 
+import { useState, useEffect, useRef } from 'react';
 import gptLogo from './assets/chatgpt.svg';
-import addBtn from './assets/add-30.png'; 
+import addBtn from './assets/add-30.png';
 import msgicon from './assets/message.svg';
-import home from './assets/home.svg';
+//import home from './assets/home.svg';
 import saved from './assets/bookmark.svg';
 import rocket from './assets/rocket.svg';
 import sendBtn from './assets/send.svg';
@@ -19,9 +19,38 @@ function App() {
       isBot: true,
     }
   ]);
+
+  // 🟢 NEW: State to store detected/selected country
+  const [country, setCountry] = useState("nigeria");
+  const [loadingCountry, setLoadingCountry] = useState(true); // 🟢 NEW
+
   useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 🟢 NEW: Detect user country automatically on first load
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data && data.country_name) {
+          const detected = data.country_name.toLowerCase();
+          // Only set if it's one of our supported countries
+          const supported = ["nigeria", "kenya", "ghana", "uganda", "rwanda"];
+          setCountry(supported.includes(detected) ? detected : "nigeria");
+        } else {
+          setCountry("nigeria");
+        }
+      } catch (err) {
+        console.error("Country detection failed:", err);
+        setCountry("nigeria");
+      } finally {
+        setLoadingCountry(false);
+      }
+    };
+    detectCountry();
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -40,9 +69,10 @@ function App() {
           accept: "application/json",
           "Content-Type": "application/json"
         },
+        // 🟢 UPDATED: Use dynamic country value
         body: JSON.stringify({
           query: input,
-          country: "nigeria"
+          country: country
         })
       });
 
@@ -76,24 +106,56 @@ function App() {
       <div className='sideBar'>
         <div className='upperSide'>
           <div className='uppersideTop'>
-            <img src={gptLogo} alt='Logo' className='logo'/>
+            <img src={gptLogo} alt='Logo' className='logo' />
             <span className='brand'>DeeBee -Your legal AI</span>
           </div>
-          <button className='midBtn'>
-            <img src={addBtn} alt='New Chat' className='addBtn'/>New Chat
-          </button>
+
+          {/* 🟢 NEW: Country selection dropdown */}
+          <div className='country-selector' style={{ margin: "10px 0", backgroundColor: "transparent" }}>
+            <label style={{ fontSize: "14px", color: "#888", backgroundColor: "transparent" }}>Select Country:</label><br />
+            {loadingCountry ? (
+              <p style={{ fontSize: "13px" }}>Detecting location...</p>
+            ) : (
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  marginTop: "4px",
+                  border: "1px solid #ccc",
+                  width: "60%",
+                  backgroundColor: "transparent", // ✅ Transparent background
+                  color: "#888",
+                  appearance: "none",              // ✅ Removes native dropdown styling (Chrome/Safari)
+                  WebkitAppearance: "none",        // ✅ Safari fix
+                  MozAppearance: "none",           // ✅ Firefox fix
+                  outline: "none",                 // ✅ Removes blue highlight on focus
+                }}
+              >
+                <option value="nigeria">Nigeria</option>
+                <option value="kenya">Kenya</option>
+                <option value="ghana">Ghana</option>
+                <option value="uganda">Uganda</option>
+                <option value="rwanda">Rwanda</option>
+              </select>
+            )}
+          </div>
+          {/* 🟢 END NEW */}
+
           <div className='upperSideButton'>
             <button className='query'><img src={msgicon} alt='query' /> what is programming?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button> 
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button> 
             <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
             <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
             <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button> 
+            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
           </div>
-        </div> 
+        </div>
+
         <div className='lowerside'>
-          <div className='ListItems'><img src={home} alt='Home' className='listitemsimg' />Home</div>
+          <div className='midBtn'><img src={addBtn} alt='New Chat' className='addBtn' /> New Chat </div>
           <div className='ListItems'><img src={saved} alt='saved' className='listitemsimg' />Saved</div>
           <div className='ListItems'><img src={rocket} alt='upgrade' className='listitemsimg' />Upgrade to Pro</div>
         </div>
@@ -103,7 +165,7 @@ function App() {
         <div className='chats'>
           {messages.map((message, i) =>
             <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
-              <img src={message.isBot ? gptimglogo : usericon} className='chtimg' alt=''/>
+              <img src={message.isBot ? gptimglogo : usericon} className='chtimg' alt='' />
               <p className='txt'>
                 {message.typing ? (
                   <div className="typing-dots">
@@ -113,28 +175,28 @@ function App() {
                   message.text
                 )}
               </p>
-            </div> 
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
         <div className='chatfooter'>
           <div className='inp'>
-            <input 
-              type='text' 
-              placeholder='Send a message' 
-              value={input} 
-              onChange={(e) => setInput(e.target.value)} 
-              onKeyDown={(e) => e.key === "Enter" && handleSend()} 
+            <input
+              type='text'
+              placeholder='Send a message'
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
             />
             <button className='send' onClick={handleSend}>
-              <img src={sendBtn} alt='send'/>
+              <img src={sendBtn} alt='send' />
             </button>
           </div>
           <p>Warri's legal AI pipeline was created to showcase my Mern skills to recruiters.</p>
         </div>
       </div>
-    </div>  
+    </div>
   );
 }
 
