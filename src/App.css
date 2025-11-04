@@ -67,7 +67,7 @@ overflow-y:auto;   /* or scroll */
   scrollbar-width: none;
 scroll-behavior: smooth;
 width: 100%;
-height:48rem;
+height:68rem;
 }
 .chats::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Edge */

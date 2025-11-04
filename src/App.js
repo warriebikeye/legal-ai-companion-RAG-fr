@@ -100,6 +100,16 @@ function App() {
 
     setInput("");
   };
+  // 🟢 NEW FUNCTION: Clears all messages and resets greeting
+  const handleNewChat = () => {
+    setMessages([
+      {
+        text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , I am designed to provide you with legal information and generate human-like text based on the input i receive. You can ask me questions, have conversations, seek informations about the Law of your country. Let me know how i can help you",
+        isBot: true,
+      },
+    ]);
+    setInput(""); // 🟢 clear input box too
+  };
 
   return (
     <div className="App">
@@ -155,7 +165,9 @@ function App() {
         </div>
 
         <div className='lowerside'>
-          <div className='midBtn'><img src={addBtn} alt='New Chat' className='addBtn' /> New Chat </div>
+          <button className='midBtn' onClick={handleNewChat}>
+            <img src={addBtn} alt='New Chat' className='addBtn' /> New Chat
+          </button>
           <div className='ListItems'><img src={saved} alt='saved' className='listitemsimg' />Saved</div>
           <div className='ListItems'><img src={rocket} alt='upgrade' className='listitemsimg' />Upgrade to Pro</div>
         </div>
