@@ -22,6 +22,7 @@ body {
   padding: 2rem;
   height: 70vh;
   border-bottom: 1px solid rgb(100, 100, 100);
+  overflow: hidden;
 }
 .uppersideTop {
 display: flex;
@@ -30,10 +31,11 @@ margin-bottom: 2.5rem;
  
 }
 .upperSideButton {
+  margin-top: 3rem;
   overflow-y: scroll;
    scrollbar-width: none;
 scroll-behavior: smooth;
-  height:45vh;
+  height:55vh;
 }
 .upperSideButton::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Edge */
@@ -65,7 +67,7 @@ overflow-y:auto;   /* or scroll */
   scrollbar-width: none;
 scroll-behavior: smooth;
 width: 100%;
-height:48rem;
+height:68rem;
 }
 .chats::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Edge */
@@ -165,7 +167,7 @@ height:48rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
+  margin: 3rem auto;
   margin-bottom: 3rem;
   border-radius: 0.5rem; 
 }

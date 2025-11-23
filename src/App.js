@@ -1,9 +1,9 @@
 import './App.css';
-import { useState, useEffect, useRef } from 'react'; 
+import { useState, useEffect, useRef } from 'react';
 import gptLogo from './assets/chatgpt.svg';
-import addBtn from './assets/add-30.png'; 
+import addBtn from './assets/add-30.png';
 import msgicon from './assets/message.svg';
-import home from './assets/home.svg';
+//import home from './assets/home.svg';
 import saved from './assets/bookmark.svg';
 import rocket from './assets/rocket.svg';
 import sendBtn from './assets/send.svg';
@@ -23,9 +23,14 @@ function App() {
     }
   ]);
 
+
+  // 🟢 NEW: State to store detected/selected country
+  const [country, setCountry] = useState("nigeria");
+  const [loadingCountry, setLoadingCountry] = useState(true); // 🟢 NEW
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages]);
 
   // ⭐ file upload handler
   const handleFileUpload = (e) => {
@@ -55,7 +60,14 @@ function App() {
 
       const response = await fetch("https://legal-ai-companion-rag.onrender.com/ask/text", {
         method: "POST",
-        body: formData, 
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          query: input,
+          country: "nigeria"
+        })
       });
 
       const data = await response.json();
@@ -83,30 +95,74 @@ function App() {
     setFiles([]); 
     setIsSending(false); // ⭐ end loading
   };
+  // 🟢 NEW FUNCTION: Clears all messages and resets greeting
+  const handleNewChat = () => {
+    setMessages([
+      {
+        text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , I am designed to provide you with legal information and generate human-like text based on the input i receive. You can ask me questions, have conversations, seek informations about the Law of your country. Let me know how i can help you",
+        isBot: true,
+      },
+    ]);
+    setInput(""); // 🟢 clear input box too
+  };
 
   return (
     <div className="App">
       <div className='sideBar'>
         <div className='upperSide'>
           <div className='uppersideTop'>
-            <img src={gptLogo} alt='Logo' className='logo'/>
+            <img src={gptLogo} alt='Logo' className='logo' />
             <span className='brand'>DeeBee -Your legal AI</span>
           </div>
-          <button className='midBtn'>
-            <img src={addBtn} alt='New Chat' className='addBtn'/>New Chat
-          </button>
+
+          {/* 🟢 NEW: Country selection dropdown */}
+          <div className='country-selector' style={{ margin: "10px 0", backgroundColor: "transparent" }}>
+            <label style={{ fontSize: "14px", color: "#888", backgroundColor: "transparent" }}>Select Country:</label><br />
+            {loadingCountry ? (
+              <p style={{ fontSize: "13px" }}>Detecting location...</p>
+            ) : (
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  marginTop: "4px",
+                  border: "1px solid #ccc",
+                  width: "60%",
+                  backgroundColor: "transparent", // ✅ Transparent background
+                  color: "#888",
+                  appearance: "none",              // ✅ Removes native dropdown styling (Chrome/Safari)
+                  WebkitAppearance: "none",        // ✅ Safari fix
+                  MozAppearance: "none",           // ✅ Firefox fix
+                  outline: "none",                 // ✅ Removes blue highlight on focus
+                }}
+              >
+                <option value="nigeria">Nigeria</option>
+                <option value="kenya">Kenya</option>
+                <option value="ghana">Ghana</option>
+                <option value="uganda">Uganda</option>
+                <option value="rwanda">Rwanda</option>
+              </select>
+            )}
+          </div>
+          {/* 🟢 END NEW */}
+
           <div className='upperSideButton'>
             <button className='query'><img src={msgicon} alt='query' /> what is programming?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button> 
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button> 
             <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
             <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
             <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button> 
+            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
           </div>
-        </div> 
+        </div>
+
         <div className='lowerside'>
-          <div className='ListItems'><img src={home} alt='Home' className='listitemsimg' />Home</div>
+          <button className='midBtn' onClick={handleNewChat}>
+            <img src={addBtn} alt='New Chat' className='addBtn' /> New Chat
+          </button>
           <div className='ListItems'><img src={saved} alt='saved' className='listitemsimg' />Saved</div>
           <div className='ListItems'><img src={rocket} alt='upgrade' className='listitemsimg' />Upgrade to Pro</div>
         </div>
@@ -116,7 +172,7 @@ function App() {
         <div className='chats'>
           {messages.map((message, i) =>
             <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
-              <img src={message.isBot ? gptimglogo : usericon} className='chtimg' alt=''/>
+              <img src={message.isBot ? gptimglogo : usericon} className='chtimg' alt='' />
               <p className='txt'>
                 {message.typing ? (
                   <div className="typing-dots">
@@ -126,39 +182,13 @@ function App() {
                   message.text
                 )}
               </p>
-            </div> 
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
         <div className='chatfooter'>
           <div className='inp'>
-
-            {/* ⭐ file upload input */}
-            <input 
-              type="file"
-              multiple
-              accept=".pdf,.txt,image/*"
-              onChange={handleFileUpload}
-              style={{ marginBottom: "8px" }}
-            />
-
-            {/* ⭐ file preview */}
-            {files.length > 0 && (
-              <div className="file-preview">
-                {files.map((file, idx) => {
-                  if (file.type.startsWith("image/")) {
-                    // ⭐ show image thumbnail
-                    const url = URL.createObjectURL(file);
-                    return <img key={idx} src={url} alt={file.name} className="file-thumb" />;
-                  } else {
-                    // ⭐ show icon + name for non-images
-                    return <p key={idx}>📄 {file.name}</p>;
-                  }
-                })}
-              </div>
-            )}
-
             <input 
               type='text' 
               placeholder='Send a message' 
@@ -166,21 +196,15 @@ function App() {
               onChange={(e) => setInput(e.target.value)} 
               onKeyDown={(e) => e.key === "Enter" && handleSend()} 
             />
-
-            {/* ⭐ send button with loading spinner */}
-            <button className='send' onClick={handleSend} disabled={isSending}>
-              {isSending ? (
-                <div className="loader"></div> // ⭐ loading animation
-              ) : (
-                <img src={sendBtn} alt='send'/>
-              )}
+            <button className='send' onClick={handleSend}>
+              <img src={sendBtn} alt='send'/>
             </button>
           </div>
 
           <p>Warri's legal AI pipeline was created to showcase my Mern skills to recruiters.</p>
         </div>
       </div>
-    </div>  
+    </div>
   );
 }
 
