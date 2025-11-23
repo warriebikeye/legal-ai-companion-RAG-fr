@@ -12,43 +12,54 @@ import gptimglogo from './assets/chatgptLogo.svg';
 
 function App() {
   const messagesEndRef = useRef(null);
+
   const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false); // ⭐ sending/loading state
+  const [files, setFiles] = useState([]); // ⭐ uploaded files
   const [messages, setMessages] = useState([
     {
       text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , I am designed to provide you with legal information and generate human-like text based on the input i receive. You can ask me questions, have conversations, seek informations about the Law of your country. Let me know how i can help you",
       isBot: true,
     }
   ]);
+
   useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
+  // ⭐ file upload handler
+  const handleFileUpload = (e) => {
+    setFiles([...e.target.files]);
+  };
+
+  // ⭐ handle send with FormData + loading
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && files.length === 0) return;
 
-    const userMessage = { text: input, isBot: false };
+    setIsSending(true); // ⭐ start loading
+
+    const userMessage = { text: input || "(Document Uploaded)", isBot: false };
     setMessages((prev) => [...prev, userMessage]);
 
-    // Show "typing…" placeholder
     const typingMsg = { text: "", isBot: true, typing: true };
     setMessages((prev) => [...prev, typingMsg]);
 
     try {
+      const formData = new FormData();
+      formData.append("query", input);
+      formData.append("country", "nigeria");
+
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
+
       const response = await fetch("https://legal-ai-companion-rag.onrender.com/ask/text", {
         method: "POST",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          query: input,
-          country: "nigeria"
-        })
+        body: formData, 
       });
 
       const data = await response.json();
 
-      // Remove typing and add actual reply
       setMessages((prev) => {
         const withoutTyping = prev.filter((msg) => !msg.typing);
         return [
@@ -69,6 +80,8 @@ function App() {
     }
 
     setInput("");
+    setFiles([]); 
+    setIsSending(false); // ⭐ end loading
   };
 
   return (
@@ -120,6 +133,32 @@ function App() {
 
         <div className='chatfooter'>
           <div className='inp'>
+
+            {/* ⭐ file upload input */}
+            <input 
+              type="file"
+              multiple
+              accept=".pdf,.txt,image/*"
+              onChange={handleFileUpload}
+              style={{ marginBottom: "8px" }}
+            />
+
+            {/* ⭐ file preview */}
+            {files.length > 0 && (
+              <div className="file-preview">
+                {files.map((file, idx) => {
+                  if (file.type.startsWith("image/")) {
+                    // ⭐ show image thumbnail
+                    const url = URL.createObjectURL(file);
+                    return <img key={idx} src={url} alt={file.name} className="file-thumb" />;
+                  } else {
+                    // ⭐ show icon + name for non-images
+                    return <p key={idx}>📄 {file.name}</p>;
+                  }
+                })}
+              </div>
+            )}
+
             <input 
               type='text' 
               placeholder='Send a message' 
@@ -127,10 +166,17 @@ function App() {
               onChange={(e) => setInput(e.target.value)} 
               onKeyDown={(e) => e.key === "Enter" && handleSend()} 
             />
-            <button className='send' onClick={handleSend}>
-              <img src={sendBtn} alt='send'/>
+
+            {/* ⭐ send button with loading spinner */}
+            <button className='send' onClick={handleSend} disabled={isSending}>
+              {isSending ? (
+                <div className="loader"></div> // ⭐ loading animation
+              ) : (
+                <img src={sendBtn} alt='send'/>
+              )}
             </button>
           </div>
+
           <p>Warri's legal AI pipeline was created to showcase my Mern skills to recruiters.</p>
         </div>
       </div>

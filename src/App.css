@@ -169,6 +169,28 @@ height:48rem;
   margin-bottom: 3rem;
   border-radius: 0.5rem; 
 }
+/* ⭐ NEW: send button loader */
+.loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 
 .query {
   display: flex;
