@@ -20,12 +20,14 @@ body {
 }
 .upperSide {
   padding: 2rem;
-  height: 70vh;
+  height: 60vh;
   border-bottom: 1px solid rgb(100, 100, 100);
+  overflow-y: hidden;
 }
 .uppersideTop {
 display: flex;
 align-items: center;
+justify-content: center;
 margin-bottom: 2.5rem;
  
 }
@@ -40,6 +42,8 @@ scroll-behavior: smooth;
 }
 .logo {
   margin-right: 1rem;
+  height: 120px;
+  width: auto;
 }
 
 .brand {
@@ -165,8 +169,7 @@ height:48rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
-  margin-bottom: 3rem;
+  margin: 3rem auto;
   border-radius: 0.5rem; 
 }
 /* ⭐ NEW: send button loader */
@@ -203,6 +206,32 @@ height:48rem;
   border:1px solid rgb(98, 98, 98, 1);
   color: rgb(222, 222, 222, 1);;
 }
+/* Remove default arrow background on Chrome */
+.query::-ms-expand {
+  display: none;
+}
+
+.query option {
+  background: #00000080; /* semi-transparent black */
+  color: white;
+  padding: 10px;
+  border: none;
+}
+
+/* Optional: highlight selected option */
+.query option:checked {
+  background: #222 !important;
+}
+.queryx {
+  display: flex;
+  margin: 1rem auto;
+  align-items: center;
+  background: transparent;
+  padding: 1.5rem;
+  width: 30rem;
+  border-radius: 0.5rem;
+  color: rgb(222, 222, 222, 1);
+}
 .query>img {
   margin-right: 2rem;
   object-fit: cover;
@@ -227,4 +256,61 @@ height:48rem;
 }
 .ListItems:nth-child(3)>.listitemsimg {
   margin-right: 0.75rem;
+}
+/* Sidebar collapse toggle button */
+.sidebarToggle {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  font-size: 2rem;
+  background: #5a4bff;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+}
+
+/* Sidebar collapsed state */
+.sideBar.collapsed {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+
+/* Main full width when sidebar collapsed */
+.main.fullWidth {
+  flex: 1 1 100%;
+  margin: 2rem;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .sidebarToggle {
+    display: block;
+  }
+
+  .sideBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(28, 30, 58, 1);
+    z-index: 99;
+    width: 18rem;
+    transition: transform 0.3s ease;
+  }
+
+  .sideBar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  .main {
+    margin: 2rem 1rem;
+  }
+
+  .main.fullWidth {
+    margin-left: 1rem;
+  }
 }
