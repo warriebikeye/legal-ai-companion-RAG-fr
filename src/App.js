@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import gptLogo from './assets/DeeBees.svg';
 import addBtn from './assets/add-30.png';
 import msgicon from './assets/message.svg';
-import home from './assets/home.svg';
+//import home from './assets/home.svg';
 import saved from './assets/bookmark.svg';
 import rocket from './assets/rocket.svg';
 import sendBtn from './assets/send.svg';
@@ -36,8 +36,8 @@ function App() {
 
   // ⭐ Auto-scroll chats
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages]);
 
   // ⭐ Fetch user location using GeoIP
   useEffect(() => {
