@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import gptLogo from './assets/DeeBees.svg';
 import addBtn from './assets/add-30.png';
 import msgicon from './assets/message.svg';
-//import home from './assets/home.svg';
+import home from './assets/home.svg';
 import saved from './assets/bookmark.svg';
 import rocket from './assets/rocket.svg';
 import sendBtn from './assets/send.svg';
@@ -17,7 +17,7 @@ function App() {
   const [isSending, setIsSending] = useState(false);
   const [files, setFiles] = useState([]);
   const [userLocation, setUserLocation] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true); // ⭐ sidebar toggle
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const countries = [
     { name: "Nigeria", flag: "🇳🇬" },
@@ -34,12 +34,12 @@ function App() {
     }
   ]);
 
-  // ⭐ Auto-scroll chats
+  // Auto-scroll chats
   useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  // ⭐ Fetch user location using GeoIP
+  // Fetch user location using GeoIP
   useEffect(() => {
     const autoDetectCountry = async () => {
       try {
@@ -113,7 +113,7 @@ function App() {
 
   return (
     <div className="App">
-      {/* ⭐ Sidebar toggle button for mobile */}
+      {/* Sidebar toggle button for mobile */}
       <button className="sidebarToggle" onClick={() => setSidebarOpen(prev => !prev)}>
         ☰
       </button>
@@ -180,7 +180,14 @@ function App() {
 
         <div className='chatfooter'>
           <div className='inp'>
-            <input type="file" multiple accept=".pdf,.txt,image/*" onChange={handleFileUpload} />
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.txt,image/*"
+              className='filein'
+              onChange={handleFileUpload}
+            />
+
             {files.length > 0 && (
               <div className="file-preview">
                 {files.map((file, idx) => {
@@ -188,7 +195,7 @@ function App() {
                     const url = URL.createObjectURL(file);
                     return <img key={idx} src={url} alt={file.name} className="file-thumb" />;
                   } else {
-                    return <p key={idx}>📄 {file.name}</p>;
+                    return <div key={idx} className="file-item">📄 {file.name}</div>;
                   }
                 })}
               </div>
@@ -211,6 +218,7 @@ function App() {
           </div>
           <p>Warri's legal AI pipeline was created to showcase my Mern skills to recruiters.</p>
         </div>
+
       </div>
     </div>
   );
