@@ -184,7 +184,8 @@ function App() {
               type="file"
               multiple
               accept=".pdf,.txt,image/*"
-              className='filein'
+              className="filein"
+              style={{ width: "200px", border:"1px solid #ccd" }}
               onChange={handleFileUpload}
             />
 
@@ -216,7 +217,7 @@ function App() {
               )}
             </button>
           </div>
-          <p>Warri's legal AI pipeline was created to showcase my Mern skills to recruiters.</p>
+          <p>Warri's legal AI pipeline</p>
         </div>
 
       </div>
