@@ -342,7 +342,7 @@ height:68rem;
     height: 100%;
     background: rgba(28, 30, 58, 1);
     z-index: 99;
-    width: 30rem;
+    width: 25rem;
     transition: transform 0.3s ease;
   }
 
