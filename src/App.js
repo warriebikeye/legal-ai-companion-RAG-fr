@@ -185,9 +185,26 @@ function App() {
               multiple
               accept=".pdf,.txt,image/*"
               className="filein"
-              style={{ width: "200px", border:"1px solid #ccd" }}
+              style={{ display: "none" }} // Hides the default file input button
               onChange={handleFileUpload}
+              id="file-input"
             />
+            <label
+              htmlFor="file-input"
+              style={{
+                display: "inline-block",
+                padding: "10px",
+                background:"transparent",
+                color: "#fff",
+                border: "1px solid #fcfcdd",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontSize: "25px",
+                textAlign: "center"
+              }}
+            >
+              +
+            </label>
 
             {files.length > 0 && (
               <div className="file-preview">

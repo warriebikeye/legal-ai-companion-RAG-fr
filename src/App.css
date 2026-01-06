@@ -187,7 +187,7 @@ height:68rem;
   display: flex;
   align-items: center;
   border-radius: .5em ; 
-  width: 100rem; 
+  width: 100%; 
 }
 .inp>input {
   width:calc(100% - 3rem);
@@ -342,7 +342,7 @@ height:68rem;
     height: 100%;
     background: rgba(28, 30, 58, 1);
     z-index: 99;
-    width: 18rem;
+    width: 38rem;
     transition: transform 0.3s ease;
   }
 
