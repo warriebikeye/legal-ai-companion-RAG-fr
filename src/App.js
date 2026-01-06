@@ -29,7 +29,7 @@ function App() {
 
   const [messages, setMessages] = useState([
     {
-      text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , I am designed to provide you with legal information and generate human-like text based on the input i receive. You can ask me questions, have conversations, seek informations about the Law of your country. Let me know how i can help you",
+       text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , you can ask me questions, have conversations, seek informations about the Laws of your country. Let me know how i can help you",
       isBot: true,
     }
   ]);
