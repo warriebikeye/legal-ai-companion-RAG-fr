@@ -336,7 +336,7 @@ height:68rem;
   }
   .chat {
   margin:0.5rem;
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 0.5rem;
   font-size: 0.85rem;
   display: flex;
   align-items: flex-start;
@@ -345,7 +345,7 @@ height:68rem;
   .chtimg {
    object-fit: cover;
    width: 1.6rem;
-   margin-right: 1rem;
+   margin-right: 0.5rem;
    border-radius: .5rem;
   }
 
