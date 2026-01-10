@@ -342,6 +342,12 @@ height:68rem;
   align-items: flex-start;
   text-align: justify;
 }
+  .chtimg {
+   object-fit: cover;
+   width: 1.6rem;
+   margin-right: 1rem;
+   border-radius: .5rem;
+  }
 
   .sideBar {
     position: fixed;
