@@ -334,6 +334,14 @@ height:68rem;
   .sidebarToggle {
     display: block;
   }
+  .chat {
+  margin:1rem;
+  padding: 2rem 3rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  text-align: justify;
+}
 
   .sideBar {
     position: fixed;
