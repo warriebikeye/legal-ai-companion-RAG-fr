@@ -29,7 +29,7 @@ function App() {
 
   const [messages, setMessages] = useState([
     {
-       text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , you can ask me questions, have conversations, seek informations about the Laws of your country. Let me know how i can help you",
+      text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , you can ask me questions, have conversations, seek informations about the Laws of your country. Let me know how i can help you",
       isBot: true,
     }
   ]);
@@ -92,17 +92,56 @@ function App() {
         method: "POST",
         body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const data = await response.json();
 
-      setMessages(prev => {
-        const withoutTyping = prev.filter(msg => !msg.typing);
-        return [...withoutTyping, { text: data.answer || "Sorry, I couldn’t get a reply.", isBot: true }];
+      setMessages((prev) => {
+        const withoutTyping = prev.filter((msg) => !msg.typing);
+
+        return [
+          ...withoutTyping,
+          {
+            isBot: true,
+
+            // Main answer
+            text: data.answer || "Sorry, I couldn’t get a reply.",
+
+            // Section spacing flags
+            hasSources: Array.isArray(data.sources) && data.sources.length > 0,
+            hasDocumentText: !!data.documentText,
+            hasClauseAnalysis: !!data.clauseAnalysis,
+
+            // Structured sections
+            sources: Array.isArray(data.sources) ? data.sources : [],
+            documentText: data.documentText ?? null,
+            clauseAnalysis: data.clauseAnalysis ?? null,
+          },
+        ];
       });
+
     } catch (error) {
       console.error("Error fetching:", error);
-      setMessages(prev => {
-        const withoutTyping = prev.filter(msg => !msg.typing);
-        return [...withoutTyping, { text: "⚠️ There was an error connecting to the server.", isBot: true }];
+
+      setMessages((prev) => {
+        const withoutTyping = prev.filter((msg) => !msg.typing);
+
+        return [
+          ...withoutTyping,
+          {
+            isBot: true,
+            text: "⚠️ There was an error connecting to the server.",
+            hasSources: false,
+            hasDocumentText: false,
+            hasClauseAnalysis: false,
+            sources: [],
+            documentText: null,
+            clauseAnalysis: null,
+          },
+        ];
       });
     }
 
@@ -194,7 +233,7 @@ function App() {
               style={{
                 display: "inline-block",
                 padding: "10px",
-                background:"transparent",
+                background: "transparent",
                 color: "#fff",
                 border: "1px solid #fcfcdd",
                 borderRadius: "5px",
