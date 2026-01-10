@@ -335,9 +335,9 @@ height:68rem;
     display: block;
   }
   .chat {
-  margin:1rem;
-  padding: 2rem 3rem;
-  font-size: 0.75rem;
+  margin:0.5rem;
+  padding: 1rem 1.5rem;
+  font-size: 0.85rem;
   display: flex;
   align-items: flex-start;
   text-align: justify;
