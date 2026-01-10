@@ -334,6 +334,12 @@ height:68rem;
   .sidebarToggle {
     display: block;
   }
+  .App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: -webkit-fill-available; /* For iOS Safari */
+  }
   .chat {
   margin:0.75rem;
   padding: 0.75rem 0.75rem;
