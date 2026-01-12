@@ -235,7 +235,6 @@ function App() {
                 padding: "10px",
                 background: "transparent",
                 color: "#fff",
-                border: "1px solid #fcfcdd",
                 borderRadius: "5px",
                 cursor: "pointer",
                 fontSize: "25px",
