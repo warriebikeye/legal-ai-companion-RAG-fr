@@ -157,7 +157,7 @@ function App() {
         ☰
       </button>
 
-      <div className={`sideBar ${sidebarOpen ? "open" : "collapsed"}`}>
+      <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
         <div className='upperSide'>
           <div className='uppersideTop'>
             <img src={gptLogo} alt='Logo' className='logo' />

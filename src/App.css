@@ -343,7 +343,7 @@ height:68rem;
   .chat {
   margin:0.75rem;
   padding: 0.75rem 0.75rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   display: flex;
   align-items: flex-start;
   text-align: justify;
@@ -366,8 +366,13 @@ height:68rem;
     transition: transform 0.3s ease;
   }
 
-  .sideBar.collapsed {
+  .sideBar .collapsed {
     transform: translateX(-100%);
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  transition: width 0.3s ease;
+
   }
 
   .main {
