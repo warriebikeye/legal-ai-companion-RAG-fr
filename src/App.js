@@ -29,7 +29,7 @@ function App() {
 
   const [messages, setMessages] = useState([
     {
-      text: "Hi, Are you about to be defrauded or trapped? Upload the contract, Ask questions, I will show you if any part is illegal under your Country's law ",
+      text:" Before you sign anything, upload it here. I will show you if any part is illegal under your country’s law. Works for rent agreements, loan contracts, and job offers. ",
       isBot: true,
     }
   ]);
@@ -60,7 +60,7 @@ function App() {
   const startNewChat = () => {
     setMessages([
       {
-        text: "Hi, Are you about to be defrauded or trapped? Upload the contract, Ask questions,I will show you if any part is illegal under your Country's law ",
+        text: " Before you sign anything, upload it here. I will show you if any part is illegal under your country’s law. Works for rent agreements, loan contracts, and job offers. ",
         isBot: true,
       }
     ]);
