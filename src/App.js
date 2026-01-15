@@ -29,7 +29,7 @@ function App() {
 
   const [messages, setMessages] = useState([
     {
-      text:" Before you sign anything, upload it here. I will show you if any part is illegal under your country’s law. Works for rent agreements, loan contracts, and job offers. ",
+      text:" Before you sign anything, upload it here, ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
       isBot: true,
     }
   ]);
@@ -60,7 +60,7 @@ function App() {
   const startNewChat = () => {
     setMessages([
       {
-        text: " Before you sign anything, upload it here. I will show you if any part is illegal under your country’s law. Works for rent agreements, loan contracts, and job offers. ",
+        text: " Before you sign anything, upload it here, ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
         isBot: true,
       }
     ]);
