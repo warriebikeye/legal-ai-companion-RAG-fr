@@ -29,7 +29,7 @@ function App() {
 
   const [messages, setMessages] = useState([
     {
-      text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , you can ask me questions, have conversations, seek informations about the Laws of your country. Let me know how i can help you",
+      text: "Hi, Are you about to be defrauded or trapped? Upload the contract, Ask questions, I will show you if any part is illegal under your Country's law ",
       isBot: true,
     }
   ]);
@@ -60,7 +60,8 @@ function App() {
   const startNewChat = () => {
     setMessages([
       {
-        text: "Hi i am a state of the legal companion created by Warri Ebikeye Cyprian , you can ask me questions, have conversations, seek informations about the Laws of your country. Let me know how i can help you",
+        text: "
+      text: "Hi, Are you about to be defrauded or trapped? Upload the contract, Ask questions,I will show you if any part is illegal under your Country's law ",
         isBot: true,
       }
     ]);
@@ -272,7 +273,7 @@ function App() {
               )}
             </button>
           </div>
-          <p>Warri's legal AI pipeline</p>
+          <p> ~ Africa’s Legal Intelligence Engine ~</p>
         </div>
 
       </div>
