@@ -60,8 +60,7 @@ function App() {
   const startNewChat = () => {
     setMessages([
       {
-        text: "
-      text: "Hi, Are you about to be defrauded or trapped? Upload the contract, Ask questions,I will show you if any part is illegal under your Country's law ",
+        text: "Hi, Are you about to be defrauded or trapped? Upload the contract, Ask questions,I will show you if any part is illegal under your Country's law ",
         isBot: true,
       }
     ]);
