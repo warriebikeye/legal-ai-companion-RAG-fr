@@ -9,6 +9,7 @@ import rocket from './assets/rocket.svg';
 import sendBtn from './assets/send.svg';
 import usericon from './assets/user-icon.png';
 import gptimglogo from './assets/DeeBees.svg';
+import ggllogo from './assets/gglepro.jpg';
 
 function App() {
   const messagesEndRef = useRef(null);
@@ -18,6 +19,7 @@ function App() {
   const [files, setFiles] = useState([]);
   const [userLocation, setUserLocation] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
 
   const countries = [
     { name: "Nigeria", flag: "🇳🇬" },
@@ -29,7 +31,7 @@ function App() {
 
   const [messages, setMessages] = useState([
     {
-      text:" Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
+      text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
       isBot: true,
     }
   ]);
@@ -54,6 +56,33 @@ function App() {
     };
     autoDetectCountry();
   }, []);
+
+  // Check if the user is authenticated
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        const res = await fetch("https://legal-ai-companion-rag.onrender.com/auth/me", {
+          method: "GET",
+          credentials: "include" // Include cookies for session management
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isAuthenticated) {
+            setIsAuthenticated(true); // If authenticated, update state
+          } else {
+            setIsAuthenticated(false); // Not authenticated
+          }
+        } else {
+          setIsAuthenticated(false); // If error, consider user as not authenticated
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setIsAuthenticated(false); // Handle any errors by assuming not authenticated
+      }
+    };
+
+    checkAuthentication();
+  }, []); // Run once when the component mounts
 
   const handleFileUpload = (e) => setFiles([...e.target.files]);
 
@@ -106,16 +135,10 @@ function App() {
           ...withoutTyping,
           {
             isBot: true,
-
-            // Main answer
             text: data.answer || "Sorry, I couldn’t get a reply.",
-
-            // Section spacing flags
             hasSources: Array.isArray(data.sources) && data.sources.length > 0,
             hasDocumentText: !!data.documentText,
             hasClauseAnalysis: !!data.clauseAnalysis,
-
-            // Structured sections
             sources: Array.isArray(data.sources) ? data.sources : [],
             documentText: data.documentText ?? null,
             clauseAnalysis: data.clauseAnalysis ?? null,
@@ -178,13 +201,29 @@ function App() {
           </select>
 
           <div className='upperSideButton'>
-            <button className='query'><img src={msgicon} alt='query' /> what is programming?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-            <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+            {isAuthenticated ? (
+              <>
+                <button className='query'><img src={msgicon} alt='query' /> what is programming?</button>
+                <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+                <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+                {/* Add more pre-defined queries */}
+              </>
+            ) : (
+              <button
+                className="queryxx google-sign-in"
+                onClick={() => window.location.href = "https://legal-ai-companion-rag.onrender.com/auth/google"}
+              >
+                
+                Sign in with Google
+
+                <img
+                  src={ggllogo}
+                  alt="Google Logo"
+                  className="google-logo"
+                />
+              </button>
+
+            )}
           </div>
         </div>
 
@@ -281,4 +320,3 @@ function App() {
 }
 
 export default App;
-

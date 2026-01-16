@@ -7,6 +7,37 @@ html {
   font-size: 62.5%;
 
 }
+/* Google Sign-In Button */
+.google-sign-in {
+  display: flex;
+  align-items: center;
+  background-color: #4285f4; /* Google blue */
+  color: white;
+  font-size: 1.4rem;
+  padding: 12px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: auto;
+  gap: 10px; /* Space between the icon and the text */
+}
+
+.google-sign-in:hover {
+  border:1px solid #ccd;
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+.google-sign-in:active {
+  background-color: #3367d6; /* Even darker blue on click */
+  transform: translateY(1px); /* Button slightly moves down on click */
+}
+
+.google-logo {
+  width: 40px; /* Icon size */
+  height: 40px;
+  object-fit: contain;
+}
 
 body {
   background: rgb(3, 0, 31);
@@ -246,6 +277,18 @@ height:68rem;
   background: transparent;
   padding: 1.5rem;
   width: 30rem;
+  border-radius: 0.5rem;
+  border:none;
+  color: rgb(222, 222, 222, 1);;
+}
+.queryxx {
+  display: flex;
+  margin: 1rem auto;
+  align-items: center;
+  background: transparent;
+  padding: 1.5rem;
+  width: 30rem;
+  height:45px;
   border-radius: 0.5rem;
   border:none;
   color: rgb(222, 222, 222, 1);;
