@@ -7,9 +7,9 @@ import home from './assets/home.svg';
 import saved from './assets/bookmark.svg';
 import rocket from './assets/rocket.svg';
 import sendBtn from './assets/send.svg';
-import usericon from './assets/user-icon.png';
 import gptimglogo from './assets/DeeBees.svg';
 import ggllogo from './assets/gglepro.jpg';
+import defaultUserIcon from './assets/user-icon.png';
 
 function App() {
   const messagesEndRef = useRef(null);
@@ -20,6 +20,8 @@ function App() {
   const [userLocation, setUserLocation] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
+  const [userEmail, setUserEmail] = useState(null); // Store the user's email
+  const [userImage, setUserImage] = useState(null); // Store the user's profile image
 
   const countries = [
     { name: "Nigeria", flag: "🇳🇬" },
@@ -57,7 +59,7 @@ function App() {
     autoDetectCountry();
   }, []);
 
-  // Check if the user is authenticated
+  // Check if the user is authenticated and retrieve user info
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
@@ -69,6 +71,8 @@ function App() {
           const data = await res.json();
           if (data.isAuthenticated) {
             setIsAuthenticated(true); // If authenticated, update state
+            setUserEmail(data.userEmail); // Set user email
+            setUserImage(data.userImage || defaultUserIcon); // Set user image (or default if not available)
           } else {
             setIsAuthenticated(false); // Not authenticated
           }
@@ -203,9 +207,15 @@ function App() {
           <div className='upperSideButton'>
             {isAuthenticated ? (
               <>
-                <button className='query'><img src={msgicon} alt='query' /> what is programming?</button>
-                <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
-                <button className='query'><img src={msgicon} alt='query' /> How to use an API?</button>
+                <button className='query'>
+                  <img src={msgicon} alt='query' /> what is programming?
+                </button>
+                <button className='query'>
+                  <img src={msgicon} alt='query' /> How to use an API?
+                </button>
+                <button className='query'>
+                  <img src={msgicon} alt='query' /> How to use an API?
+                </button>
                 {/* Add more pre-defined queries */}
               </>
             ) : (
@@ -213,16 +223,13 @@ function App() {
                 className="queryxx google-sign-in"
                 onClick={() => window.location.href = "https://legal-ai-companion-rag.onrender.com/auth/google"}
               >
-                
                 Sign in with Google
-
                 <img
                   src={ggllogo}
                   alt="Google Logo"
                   className="google-logo"
                 />
               </button>
-
             )}
           </div>
         </div>
@@ -231,9 +238,16 @@ function App() {
           <button className='midBtn' onClick={startNewChat}>
             <img src={addBtn} alt='New Chat' className='addBtn' />New Chat
           </button>
-          <div className='ListItems'><img src={home} alt='Home' className='listitemsimg' />Home</div>
-          <div className='ListItems'><img src={saved} alt='saved' className='listitemsimg' />Saved</div>
-          <div className='ListItems'><img src={rocket} alt='upgrade' className='listitemsimg' />Upgrade to Pro</div>
+          <div className='ListItems'>
+            <img src={home} alt='Home' className='listitemsimg' />Home
+          </div>
+          <div className='ListItems'>
+            <img src={rocket} alt='upgrade' className='listitemsimg' />Upgrade to Pro
+          </div>
+          <div className='ListItems'>
+            <img src={saved} alt='saved' className='listitemsimg' />
+            {isAuthenticated ? userEmail : "Saved"}
+          </div>
         </div>
       </div>
 
@@ -241,7 +255,7 @@ function App() {
         <div className='chats'>
           {messages.map((message, i) =>
             <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
-              <img src={message.isBot ? gptimglogo : usericon} className='chtimg' alt='' />
+              <img src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)} className='chtimg' alt='' />
               <p className='txt'>
                 {message.typing ? (
                   <div className="typing-dots">
@@ -313,7 +327,6 @@ function App() {
           </div>
           <p> ~ Africa’s Legal Intelligence Engine ~</p>
         </div>
-
       </div>
     </div>
   );
