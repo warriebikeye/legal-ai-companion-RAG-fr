@@ -69,6 +69,7 @@ function App() {
         });
         if (res.ok) {
           const data = await res.json();
+          console.log(data);
           if (data.isAuthenticated) {
             setIsAuthenticated(true); // If authenticated, update state
             setUserEmail(data.userEmail); // Set user email
