@@ -81,6 +81,7 @@ function App() {
         }
 
         const data = await res.json();
+        console.log(API_BASE_URL)
         console.log(data);
         setIsAuthenticated(Boolean(data.isAuthenticated));
         setUserEmail(data.userEmail || null);
