@@ -11,6 +11,11 @@ import gptimglogo from './assets/DeeBees.svg';
 import ggllogo from './assets/gglepro.jpg';
 import defaultUserIcon from './assets/user-icon.png';
 
+/* =========================================================
+   ✅ FIX: Centralized environment-aware API base URL
+   ========================================================= */
+const API_BASE_URL = process.env.REACT_APP_BASEURL;
+
 function App() {
   const messagesEndRef = useRef(null);
 
@@ -19,9 +24,9 @@ function App() {
   const [files, setFiles] = useState([]);
   const [userLocation, setUserLocation] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
-  const [userEmail, setUserEmail] = useState(null); // Store the user's email
-  const [userImage, setUserImage] = useState(null); // Store the user's profile image
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
+  const [userImage, setUserImage] = useState(null);
 
   const countries = [
     { name: "Nigeria", flag: "🇳🇬" },
@@ -59,36 +64,35 @@ function App() {
     autoDetectCountry();
   }, []);
 
-  // Check if the user is authenticated and retrieve user info
+  // =========================================================
+  // ✅ FIX: Auth check now uses API_BASE_URL
+  // =========================================================
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
-        const res = await fetch("https://legal-ai-companion-rag.onrender.com/auth/me", {
-        //const res = await fetch("http://localhost:5000/auth/me", {
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
-          credentials: "include" // Include cookies for session management
+          credentials: "include",
         });
-        if (res.ok) {
-          const data = await res.json();
-          console.log(data);
-          if (data.isAuthenticated) {
-            setIsAuthenticated(true); // If authenticated, update state
-            setUserEmail(data.userEmail); // Set user email
-            setUserImage(data.userImage || defaultUserIcon); // Set user image (or default if not available)
-          } else {
-            setIsAuthenticated(false); // Not authenticated
-          }
-        } else {
-          setIsAuthenticated(false); // If error, consider user as not authenticated
+
+        if (!res.ok) {
+          setIsAuthenticated(false);
+          return;
         }
+
+        const data = await res.json();
+        console.log(data);
+        setIsAuthenticated(Boolean(data.isAuthenticated));
+        setUserEmail(data.userEmail || null);
+        setUserImage(data.userImage || defaultUserIcon);
       } catch (error) {
         console.error("Error checking authentication:", error);
-        setIsAuthenticated(false); // Handle any errors by assuming not authenticated
+        setIsAuthenticated(false);
       }
     };
 
     checkAuthentication();
-  }, []); // Run once when the component mounts
+  }, []);
 
   const handleFileUpload = (e) => setFiles([...e.target.files]);
 
@@ -112,10 +116,12 @@ function App() {
     }
 
     setIsSending(true);
-    const userMessage = { text: input || "(Document Uploaded)", isBot: false };
-    setMessages(prev => [...prev, userMessage]);
-    const typingMsg = { text: "", isBot: true, typing: true };
-    setMessages(prev => [...prev, typingMsg]);
+
+    setMessages(prev => [
+      ...prev,
+      { text: input || "(Document Uploaded)", isBot: false },
+      { text: "", isBot: true, typing: true }
+    ]);
 
     try {
       const formData = new FormData();
@@ -123,7 +129,10 @@ function App() {
       formData.append("country", userLocation);
       files.forEach((file) => formData.append("files", file));
 
-      const response = await fetch("https://legal-ai-companion-rag.onrender.com/ask/text", {
+      // =========================================================
+      // ✅ FIX: Message request uses API_BASE_URL
+      // =========================================================
+      const response = await fetch(`${API_BASE_URL}/ask/text`, {
         method: "POST",
         body: formData,
       });
@@ -134,9 +143,8 @@ function App() {
 
       const data = await response.json();
 
-      setMessages((prev) => {
-        const withoutTyping = prev.filter((msg) => !msg.typing);
-
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.typing);
         return [
           ...withoutTyping,
           {
@@ -145,19 +153,17 @@ function App() {
             hasSources: Array.isArray(data.sources) && data.sources.length > 0,
             hasDocumentText: !!data.documentText,
             hasClauseAnalysis: !!data.clauseAnalysis,
-            sources: Array.isArray(data.sources) ? data.sources : [],
+            sources: data.sources ?? [],
             documentText: data.documentText ?? null,
             clauseAnalysis: data.clauseAnalysis ?? null,
           },
         ];
       });
-
     } catch (error) {
       console.error("Error fetching:", error);
 
-      setMessages((prev) => {
-        const withoutTyping = prev.filter((msg) => !msg.typing);
-
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.typing);
         return [
           ...withoutTyping,
           {
@@ -181,7 +187,6 @@ function App() {
 
   return (
     <div className="App">
-      {/* Sidebar toggle button for mobile */}
       <button className="sidebarToggle" onClick={() => setSidebarOpen(prev => !prev)}>
         ☰
       </button>
@@ -192,7 +197,6 @@ function App() {
             <img src={gptLogo} alt='Logo' className='logo' />
           </div>
 
-          {/* Country dropdown */}
           <select
             className='query'
             value={userLocation}
@@ -209,29 +213,20 @@ function App() {
           <div className='upperSideButton'>
             {isAuthenticated ? (
               <>
-                <button className='query'>
-                  <img src={msgicon} alt='query' /> what is programming?
-                </button>
-                <button className='query'>
-                  <img src={msgicon} alt='query' /> How to use an API?
-                </button>
-                <button className='query'>
-                  <img src={msgicon} alt='query' /> How to use an API?
-                </button>
-                {/* Add more pre-defined queries */}
+                <button className='query'><img src={msgicon} alt='' /> what is programming?</button>
+                <button className='query'><img src={msgicon} alt='' /> How to use an API?</button>
+                <button className='query'><img src={msgicon} alt='' /> How to use an API?</button>
               </>
             ) : (
               <button
                 className="queryxx google-sign-in"
-                onClick={() => window.location.href = "https://legal-ai-companion-rag.onrender.com/auth/google"}
-                 //onClick={() => window.location.href = "http://localhost:5000/auth/google"}
+                // =========================================================
+                // ✅ FIX: Google OAuth redirect uses API_BASE_URL
+                // =========================================================
+                onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}
               >
                 Sign in with Google
-                <img
-                  src={ggllogo}
-                  alt="Google Logo"
-                  className="google-logo"
-                />
+                <img src={ggllogo} alt="Google Logo" className="google-logo" />
               </button>
             )}
           </div>
@@ -239,16 +234,12 @@ function App() {
 
         <div className='lowerside'>
           <button className='midBtn' onClick={startNewChat}>
-            <img src={addBtn} alt='New Chat' className='addBtn' />New Chat
+            <img src={addBtn} alt='' className='addBtn' />New Chat
           </button>
+          <div className='ListItems'><img src={home} alt='' />Home</div>
+          <div className='ListItems'><img src={rocket} alt='' />Upgrade to Pro</div>
           <div className='ListItems'>
-            <img src={home} alt='Home' className='listitemsimg' />Home
-          </div>
-          <div className='ListItems'>
-            <img src={rocket} alt='upgrade' className='listitemsimg' />Upgrade to Pro
-          </div>
-          <div className='ListItems'>
-            <img src={saved} alt='saved' className='listitemsimg' />
+            <img src={saved} alt='' />
             {isAuthenticated ? userEmail : "Saved"}
           </div>
         </div>
@@ -256,20 +247,22 @@ function App() {
 
       <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
         <div className='chats'>
-          {messages.map((message, i) =>
+          {messages.map((message, i) => (
             <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
-              <img src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)} className='chtimg' alt='' />
+              <img
+                src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)}
+                className='chtimg'
+                alt=''
+              />
               <p className='txt'>
                 {message.typing ? (
-                  <div className="typing-dots">
-                    <span></span><span></span><span></span>
-                  </div>
+                  <div className="typing-dots"><span></span><span></span><span></span></div>
                 ) : (
                   message.text
                 )}
               </p>
             </div>
-          )}
+          ))}
           <div ref={messagesEndRef} />
         </div>
 
@@ -280,36 +273,19 @@ function App() {
               multiple
               accept=".pdf,.txt,image/*"
               className="filein"
-              style={{ display: "none" }} // Hides the default file input button
+              style={{ display: "none" }}
               onChange={handleFileUpload}
               id="file-input"
             />
-            <label
-              htmlFor="file-input"
-              style={{
-                display: "inline-block",
-                padding: "10px",
-                background: "transparent",
-                color: "#fff",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "25px",
-                textAlign: "center"
-              }}
-            >
-              +
-            </label>
+            <label htmlFor="file-input" className="file-label">+</label>
 
             {files.length > 0 && (
               <div className="file-preview">
-                {files.map((file, idx) => {
-                  if (file.type.startsWith("image/")) {
-                    const url = URL.createObjectURL(file);
-                    return <img key={idx} src={url} alt={file.name} className="file-thumb" />;
-                  } else {
-                    return <div key={idx} className="file-item">📄 {file.name}</div>;
-                  }
-                })}
+                {files.map((file, idx) =>
+                  file.type.startsWith("image/")
+                    ? <img key={idx} src={URL.createObjectURL(file)} alt='' className="file-thumb" />
+                    : <div key={idx} className="file-item">📄 {file.name}</div>
+                )}
               </div>
             )}
 
@@ -320,12 +296,9 @@ function App() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
             />
+
             <button className='send' onClick={handleSend} disabled={isSending}>
-              {isSending ? (
-                <div className="loader"></div>
-              ) : (
-                <img src={sendBtn} alt='send' />
-              )}
+              {isSending ? <div className="loader"></div> : <img src={sendBtn} alt='' />}
             </button>
           </div>
           <p> ~ Africa’s Legal Intelligence Engine ~</p>
