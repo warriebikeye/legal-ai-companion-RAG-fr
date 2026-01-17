@@ -136,6 +136,7 @@ function App() {
       const response = await fetch(`${API_BASE_URL}/ask/text`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
