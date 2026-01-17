@@ -64,6 +64,7 @@ function App() {
     const checkAuthentication = async () => {
       try {
         const res = await fetch("https://legal-ai-companion-rag.onrender.com/auth/me", {
+        //const res = await fetch("http://localhost:5000/auth/me", {
           method: "GET",
           credentials: "include" // Include cookies for session management
         });
@@ -223,6 +224,7 @@ function App() {
               <button
                 className="queryxx google-sign-in"
                 onClick={() => window.location.href = "https://legal-ai-companion-rag.onrender.com/auth/google"}
+                 //onClick={() => window.location.href = "http://localhost:5000/auth/google"}
               >
                 Sign in with Google
                 <img
