@@ -336,7 +336,7 @@ height:68rem;
 }
 .ListItems img{
   margin: 0.7rem;
-  max-width: 40px;
+  max-width: 30px;
   border-radius:50%;
 }
 .ListItems:nth-child(1)>.ListItems img {
