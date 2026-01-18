@@ -238,10 +238,10 @@ function App() {
           <button className='midBtn' onClick={startNewChat}>
             <img src={addBtn} alt='' className='addBtn' />New Chat
           </button>
-          <div className='ListItems'><img src={home} alt='' />Home</div>
-          <div className='ListItems'><img src={rocket} alt='' />Upgrade to Pro</div>
+          <div className='ListItems'><img src={home} alt='' /> Home</div>
+          <div className='ListItems'><img src={rocket} alt='' /> Upgrade to Pro</div>
           <div className='ListItems'>
-            <img src={saved} alt='' />
+            <img src={isAuthenticated && userImage ? userImage : saved} alt='' /> 
             {isAuthenticated ? userEmail : "Saved"}
           </div>
         </div>
