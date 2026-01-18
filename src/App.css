@@ -398,7 +398,12 @@ height:68rem;
    margin-right: 0.5rem;
    border-radius: .5rem;
   }
-
+  .ListItems {
+  margin: 0.75rem;
+  align-items: center;
+   display: flex;
+   font-size: 0.7rem;
+}
   .sideBar {
     position: fixed;
     top: 0;
