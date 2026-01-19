@@ -36,12 +36,10 @@ function App() {
     { name: "United States", flag: "🇺🇸" }
   ];
 
-  const [messages, setMessages] = useState([
-    {
-      text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
-      isBot: true,
-    }
-  ]);
+  const [messages, setMessages] = useState([{
+    text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
+    isBot: true,
+  }]);
 
   // Auto-scroll chats
   useEffect(() => {
@@ -98,12 +96,10 @@ function App() {
   const handleFileUpload = (e) => setFiles([...e.target.files]);
 
   const startNewChat = () => {
-    setMessages([
-      {
-        text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
-        isBot: true,
-      }
-    ]);
+    setMessages([{
+      text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
+      isBot: true,
+    }]);
     setInput("");
     setFiles([]);
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -260,7 +256,19 @@ function App() {
                 {message.typing ? (
                   <div className="typing-dots"><span></span><span></span><span></span></div>
                 ) : (
-                  message.text
+                  <>
+                    <span>{message.text}</span>
+                    {message.clauseAnalysis && (
+                      <span style={{ marginTop: '10px', display: 'block' }}>
+                        <strong>Clause Analysis:</strong> {message.clauseAnalysis}
+                      </span>
+                    )}
+                    {message.sources && message.sources.length > 0 && (
+                      <span style={{ marginTop: '10px', display: 'block' }}>
+                        <strong>Sources:</strong> {message.sources.join(", ")}
+                      </span>
+                    )}
+                  </>
                 )}
               </p>
             </div>
