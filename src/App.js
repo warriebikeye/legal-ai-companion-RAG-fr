@@ -239,6 +239,7 @@ function App() {
           <div className='upperSideButton'>
             {isAuthenticated ? (
               <>
+              <h2>Previous Chats</h2>
                 {/* ✅ Map recentConversations to buttons safely */}
                 {Array.isArray(recentConversations) && recentConversations.map(conv => (
                   <button
