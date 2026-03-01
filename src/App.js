@@ -28,6 +28,11 @@ function App() {
   const [userEmail, setUserEmail] = useState(null);
   const [userImage, setUserImage] = useState(null);
 
+  /* =========================================================
+     ✅ IMPLEMENTATION: State for previous conversations
+  ========================================================= */
+  const [recentConversations, setRecentConversations] = useState([]);
+
   const countries = [
     { name: "Nigeria", flag: "🇳🇬" },
     { name: "Kenya", flag: "🇰🇪" },
@@ -79,14 +84,33 @@ function App() {
         }
 
         const data = await res.json();
-        console.log(API_BASE_URL)
-        console.log(data);
         setIsAuthenticated(Boolean(data.isAuthenticated));
         setUserEmail(data.userEmail || null);
         setUserImage(data.userImage || defaultUserIcon);
+
+        // ✅ IMPLEMENTATION: Fetch previous conversations
+        if (data.isAuthenticated) {
+          fetchRecentConversations();
+        }
       } catch (error) {
         console.error("Error checking authentication:", error);
         setIsAuthenticated(false);
+      }
+    };
+
+    const fetchRecentConversations = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/conversations`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch conversations");
+
+        const convData = await res.json();
+        // convData should be an array of objects: [{ id, title }]
+        setRecentConversations(convData);
+      } catch (err) {
+        console.error("Error fetching recent conversations:", err);
       }
     };
 
@@ -126,9 +150,6 @@ function App() {
       formData.append("country", userLocation);
       files.forEach((file) => formData.append("files", file));
 
-      // =========================================================
-      // ✅ FIX: Message request uses API_BASE_URL
-      // =========================================================
       const response = await fetch(`${API_BASE_URL}/ask/text`, {
         method: "POST",
         body: formData,
@@ -211,16 +232,24 @@ function App() {
           <div className='upperSideButton'>
             {isAuthenticated ? (
               <>
-                <button className='query'><img src={msgicon} alt='' /> what is programming?</button>
-                <button className='query'><img src={msgicon} alt='' /> How to use an API?</button>
-                <button className='query'><img src={msgicon} alt='' /> How to use an API?</button>
+                {/* =========================================================
+                    ✅ IMPLEMENTATION: Map recentConversations to buttons
+                ========================================================= */}
+                {recentConversations.map(conv => (
+                  <button
+                    key={conv.id}
+                    className='query'
+                    onClick={() => {
+                      setMessages(prev => [...prev, { text: conv.title, isBot: false }]);
+                    }}
+                  >
+                    <img src={msgicon} alt='' /> {conv.title}
+                  </button>
+                ))}
               </>
             ) : (
               <button
                 className="queryxx google-sign-in"
-                // =========================================================
-                // ✅ FIX: Google OAuth redirect uses API_BASE_URL
-                // =========================================================
                 onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}
               >
                 Sign in with Google
@@ -297,7 +326,6 @@ function App() {
                 height: "50px",
                 fontSize: "30px",
                 cursor: "pointer",
-                // border: "1px solid #ccc",
                 borderRadius: "4px",
               }}
               className="file-label"
