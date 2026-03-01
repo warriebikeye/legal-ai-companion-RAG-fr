@@ -264,7 +264,6 @@ function App() {
             )}
           </div>
         </div>
-
         <div className='lowerside'>
           <button className='midBtn' onClick={startNewChat}>
             <img src={addBtn} alt='' className='addBtn' />New Chat

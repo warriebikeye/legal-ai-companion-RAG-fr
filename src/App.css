@@ -338,7 +338,6 @@ height:68rem;
 }
 .lowerSide {
   padding: 2rem;
-
 }
 .ListItems {
   margin: 0.75rem;
@@ -460,5 +459,25 @@ height:68rem;
   .main.fullWidth {
     margin-left: 1rem;
   }
+  .upperSide {
+  padding: 2rem;
+  height: 58vh;
+  border-bottom: 1px solid rgb(100, 100, 100);
+  overflow-y: hidden;
+}
+.uppersideTop {
+display: flex;
+align-items: center;
+justify-content: center;
+margin-bottom: 2.5rem;
+ 
+}
+.upperSideButton {
+  margin-top: 3rem;
+  overflow-y: scroll;
+   scrollbar-width: none;
+scroll-behavior: smooth;
+  height:50vh;
+}
 }
 
