@@ -3,15 +3,18 @@
   padding: 0;
   box-sizing: border-box;
 }
+
 html {
   font-size: 62.5%;
 
 }
+
 /* Google Sign-In Button */
 .google-sign-in {
   display: flex;
   align-items: center;
-  background-color: #4285f4; /* Google blue */
+  background-color: #4285f4;
+  /* Google blue */
   color: white;
   font-size: 1.4rem;
   padding: 12px 20px;
@@ -20,35 +23,41 @@ html {
   cursor: pointer;
   transition: all 0.3s ease;
   width: auto;
-  gap: 10px; /* Space between the icon and the text */
+  gap: 10px;
+  /* Space between the icon and the text */
 }
 
 .google-sign-in:hover {
-  border:1px solid #ccd;
-  transform: translateY(-2px); /* Slight lift effect on hover */
+  border: 1px solid #ccd;
+  transform: translateY(-2px);
+  /* Slight lift effect on hover */
 }
 
 .google-sign-in:active {
-  background-color: #3367d6; /* Even darker blue on click */
-  transform: translateY(1px); /* Button slightly moves down on click */
+  background-color: #3367d6;
+  /* Even darker blue on click */
+  transform: translateY(1px);
+  /* Button slightly moves down on click */
 }
 
 .google-logo {
-  width: 40px; /* Icon size */
+  width: 40px;
+  /* Icon size */
   height: 40px;
   object-fit: contain;
 }
 
 body {
   background: rgb(3, 0, 31);
-  color: white ;
+  color: white;
   font-family: 'Poppins', sans-serif;
 }
 
 .App {
- min-height: 100vh;
- display: flex;
+  min-height: 100vh;
+  display: flex;
 }
+
 /* File input width reduced */
 .filein {
   width: 20%;
@@ -57,7 +66,7 @@ body {
   border-radius: 0.3rem;
   border: 1px solid rgba(222, 222, 222, 0.5);
   color: white;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* File preview container */
@@ -69,7 +78,7 @@ body {
   overflow-y: auto;
   margin-bottom: 0.5rem;
   padding: 0.5rem;
-  background: rgba(28,30,58,0.5);
+  background: rgba(28, 30, 58, 0.5);
   border-radius: 0.5rem;
 }
 
@@ -85,7 +94,7 @@ body {
 /* Non-image file items */
 .file-item {
   padding: 0.3rem 0.5rem;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 0.3rem;
   color: white;
   font-size: 1rem;
@@ -97,23 +106,28 @@ body {
   border-bottom: 1px solid rgb(100, 100, 100);
   overflow-y: hidden;
 }
+
 .uppersideTop {
-display: flex;
-align-items: center;
-justify-content: center;
-margin-bottom: 2.5rem;
- 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+
 }
+
 .upperSideButton {
   margin-top: 3rem;
   overflow-y: scroll;
-   scrollbar-width: none;
-scroll-behavior: smooth;
-  height:55vh;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  height: 55vh;
 }
+
 .upperSideButton::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+  display: none;
+  /* Chrome, Safari, Edge */
 }
+
 .logo {
   margin-right: 1rem;
   height: 120px;
@@ -123,32 +137,38 @@ scroll-behavior: smooth;
 .brand {
   font-size: 2rem;
 }
+
 .sideBar {
- flex: 3;
- border-right: 1px solid rgb(100, 100, 100);
- overflow: hidden;
+  flex: 3;
+  border-right: 1px solid rgb(100, 100, 100);
+  overflow: hidden;
 }
 
 .main {
-  flex :9;
-  min-height: calc(100vh-14rem); 
+  flex: 9;
+  min-height: calc(100vh-14rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   margin: 6rem 10rem;
   margin-bottom: 0;
 }
-.chats{
-overflow:hidden;
-overflow-y:auto;   /* or scroll */
+
+.chats {
+  overflow: hidden;
+  overflow-y: auto;
+  /* or scroll */
   scrollbar-width: none;
-scroll-behavior: smooth;
-width: 100%;
-height:68rem;
+  scroll-behavior: smooth;
+  width: 100%;
+  height: 68rem;
 }
+
 .chats::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+  display: none;
+  /* Chrome, Safari, Edge */
 }
+
 /* App.css */
 .typing-dots {
   display: inline-block;
@@ -167,40 +187,48 @@ height:68rem;
 .typing-dots span:nth-child(2) {
   animation-delay: 0.2s;
 }
+
 .typing-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0);
   }
+
   40% {
     transform: scale(1);
   }
 }
 
 .chat {
-  margin:1rem;
+  margin: 1rem;
   padding: 2rem 3rem;
   font-size: 1.2rem;
   display: flex;
   align-items: flex-start;
   text-align: justify;
 }
-.bot{
+
+.bot {
   background: rgba(28, 30, 58, 1);
   width: fit-content;
   border-radius: .5rem;
   overflow-y: auto;
-  height:auto;
+  height: auto;
 }
+
 .chtimg {
-   object-fit: cover;
-   width: 3.5rem;
-   margin-right: 2rem;
-   border-radius: .5rem;
+  object-fit: cover;
+  width: 3.5rem;
+  margin-right: 2rem;
+  border-radius: .5rem;
 }
+
 .chatfooter {
   width: 100%;
   margin-top: auto;
@@ -209,33 +237,40 @@ height:68rem;
   align-items: center;
   justify-content: center;
 }
-.chatfooter>p{
- margin: 1.5rem 0; 
+
+.chatfooter>p {
+  margin: 1.5rem 0;
 }
+
 .inp {
   padding: 0.5rem;
   background: rgba(28, 30, 58, 1);
   display: flex;
   align-items: center;
-  border-radius: .5em ; 
-  width: 100%; 
-  padding:5px 10px;
+  border-radius: .5em;
+  width: 100%;
+  padding: 5px 10px;
 }
+
 .inp>input {
-  width:calc(100% - 3rem);
-  outline: none ;
+  width: calc(100% - 3rem);
+  outline: none;
   padding: 1.25rem;
   color: white;
 }
-.inp>input, .send {
+
+.inp>input,
+.send {
   background: transparent;
   border: none;
   font-size: 16px;
 }
+
 .addBtn {
   height: 2rem;
   padding-right: 1.5rem;
 }
+
 .midBtn {
   background: #5a4bff;
   border: none;
@@ -247,8 +282,9 @@ height:68rem;
   align-items: center;
   justify-content: center;
   margin: 3rem auto;
-  border-radius: 0.5rem; 
+  border-radius: 0.5rem;
 }
+
 /* ⭐ NEW: send button loader */
 .loader {
   width: 20px;
@@ -280,9 +316,11 @@ height:68rem;
   padding: 10px;
   width: 30rem;
   border-radius: 0.5rem;
-  border:none;
-  color: rgb(222, 222, 222, 1);;
+  border: none;
+  color: rgb(222, 222, 222, 1);
+  ;
 }
+
 .queryText {
   display: block;
   overflow: hidden;
@@ -293,6 +331,12 @@ height:68rem;
   min-width: 0;
   flex: 1;
 }
+
+/* ✅ Capitalize only the first visible character */
+.queryText::first-letter {
+  text-transform: uppercase;
+}
+
 .queryxx {
   display: flex;
   margin: 1rem auto;
@@ -300,18 +344,21 @@ height:68rem;
   background: transparent;
   padding: 1.5rem;
   width: 30rem;
-  height:45px;
+  height: 45px;
   border-radius: 0.5rem;
-  border:none;
-  color: rgb(222, 222, 222, 1);;
+  border: none;
+  color: rgb(222, 222, 222, 1);
+  ;
 }
+
 /* Remove default arrow background on Chrome */
 .query::-ms-expand {
   display: none;
 }
 
 .query option {
-  background: #00000080; /* semi-transparent black */
+  background: #00000080;
+  /* semi-transparent black */
   color: white;
   padding: 10px;
   border: none;
@@ -321,6 +368,7 @@ height:68rem;
 .query option:checked {
   background: #222 !important;
 }
+
 .queryx {
   display: flex;
   margin: 1rem auto;
@@ -331,31 +379,38 @@ height:68rem;
   border-radius: 0.5rem;
   color: rgb(222, 222, 222, 1);
 }
+
 .query>img {
   margin-right: 2rem;
   object-fit: cover;
   height: 1.75rem;
 }
+
 .lowerSide {
   padding: 2rem;
 }
+
 .ListItems {
   margin: 0.75rem;
   align-items: center;
-   display: flex;
-   font-size: 1.3rem;
+  display: flex;
+  font-size: 1.3rem;
 }
-.ListItems img{
+
+.ListItems img {
   margin: 0.7rem;
   max-width: 30px;
-  border-radius:50%;
+  border-radius: 50%;
 }
+
 .ListItems:nth-child(1)>.ListItems img {
   margin-right: 0.5rem;
 }
+
 .ListItems:nth-child(3)>.ListItems img {
   margin-right: 0.75rem;
 }
+
 /* Sidebar collapse toggle button */
 .sidebarToggle {
   display: none;
@@ -383,43 +438,52 @@ height:68rem;
   flex: 1 1 100%;
   margin: 2rem;
 }
-.file-label{
-    font-size:larger;
-  }
+
+.file-label {
+  font-size: larger;
+}
+
 /* Responsive for mobile */
 @media (max-width: 768px) {
   .sidebarToggle {
     display: block;
   }
-  .file-label{
-    font-size:large;
+
+  .file-label {
+    font-size: large;
   }
+
   .App {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  height: -webkit-fill-available; /* For iOS Safari */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    height: -webkit-fill-available;
+    /* For iOS Safari */
   }
+
   .chat {
-  margin:1.2rem 0.75rem;
-  padding: 0.75rem 0.75rem;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: flex-start;
-  text-align: justify;
-}
-  .chtimg {
-   object-fit: cover;
-   width: 1.6rem;
-   margin-right: 0.5rem;
-   border-radius: .5rem;
+    margin: 1.2rem 0.75rem;
+    padding: 0.75rem 0.75rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: flex-start;
+    text-align: justify;
   }
+
+  .chtimg {
+    object-fit: cover;
+    width: 1.6rem;
+    margin-right: 0.5rem;
+    border-radius: .5rem;
+  }
+
   .ListItems {
-  margin: 0.65rem;
-  align-items: center;
-   display: flex;
-   font-size: 1rem;
-}
+    margin: 0.65rem;
+    align-items: center;
+    display: flex;
+    font-size: 1rem;
+  }
+
   .sideBar {
     position: fixed;
     top: 0;
@@ -427,28 +491,35 @@ height:68rem;
     height: 100%;
     background: rgba(28, 30, 58, 1);
     z-index: 99;
-    width: 25rem;
+    width: 28rem;
     transition: transform 0.3s ease;
   }
 
   .query {
-  display: flex;
-  margin: 5px auto;
-  align-items: center;
-  text-align: justify;
-  background: transparent;
-  padding: 10px;
-  width: 22rem;
-  border-radius: 0.5rem;
-  border:none;
-  color: rgb(222, 222, 222, 1);;
-}
+    display: flex;
+    margin: 5px auto;
+    align-items: center;
+    text-align: justify;
+    background: transparent;
+    padding: 10px;
+    width: 25rem;
+    border-radius: 0.5rem;
+    border: none;
+    color: rgb(222, 222, 222, 1);
+    ;
+  }
+
+  /* ✅ Capitalize only the first visible character */
+  .queryText::first-letter {
+    text-transform: uppercase;
+  }
+
   .sideBar .collapsed {
     transform: translateX(-100%);
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  transition: width 0.3s ease;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
 
   }
 
@@ -459,25 +530,27 @@ height:68rem;
   .main.fullWidth {
     margin-left: 1rem;
   }
-  .upperSide {
-  padding: 2rem;
-  height: 58vh;
-  border-bottom: 1px solid rgb(100, 100, 100);
-  overflow-y: hidden;
-}
-.uppersideTop {
-display: flex;
-align-items: center;
-justify-content: center;
-margin-bottom: 2.5rem;
- 
-}
-.upperSideButton {
-  margin-top: 3rem;
-  overflow-y: scroll;
-   scrollbar-width: none;
-scroll-behavior: smooth;
-  height:50vh;
-}
-}
 
+  .upperSide {
+    padding: 2rem;
+    height: 58vh;
+    border-bottom: 1px solid rgb(100, 100, 100);
+    overflow-y: hidden;
+  }
+
+  .uppersideTop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+
+  }
+
+  .upperSideButton {
+    margin-top: 3rem;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    height: 50vh;
+  }
+}
