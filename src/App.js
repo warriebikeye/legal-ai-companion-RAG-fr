@@ -2,6 +2,7 @@ import './App.css';
 import { useState, useEffect, useRef } from 'react';
 import gptLogo from './assets/DeeBees.svg';
 import addBtn from './assets/add-30.png';
+import msgicon from './assets/message.svg';
 import home from './assets/home.svg';
 import saved from './assets/bookmark.svg';
 import rocket from './assets/rocket.svg';
@@ -11,8 +12,8 @@ import ggllogo from './assets/gglepro.jpg';
 import defaultUserIcon from './assets/user-icon.png';
 
 /* =========================================================
-   API Base URL
-========================================================= */
+   ✅ FIX: Centralized environment-aware API base URL
+   ========================================================= */
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 function App() {
@@ -26,112 +27,113 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [userImage, setUserImage] = useState(null);
-
+  /* =========================================================
+   ✅ IMPLEMENTATION: Track opened conversation
+========================================================= */
   const [activeConversationId, setActiveConversationId] = useState(null);
+  /* =========================================================
+     ✅ IMPLEMENTATION: State for previous conversations
+  ========================================================= */
   const [recentConversations, setRecentConversations] = useState([]);
 
+  const countries = [
+    { name: "Nigeria", flag: "🇳🇬" },
+    { name: "Kenya", flag: "🇰🇪" },
+    { name: "Ghana", flag: "🇬🇭" },
+    { name: "South Africa", flag: "🇿🇦" },
+    { name: "United States", flag: "🇺🇸" }
+  ];
+
   const [messages, setMessages] = useState([{
-    text: "Before you sign anything, upload it here or ask questions.",
+    text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
     isBot: true,
   }]);
 
-  /* =========================================================
-     Restore conversation after refresh
-  ========================================================= */
-  useEffect(() => {
-    const savedId = localStorage.getItem("activeConversationId");
-    if (savedId && savedId !== "undefined") {
-      setActiveConversationId(savedId);
-    }
-  }, []);
-
-  /* =========================================================
-     Auto-scroll chats
-  ========================================================= */
+  // Auto-scroll chats
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* =========================================================
-     Detect country
-  ========================================================= */
+  // Fetch user location using GeoIP
   useEffect(() => {
     const autoDetectCountry = async () => {
       try {
         const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
-        if (data.country_name) setUserLocation(data.country_name);
-      } catch {}
+        const detected = data.country_name;
+        const found = countries.find(c => c.name === detected);
+        if (found) setUserLocation(found.name);
+      } catch (err) {
+        console.warn("Auto-location failed:", err);
+      }
     };
     autoDetectCountry();
   }, []);
 
-  /* =========================================================
-     Auth + Fetch Conversations
-  ========================================================= */
+  // =========================================================
+  // ✅ FIX: Auth check now uses API_BASE_URL
+  // =========================================================
   useEffect(() => {
-    const init = async () => {
+    const checkAuthentication = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/auth/me`, {
-          credentials: "include"
+          method: "GET",
+          credentials: "include",
         });
 
-        if (!res.ok) return;
+        if (!res.ok) {
+          setIsAuthenticated(false);
+          return;
+        }
 
         const data = await res.json();
-
         setIsAuthenticated(Boolean(data.isAuthenticated));
         setUserEmail(data.userEmail || null);
         setUserImage(data.userImage || defaultUserIcon);
 
-        if (data.isAuthenticated) fetchRecentConversations();
-
-      } catch (err) {
-        console.error(err);
+        // ✅ IMPLEMENTATION: Fetch previous conversations
+        if (data.isAuthenticated) {
+          fetchRecentConversations();
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setIsAuthenticated(false);
       }
     };
 
-    init();
+    const fetchRecentConversations = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/conversations`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch conversations");
+
+        const convData = await res.json();
+        // ✅ Safe check: ensure array for mapping
+        if (Array.isArray(convData)) {
+          setRecentConversations(convData);
+        } else if (Array.isArray(convData.conversations)) {
+          setRecentConversations(convData.conversations);
+        } else {
+          setRecentConversations([]);
+        }
+      } catch (err) {
+        console.error("Error fetching recent conversations:", err);
+        setRecentConversations([]);
+      }
+    };
+
+    checkAuthentication();
   }, []);
 
-  /* =========================================================
-     Normalize conversations (CRITICAL FIX)
-  ========================================================= */
-  const fetchRecentConversations = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/conversations`, {
-        credentials: "include"
-      });
+  const handleFileUpload = (e) => setFiles([...e.target.files]);
 
-      const data = await res.json();
-
-      const array =
-        Array.isArray(data) ? data :
-        Array.isArray(data.conversations) ? data.conversations :
-        [];
-
-      const normalized = array.map(conv => ({
-        id: conv.id || conv._id || conv.conversationId,
-        title: conv.title || "Untitled Chat"
-      }));
-
-      setRecentConversations(normalized);
-
-    } catch (err) {
-      console.error("Conversation fetch failed:", err);
-      setRecentConversations([]);
-    }
-  };
-
-  /* =========================================================
-     Start New Chat
-  ========================================================= */
   const startNewChat = () => {
-    setActiveConversationId(null);
-    localStorage.removeItem("activeConversationId");
+    setActiveConversationId(null); // ✅ IMPORTANT
 
     setMessages([{
-      text: "Before you sign anything, upload it here or ask questions.",
+      text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
       isBot: true,
     }]);
 
@@ -140,44 +142,63 @@ function App() {
   };
 
   /* =========================================================
-     Load Conversation (SAFE)
-  ========================================================= */
+   ✅ IMPLEMENTATION: Load a conversation by ID
+========================================================= */
   const loadConversation = async (conversationId) => {
-    if (!conversationId || conversationId === "undefined") return;
-
     try {
       setActiveConversationId(conversationId);
-      localStorage.setItem("activeConversationId", conversationId);
 
-      setMessages([{ text: "Loading...", isBot: true, typing: true }]);
+      // Optional loader message while fetching
+      setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
       const res = await fetch(
         `${API_BASE_URL}/conversations/${conversationId}/messages`,
-        { credentials: "include" }
+        {
+          method: "GET",
+          credentials: "include",
+        }
       );
+
+      if (!res.ok) throw new Error("Failed to load conversation");
 
       const data = await res.json();
 
-      const formatted = data.map(msg => ({
+      /*
+        Expected backend shape (example):
+        [
+          { role: "user", content: "..."},
+          { role: "assistant", content: "...", sources: [], clauseAnalysis: "" }
+        ]
+      */
+
+      const formattedMessages = data.map(msg => ({
         text: msg.content,
         isBot: msg.role !== "user",
         sources: msg.sources ?? [],
-        clauseAnalysis: msg.clauseAnalysis ?? null
+        clauseAnalysis: msg.clauseAnalysis ?? null,
+        hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
+        hasClauseAnalysis: !!msg.clauseAnalysis,
       }));
 
-      setMessages(formatted);
+      setMessages(formattedMessages);
+
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
 
     } catch (err) {
-      console.error(err);
-      setMessages([{ text: "Failed to load conversation.", isBot: true }]);
+      console.error("Error loading conversation:", err);
+      setMessages([
+        { text: "⚠️ Failed to load this conversation.", isBot: true }
+      ]);
     }
   };
-
-  /* =========================================================
-     Send Message (captures new conversation ID)
-  ========================================================= */
   const handleSend = async () => {
     if (!input.trim() && files.length === 0) return;
+    if (!userLocation) {
+      alert("Please select your country first.");
+      return;
+    }
 
     setIsSending(true);
 
@@ -191,101 +212,214 @@ function App() {
       const formData = new FormData();
       formData.append("query", input);
       formData.append("country", userLocation);
-
       if (activeConversationId) {
         formData.append("conversationId", activeConversationId);
       }
+      files.forEach((file) => formData.append("files", file));
 
-      files.forEach(f => formData.append("files", f));
-
-      const res = await fetch(`${API_BASE_URL}/ask/text`, {
+      const response = await fetch(`${API_BASE_URL}/ask/text`, {
         method: "POST",
         body: formData,
-        credentials: "include"
+        credentials: "include",
       });
 
-      const data = await res.json();
-
-      /* 🔥 IMPORTANT FIX */
-      if (data.conversationId && !activeConversationId) {
-        setActiveConversationId(data.conversationId);
-        localStorage.setItem("activeConversationId", data.conversationId);
-        fetchRecentConversations();
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
       }
 
-      setMessages(prev => {
-        const clean = prev.filter(m => !m.typing);
-        return [...clean, {
-          isBot: true,
-          text: data.answer || "No response."
-        }];
-      });
+      const data = await response.json();
 
       setInput("");
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.typing);
+        return [
+          ...withoutTyping,
+          {
+            isBot: true,
+            text: data.answer || "Sorry, I couldn’t get a reply.",
+            hasSources: Array.isArray(data.sources) && data.sources.length > 0,
+            hasDocumentText: !!data.documentText,
+            hasClauseAnalysis: !!data.clauseAnalysis,
+            sources: data.sources ?? [],
+            documentText: data.documentText ?? null,
+            clauseAnalysis: data.clauseAnalysis ?? null,
+          },
+        ];
+      });
+    } catch (error) {
+      console.error("Error fetching:", error);
 
-    } catch (err) {
-      console.error(err);
+      setMessages(prev => {
+        const withoutTyping = prev.filter(msg => !msg.typing);
+        return [
+          ...withoutTyping,
+          {
+            isBot: true,
+            text: "⚠️ There was an error connecting to the server.",
+            hasSources: false,
+            hasDocumentText: false,
+            hasClauseAnalysis: false,
+            sources: [],
+            documentText: null,
+            clauseAnalysis: null,
+          },
+        ];
+      });
     }
 
     setFiles([]);
     setIsSending(false);
   };
 
-  /* =========================================================
-     UI
-  ========================================================= */
   return (
     <div className="App">
+      <button className="sidebarToggle" onClick={() => setSidebarOpen(prev => !prev)}>
+        ☰
+      </button>
 
       <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
-        <img src={gptLogo} alt="" className='logo' />
+        <div className='upperSide'>
+          <div className='uppersideTop'>
+            <img src={gptLogo} alt='Logo' className='logo' />
+          </div>
 
-        {isAuthenticated ? (
-          <>
-            <h3>Previous Chats</h3>
-            {recentConversations.map(conv => (
-              <button key={conv.id} onClick={() => loadConversation(conv.id)}>
-                {conv.title}
-              </button>
+          <select
+            className='query'
+            value={userLocation}
+            onChange={(e) => setUserLocation(e.target.value)}
+          >
+            <option value="">-- Select Country --</option>
+            {countries.map(c => (
+              <option key={c.name} value={c.name}>
+                {c.flag} {c.name}
+              </option>
             ))}
-          </>
-        ) : (
-          <button onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}>
-            Sign in with Google
-            <img src={ggllogo} alt="" />
-          </button>
-        )}
+          </select>
 
-        <button onClick={startNewChat}>
-          <img src={addBtn} alt="" /> New Chat
-        </button>
+          <div className='upperSideButton'>
+            {isAuthenticated ? (
+              <>
+                <h2>Previous Chats</h2>
+                {/* ✅ Map recentConversations to buttons safely */}
+                {Array.isArray(recentConversations) && recentConversations.map(conv => (
+                  <button
+                    key={conv.id}
+                    className='query'
+                    onClick={() => loadConversation(conv.id)}
+                  >
+                    <span className="queryText">{conv.title}</span>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <button
+                className="queryxx google-sign-in"
+                onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}
+              >
+                Sign in with Google
+                <img src={ggllogo} alt="Google Logo" className="google-logo" />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className='lowerside'>
+          <button className='midBtn' onClick={startNewChat}>
+            <img src={addBtn} alt='' className='addBtn' />New Chat
+          </button>
+          <div className='ListItems'><img src={home} alt='' /> Home</div>
+          <div className='ListItems'><img src={rocket} alt='' /> Upgrade to Pro</div>
+          <div className='ListItems'>
+            <img src={isAuthenticated && userImage ? userImage : saved} alt='' />
+            {isAuthenticated ? userEmail : "Saved"}
+          </div>
+        </div>
       </div>
 
-      <div className="main">
+      <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
         <div className='chats'>
-          {messages.map((m, i) => (
-            <div key={i} className={m.isBot ? 'chat bot' : 'chat'}>
-              <img src={m.isBot ? gptimglogo : (userImage || defaultUserIcon)} alt='' />
-              <p>{m.typing ? "..." : m.text}</p>
+          {messages.map((message, i) => (
+            <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
+              <img
+                src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)}
+                className='chtimg'
+                alt=''
+              />
+              <p className='txt'>
+                {message.typing ? (
+                  <div className="typing-dots"><span></span><span></span><span></span></div>
+                ) : (
+                  <>
+                    <span>{message.text}</span>
+                    {message.clauseAnalysis && (
+                      <span style={{ marginTop: '10px', display: 'block' }}>
+                        <strong>Clause Analysis:</strong> {message.clauseAnalysis}
+                      </span>
+                    )}
+                    {message.sources && message.sources.length > 0 && (
+                      <span style={{ marginTop: '10px', display: 'block' }}>
+                        <strong>Sources:</strong> {message.sources.join(", ")}
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
 
         <div className='chatfooter'>
-          <input
-            type='text'
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder='Send a message'
-          />
-          <button onClick={handleSend} disabled={isSending}>
-            <img src={sendBtn} alt='' />
-          </button>
+          <div className='inp'>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.txt,image/*"
+              className="filein"
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+              id="file-input"
+            />
+            <label
+              htmlFor="file-input"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "50px",
+                height: "50px",
+                fontSize: "30px",
+                cursor: "pointer",
+                borderRadius: "4px",
+              }}
+              className="file-label"
+            >
+              +
+            </label>
+            {files.length > 0 && (
+              <div className="file-preview">
+                {files.map((file, idx) =>
+                  file.type.startsWith("image/")
+                    ? <img key={idx} src={URL.createObjectURL(file)} alt='' className="file-thumb" />
+                    : <div key={idx} className="file-item">📄 {file.name}</div>
+                )}
+              </div>
+            )}
+
+            <input
+              type='text'
+              placeholder='Send a message'
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            />
+
+            <button className='send' onClick={handleSend} disabled={isSending}>
+              {isSending ? <div className="loader"></div> : <img src={sendBtn} alt='' />}
+            </button>
+          </div>
+          <p> ~ Africa’s Legal Intelligence Engine ~</p>
         </div>
       </div>
-
     </div>
   );
 }
