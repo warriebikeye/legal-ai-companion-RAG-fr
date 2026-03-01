@@ -169,6 +169,7 @@ function App() {
 
       const data = await response.json();
 
+      setInput("");
       setMessages(prev => {
         const withoutTyping = prev.filter(msg => !msg.typing);
         return [
@@ -206,7 +207,6 @@ function App() {
       });
     }
 
-    setInput("");
     setFiles([]);
     setIsSending(false);
   };
@@ -239,7 +239,7 @@ function App() {
           <div className='upperSideButton'>
             {isAuthenticated ? (
               <>
-              <h2>Previous Chats</h2>
+                <h2>Previous Chats</h2>
                 {/* ✅ Map recentConversations to buttons safely */}
                 {Array.isArray(recentConversations) && recentConversations.map(conv => (
                   <button
