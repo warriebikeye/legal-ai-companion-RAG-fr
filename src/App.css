@@ -280,6 +280,7 @@ height:68rem;
   padding: 1.5rem;
   width: 30rem;
   border-radius: 0.5rem;
+  border:none;
   color: rgb(222, 222, 222, 1);;
 }
 .queryxx {
