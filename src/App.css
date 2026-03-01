@@ -283,6 +283,16 @@ height:68rem;
   border:none;
   color: rgb(222, 222, 222, 1);;
 }
+.queryText {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  /* 👇 THIS is what most people miss in flex layouts */
+  min-width: 0;
+  flex: 1;
+}
 .queryxx {
   display: flex;
   margin: 1rem auto;

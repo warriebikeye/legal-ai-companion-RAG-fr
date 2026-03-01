@@ -247,7 +247,8 @@ function App() {
                     onClick={() => {
                       setMessages(prev => [...prev, { text: conv.title, isBot: false }]);
                     }}
-                  > {conv.title}
+                  >
+                    <span className="queryText">{conv.title}</span>
                   </button>
                 ))}
               </>
