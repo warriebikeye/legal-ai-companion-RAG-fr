@@ -237,7 +237,7 @@ function App() {
           <div className='ListItems'><img src={home} alt='' /> Home</div>
           <div className='ListItems'><img src={rocket} alt='' /> Upgrade to Pro</div>
           <div className='ListItems'>
-            <img src={isAuthenticated && userImage ? userImage : saved} alt='' /> 
+            <img src={isAuthenticated && userImage ? userImage : saved} alt='' />
             {isAuthenticated ? userEmail : "Saved"}
           </div>
         </div>
@@ -287,8 +287,23 @@ function App() {
               onChange={handleFileUpload}
               id="file-input"
             />
-            <label htmlFor="file-input" className="file-label">+</label>
-
+            <label
+              htmlFor="file-input"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "50px",
+                height: "50px",
+                fontSize: "30px",
+                cursor: "pointer",
+                // border: "1px solid #ccc",
+                borderRadius: "4px",
+              }}
+              className="file-label"
+            >
+              +
+            </label>
             {files.length > 0 && (
               <div className="file-preview">
                 {files.map((file, idx) =>

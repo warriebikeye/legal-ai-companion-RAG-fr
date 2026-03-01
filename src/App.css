@@ -219,6 +219,7 @@ height:68rem;
   align-items: center;
   border-radius: .5em ; 
   width: 100%; 
+  padding:5px 10px;
 }
 .inp>input {
   width:calc(100% - 3rem);
@@ -229,6 +230,7 @@ height:68rem;
 .inp>input, .send {
   background: transparent;
   border: none;
+  font-size: 16px;
 }
 .addBtn {
   height: 2rem;
@@ -372,11 +374,16 @@ height:68rem;
   flex: 1 1 100%;
   margin: 2rem;
 }
-
+.file-label{
+    font-size:larger;
+  }
 /* Responsive for mobile */
 @media (max-width: 768px) {
   .sidebarToggle {
     display: block;
+  }
+  .file-label{
+    font-size:large;
   }
   .App {
   min-height: 100vh;
