@@ -107,10 +107,17 @@ function App() {
         if (!res.ok) throw new Error("Failed to fetch conversations");
 
         const convData = await res.json();
-        // convData should be an array of objects: [{ id, title }]
-        setRecentConversations(convData);
+        // ✅ Safe check: ensure array for mapping
+        if (Array.isArray(convData)) {
+          setRecentConversations(convData);
+        } else if (Array.isArray(convData.conversations)) {
+          setRecentConversations(convData.conversations);
+        } else {
+          setRecentConversations([]);
+        }
       } catch (err) {
         console.error("Error fetching recent conversations:", err);
+        setRecentConversations([]);
       }
     };
 
@@ -232,10 +239,8 @@ function App() {
           <div className='upperSideButton'>
             {isAuthenticated ? (
               <>
-                {/* =========================================================
-                    ✅ IMPLEMENTATION: Map recentConversations to buttons
-                ========================================================= */}
-                {recentConversations.map(conv => (
+                {/* ✅ Map recentConversations to buttons safely */}
+                {Array.isArray(recentConversations) && recentConversations.map(conv => (
                   <button
                     key={conv.id}
                     className='query'
