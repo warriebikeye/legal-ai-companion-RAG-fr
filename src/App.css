@@ -271,16 +271,15 @@ height:68rem;
   cursor: not-allowed;
 }
 
-
 .query {
   display: flex;
-  margin: 1rem auto;
+  margin: 5px auto;
   align-items: center;
+  text-align: justify;
   background: transparent;
   padding: 1.5rem;
   width: 30rem;
   border-radius: 0.5rem;
-  border:none;
   color: rgb(222, 222, 222, 1);;
 }
 .queryxx {

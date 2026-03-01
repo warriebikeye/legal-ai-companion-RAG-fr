@@ -247,8 +247,7 @@ function App() {
                     onClick={() => {
                       setMessages(prev => [...prev, { text: conv.title, isBot: false }]);
                     }}
-                  >
-                    <img src={msgicon} alt='' /> {conv.title}
+                  > {conv.title}
                   </button>
                 ))}
               </>
