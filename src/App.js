@@ -27,7 +27,10 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
   const [userImage, setUserImage] = useState(null);
-
+  /* =========================================================
+   ✅ IMPLEMENTATION: Track opened conversation
+========================================================= */
+  const [activeConversationId, setActiveConversationId] = useState(null);
   /* =========================================================
      ✅ IMPLEMENTATION: State for previous conversations
   ========================================================= */
@@ -127,15 +130,69 @@ function App() {
   const handleFileUpload = (e) => setFiles([...e.target.files]);
 
   const startNewChat = () => {
+    setActiveConversationId(null); // ✅ IMPORTANT
+
     setMessages([{
       text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
       isBot: true,
     }]);
+
     setInput("");
     setFiles([]);
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  /* =========================================================
+   ✅ IMPLEMENTATION: Load a conversation by ID
+========================================================= */
+  const loadConversation = async (conversationId) => {
+    try {
+      setActiveConversationId(conversationId);
+
+      // Optional loader message while fetching
+      setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
+
+      const res = await fetch(
+        `${API_BASE_URL}/conversations/${conversationId}/messages`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to load conversation");
+
+      const data = await res.json();
+
+      /*
+        Expected backend shape (example):
+        [
+          { role: "user", content: "..."},
+          { role: "assistant", content: "...", sources: [], clauseAnalysis: "" }
+        ]
+      */
+
+      const formattedMessages = data.map(msg => ({
+        text: msg.content,
+        isBot: msg.role !== "user",
+        sources: msg.sources ?? [],
+        clauseAnalysis: msg.clauseAnalysis ?? null,
+        hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
+        hasClauseAnalysis: !!msg.clauseAnalysis,
+      }));
+
+      setMessages(formattedMessages);
+
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+
+    } catch (err) {
+      console.error("Error loading conversation:", err);
+      setMessages([
+        { text: "⚠️ Failed to load this conversation.", isBot: true }
+      ]);
+    }
+  };
   const handleSend = async () => {
     if (!input.trim() && files.length === 0) return;
     if (!userLocation) {
@@ -155,6 +212,9 @@ function App() {
       const formData = new FormData();
       formData.append("query", input);
       formData.append("country", userLocation);
+      if (activeConversationId) {
+        formData.append("conversationId", activeConversationId);
+      }
       files.forEach((file) => formData.append("files", file));
 
       const response = await fetch(`${API_BASE_URL}/ask/text`, {
@@ -245,9 +305,7 @@ function App() {
                   <button
                     key={conv.id}
                     className='query'
-                    onClick={() => {
-                      setMessages(prev => [...prev, { text: conv.title, isBot: false }]);
-                    }}
+                    onClick={() => loadConversation(conv.id)}
                   >
                     <span className="queryText">{conv.title}</span>
                   </button>

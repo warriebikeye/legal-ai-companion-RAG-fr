@@ -115,17 +115,66 @@ body {
 
 }
 
+/* =========================================================
+   ✅ Fancy Scrollbar (Modern UI Style)
+========================================================= */
+
 .upperSideButton {
   margin-top: 3rem;
-  overflow-y: scroll;
-  scrollbar-width: none;
+  overflow-y: auto;                 /* allow scroll */
   scroll-behavior: smooth;
   height: 55vh;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120,120,120,0.4) transparent;
 }
 
+/* ===============================
+   Chrome / Edge / Safari
+=============================== */
+
+/* scrollbar width */
 .upperSideButton::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari, Edge */
+  width: 8px;
+}
+
+/* Track (background) */
+.upperSideButton::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Scroll Thumb */
+.upperSideButton::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(140,140,140,0.35),
+    rgba(90,90,90,0.35)
+  );
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  transition: all 0.3s ease;
+}
+
+/* Hover effect */
+.upperSideButton::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(180,180,180,0.6),
+    rgba(120,120,120,0.6)
+  );
+}
+
+/* Active drag feel */
+.upperSideButton::-webkit-scrollbar-thumb:active {
+  background: rgba(200,200,200,0.8);
+}
+.upperSideButton::-webkit-scrollbar-thumb {
+  opacity: 0;
+}
+
+.upperSideButton:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
 }
 
 .logo {
