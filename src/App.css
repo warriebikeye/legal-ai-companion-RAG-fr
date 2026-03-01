@@ -432,6 +432,18 @@ height:68rem;
     transition: transform 0.3s ease;
   }
 
+  .query {
+  display: flex;
+  margin: 5px auto;
+  align-items: center;
+  text-align: justify;
+  background: transparent;
+  padding: 10px;
+  width: 24rem;
+  border-radius: 0.5rem;
+  border:none;
+  color: rgb(222, 222, 222, 1);;
+}
   .sideBar .collapsed {
     transform: translateX(-100%);
   width: 0;
