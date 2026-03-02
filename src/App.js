@@ -293,9 +293,9 @@ function App() {
           </select>
 
           <div className="upperSideButton">
+                <h2>Previous Chats</h2>
             {isAuthenticated ? (
               <>
-                <h2>Previous Chats</h2>
                 {Array.isArray(recentConversations) &&
                   recentConversations.map(conv => {
                     const id = conv?._id;
