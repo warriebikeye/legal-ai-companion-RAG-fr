@@ -131,59 +131,66 @@ function App() {
   /* =========================================================
      ✅ FIXED LOAD CONVERSATION (Defensive + Safe Mapping)
   ========================================================= */
-  const loadConversation = async (conversationId) => {
-    if (!conversationId) return;
+ const loadConversation = async (conversationId) => {
+  if (!conversationId) return;
 
-    try {
-      setActiveConversationId(conversationId);
-      setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
+  try {
+    setActiveConversationId(conversationId);
+    setMessages([
+      { text: "Loading conversation...", isBot: true, typing: true }
+    ]);
 
-      const res = await fetch(
-        `${API_BASE_URL}/conversations/${conversationId}/messages`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to load conversation");
-
-      const data = await res.json();
-
-      console.log("RAW CONVERSATION RESPONSE:", data);
-
-      if (!data || (!Array.isArray(data.messages) && !Array.isArray(data.data))) {
-        throw new Error("Server did not return a valid message array");
+    const res = await fetch(
+      `${API_BASE_URL}/conversations/${conversationId}/messages`,
+      {
+        method: "GET",
+        credentials: "include",
       }
+    );
 
-      const rawMessages = Array.isArray(data.messages)
-        ? data.messages
-        : Array.isArray(data.data)
-        ? data.data
-        : [];
+    if (!res.ok) throw new Error("Failed to load conversation");
 
-      const formattedMessages = rawMessages.map(msg => ({
-        text: msg?.content || "",
-        isBot: msg?.role !== "user",
-        sources: msg?.sources ?? [],
-        clauseAnalysis: msg?.clauseAnalysis ?? null,
-        hasSources: Array.isArray(msg?.sources) && msg.sources.length > 0,
-        hasClauseAnalysis: !!msg?.clauseAnalysis,
-      }));
+    const data = await res.json();
 
-      setMessages(formattedMessages);
+    console.log("RAW CONVERSATION RESPONSE:", data);
 
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-
-    } catch (err) {
-      console.error("Error loading conversation:", err);
-      setMessages([
-        { text: "⚠️ Failed to load this conversation.", isBot: true }
-      ]);
+    if (!data || (!Array.isArray(data.messages) && !Array.isArray(data.data))) {
+      throw new Error("Server did not return a valid message array");
     }
-  };
+
+    const rawMessages = Array.isArray(data.messages)
+      ? data.messages
+      : Array.isArray(data.data)
+      ? data.data
+      : [];
+
+    const formattedMessages = rawMessages.map(msg => ({
+      text: msg?.content || "",
+      isBot: msg?.role !== "user",
+      sources: msg?.sources ?? [],
+      clauseAnalysis: msg?.clauseAnalysis ?? null,
+      hasSources: Array.isArray(msg?.sources) && msg.sources.length > 0,
+      hasClauseAnalysis: !!msg?.clauseAnalysis,
+    }));
+
+    setMessages(formattedMessages);
+
+    // ✅ Auto-close sidebar on mobile after loading conversation
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(true); // collapsed state in your UI
+    }
+
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+
+  } catch (err) {
+    console.error("Error loading conversation:", err);
+    setMessages([
+      { text: "⚠️ Failed to load this conversation.", isBot: true }
+    ]);
+  }
+};
 
   const handleSend = async () => {
     if (!input.trim() && files.length === 0) return;
