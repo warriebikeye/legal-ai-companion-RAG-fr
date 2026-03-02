@@ -11,6 +11,9 @@ import gptimglogo from './assets/DeeBees.svg';
 import ggllogo from './assets/gglepro.jpg';
 import defaultUserIcon from './assets/user-icon.png';
 
+/* =========================================================
+   ✅ FIX: Centralized environment-aware API base URL
+========================================================= */
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 function App() {
@@ -125,7 +128,9 @@ function App() {
     setFiles([]);
   };
 
-  // ✅ FIXED HERE
+  /* =========================================================
+     ✅ FIXED LOAD CONVERSATION (Defensive + Safe Mapping)
+  ========================================================= */
   const loadConversation = async (conversationId) => {
     if (!conversationId) return;
 
@@ -145,17 +150,25 @@ function App() {
 
       const data = await res.json();
 
-      if (!data.success || !Array.isArray(data.messages)) {
-        throw new Error("Malformed server response");
+      console.log("RAW CONVERSATION RESPONSE:", data);
+
+      if (!data || (!Array.isArray(data.messages) && !Array.isArray(data.data))) {
+        throw new Error("Server did not return a valid message array");
       }
 
-      const formattedMessages = data.messages.map(msg => ({
-        text: msg.content,
-        isBot: msg.role !== "user",
-        sources: msg.sources ?? [],
-        clauseAnalysis: msg.clauseAnalysis ?? null,
-        hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
-        hasClauseAnalysis: !!msg.clauseAnalysis,
+      const rawMessages = Array.isArray(data.messages)
+        ? data.messages
+        : Array.isArray(data.data)
+        ? data.data
+        : [];
+
+      const formattedMessages = rawMessages.map(msg => ({
+        text: msg?.content || "",
+        isBot: msg?.role !== "user",
+        sources: msg?.sources ?? [],
+        clauseAnalysis: msg?.clauseAnalysis ?? null,
+        hasSources: Array.isArray(msg?.sources) && msg.sources.length > 0,
+        hasClauseAnalysis: !!msg?.clauseAnalysis,
       }));
 
       setMessages(formattedMessages);
@@ -194,7 +207,7 @@ function App() {
       if (activeConversationId) {
         formData.append("conversationId", activeConversationId);
       }
-      files.forEach((file) => formData.append("files", file));
+      files.forEach(file => formData.append("files", file));
 
       const response = await fetch(`${API_BASE_URL}/ask/text`, {
         method: "POST",
@@ -251,8 +264,144 @@ function App() {
 
   return (
     <div className="App">
-      {/* UI unchanged */}
-      <div ref={messagesEndRef} />
+      <div className="sidebarToggle" onClick={() => setSidebarOpen(prev => !prev)}>☰</div>
+
+      <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
+        <div className="upperSide">
+          <div className="uppersideTop">
+            <img src={gptLogo} alt="Logo" className="logo" />
+          </div>
+
+          <select
+            className="query"
+            value={userLocation}
+            onChange={(e) => setUserLocation(e.target.value)}
+          >
+            <option value="">-- Select Country --</option>
+            {countries.map(c => (
+              <option key={c.name} value={c.name}>
+                {c.flag} {c.name}
+              </option>
+            ))}
+          </select>
+
+          <div className="upperSideButton">
+            {isAuthenticated ? (
+              <>
+                <h2>Previous Chats</h2>
+                {Array.isArray(recentConversations) &&
+                  recentConversations.map(conv => {
+                    const id = conv?._id;
+                    if (!id) return null;
+
+                    return (
+                      <button
+                        key={id}
+                        className="query"
+                        onClick={() => loadConversation(id)}
+                      >
+                        <span className="queryText">{conv.title}</span>
+                      </button>
+                    );
+                  })}
+              </>
+            ) : (
+              <button
+                className="queryxx google-sign-in"
+                onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}
+              >
+                Sign in with Google
+                <img src={ggllogo} alt="Google Logo" className="google-logo" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="lowerside">
+          <button className="midBtn" onClick={startNewChat}>
+            <img src={addBtn} alt="" className="addBtn" />New Chat
+          </button>
+          <div className="ListItems"><img src={home} alt="" /> Home</div>
+          <div className="ListItems"><img src={rocket} alt="" /> Upgrade to Pro</div>
+          <div className="ListItems">
+            <img src={isAuthenticated && userImage ? userImage : saved} alt="" />
+            {isAuthenticated ? userEmail : "Saved"}
+          </div>
+        </div>
+      </div>
+
+      <div className="main">
+        <div className="chats">
+          {messages.map((message, i) => (
+            <div key={i} className={message.isBot ? "chat bot" : "chat"}>
+              <img
+                src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)}
+                className="chtimg"
+                alt=""
+              />
+              <p className="txt">
+                {message.typing ? (
+                  <div className="typing-dots">
+                    <span></span><span></span><span></span>
+                  </div>
+                ) : (
+                  <>
+                    <span>{message.text}</span>
+                    {message.clauseAnalysis && (
+                      <span style={{ marginTop: "10px", display: "block" }}>
+                        <strong>Clause Analysis:</strong> {message.clauseAnalysis}
+                      </span>
+                    )}
+                    {message.sources && message.sources.length > 0 && (
+                      <span style={{ marginTop: "10px", display: "block" }}>
+                        <strong>Sources:</strong> {message.sources.join(", ")}
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="chatfooter">
+          <div className="inp">
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.txt,image/*"
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+              id="file-input"
+            />
+            <label htmlFor="file-input" className="file-label">+</label>
+
+            {files.length > 0 && (
+              <div className="file-preview">
+                {files.map((file, idx) =>
+                  file.type.startsWith("image/")
+                    ? <img key={idx} src={URL.createObjectURL(file)} alt="" className="file-thumb" />
+                    : <div key={idx} className="file-item">📄 {file.name}</div>
+                )}
+              </div>
+            )}
+
+            <input
+              type="text"
+              placeholder="Send a message"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            />
+
+            <button className="send" onClick={handleSend} disabled={isSending}>
+              {isSending ? <div className="loader"></div> : <img src={sendBtn} alt="" />}
+            </button>
+          </div>
+          <p> ~ Africa’s Legal Intelligence Engine ~</p>
+        </div>
+      </div>
     </div>
   );
 }
