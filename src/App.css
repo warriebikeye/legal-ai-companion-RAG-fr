@@ -102,9 +102,11 @@ body {
 
 .upperSide {
   padding: 2rem;
-  height: 68vh;
+  height: 68vh;              /* keep your original design */
   border-bottom: 1px solid rgb(100, 100, 100);
-  overflow-y: hidden;
+
+  display: flex;
+  flex-direction: column;
 }
 
 .uppersideTop {
@@ -126,12 +128,14 @@ body {
 
 .upperSideButton {
   margin-top: 3rem;
-  overflow-y: auto; /* vertical scroll only */
-  overflow-x: hidden; /* hide bottom scrollbar */
-  scroll-behavior: smooth;
-  height: 55vh;
 
-  scrollbar-width: thin; /* Firefox */
+  flex: 1;              /* 👈 This is the key */
+  overflow-y: auto;      /* vertical scroll */
+  overflow-x: hidden;
+
+  scroll-behavior: smooth;
+
+  scrollbar-width: thin;
   scrollbar-color: rgba(160,160,160,0.6) transparent;
 }
 
@@ -588,7 +592,6 @@ body {
   overflow-y: auto; /* vertical scroll only */
   overflow-x: hidden; /* hide bottom scrollbar */
     scroll-behavior: smooth;
-    height: 50vh;
 
     /* Keep fancy scrollbar */
     scrollbar-width: thin;
