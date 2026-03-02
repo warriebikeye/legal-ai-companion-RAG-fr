@@ -597,9 +597,12 @@ body {
 
   .upperSideButton {
     margin-top: 3rem;
-    overflow-y: scroll;
-    scrollbar-width: none;
+    overflow-y: auto;
     scroll-behavior: smooth;
     height: 50vh;
+
+    /* Keep fancy scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120,120,120,0.4) transparent;
   }
 }
