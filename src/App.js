@@ -291,9 +291,9 @@ function App() {
               </option>
             ))}
           </select>
-
-          <div className="upperSideButton">
+          
                 <h2>Previous Chats</h2>
+          <div className="upperSideButton">
             {isAuthenticated ? (
               <>
                 {Array.isArray(recentConversations) &&
