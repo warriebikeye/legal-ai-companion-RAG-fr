@@ -303,9 +303,9 @@ function App() {
                 {/* ✅ Map recentConversations to buttons safely */}
                 {Array.isArray(recentConversations) && recentConversations.map(conv => (
                   <button
-                    key={conv.id}
+                    key={conv._id}
                     className='query'
-                    onClick={() => loadConversation(conv.id)}
+                    onClick={() => loadConversation(conv._id)}
                   >
                     <span className="queryText">{conv.title}</span>
                   </button>
