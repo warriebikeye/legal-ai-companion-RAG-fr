@@ -127,7 +127,7 @@ body {
 =============================== */
 
 .upperSideButton {
-  margin-top: 3rem;
+  margin-top: 1.3rem;
 
   flex: 1;              /* 👈 This is the key */
   overflow-y: auto;      /* vertical scroll */
@@ -588,7 +588,7 @@ body {
   }
 
   .upperSideButton {
-    margin-top: 3rem;
+    margin-top: 1.2rem;
   overflow-y: auto; /* vertical scroll only */
   overflow-x: hidden; /* hide bottom scrollbar */
     scroll-behavior: smooth;
