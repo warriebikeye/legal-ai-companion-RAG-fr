@@ -6,7 +6,6 @@
 
 html {
   font-size: 62.5%;
-
 }
 
 /* Google Sign-In Button */
@@ -16,7 +15,7 @@ html {
   background-color: #4285f4;
   /* Google blue */
   color: white;
-  font-size: 1.4rem;
+  font-size: 2rem;
   padding: 12px 20px;
   border-radius: 5px;
   border: none;
@@ -97,7 +96,7 @@ body {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 0.3rem;
   color: white;
-  font-size: 1rem;
+  font-size: 1.5rem;
 }
 
 .upperSide {
@@ -129,7 +128,9 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(120,120,120,0.4) transparent;
 }
-
+.upperSideButton h2{
+  font-size: 2.0rem;
+}
 /* ===============================
    Chrome / Edge / Safari
 =============================== */
@@ -172,7 +173,15 @@ body {
 .upperSideButton::-webkit-scrollbar-thumb {
   opacity: 0;
 }
+.upgradeBtn {
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
 
+.upgradeBtn:hover {
+  transform: translateY(-2px);
+  color: #8b7cff;
+}
 .upperSideButton:hover::-webkit-scrollbar-thumb {
   opacity: 1;
 }
@@ -257,7 +266,7 @@ body {
 .chat {
   margin: 1rem;
   padding: 2rem 3rem;
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   display: flex;
   align-items: flex-start;
   text-align: justify;
@@ -375,7 +384,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
+  font-size: 1.6rem;
   /* 👇 THIS is what most people miss in flex layouts */
   min-width: 0;
   flex: 1;
@@ -443,7 +452,7 @@ body {
   margin: 0.75rem;
   align-items: center;
   display: flex;
-  font-size: 1.3rem;
+  font-size: 1.6rem;
 }
 
 .ListItems img {
@@ -491,7 +500,105 @@ body {
 .file-label {
   font-size: larger;
 }
+/* =========================================================
+   UPGRADE PAGE
+========================================================= */
 
+.upgradePage {
+  min-height: 100vh;
+  background: rgb(3, 0, 31);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.upgradeCard {
+  width: 100%;
+  max-width: 1000px;
+  background: rgba(28, 30, 58, 1);
+  border-radius: 2rem;
+  padding: 4rem;
+  text-align: center;
+}
+
+.upgradeCard h1 {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.upgradeSubtitle {
+  font-size: 1.6rem;
+  opacity: 0.8;
+  margin-bottom: 4rem;
+}
+
+.pricingGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3rem;
+}
+
+.priceCard {
+  background: rgba(255,255,255,0.05);
+  padding: 3rem;
+  border-radius: 2rem;
+  transition: 0.3s;
+}
+
+.priceCard:hover {
+  transform: translateY(-5px);
+}
+
+.priceCard h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.priceCard h3 {
+  font-size: 4rem;
+  color: #8b7bff;
+  margin-bottom: 2rem;
+}
+
+.priceCard p {
+  font-size: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.featured {
+  border: 2px solid #5a4bff;
+}
+
+.upgradeButton {
+  background: #5a4bff;
+  border: none;
+  color: white;
+  padding: 1.5rem 3rem;
+  border-radius: 1rem;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.upgradeButton:hover {
+  opacity: 0.9;
+  transform: scale(1.03);
+}
+
+@media (max-width: 768px) {
+  .pricingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .upgradeCard {
+    padding: 2rem;
+  }
+
+  .upgradeCard h1 {
+    font-size: 3rem;
+  }
+}
 /* Responsive for mobile */
 @media (max-width: 768px) {
   .sidebarToggle {
@@ -513,7 +620,7 @@ body {
   .chat {
     margin: 1.2rem 0.75rem;
     padding: 0.75rem 0.75rem;
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     display: flex;
     align-items: flex-start;
     text-align: justify;
@@ -530,7 +637,7 @@ body {
     margin: 0.65rem;
     align-items: center;
     display: flex;
-    font-size: 1rem;
+    font-size: 1.4rem;
   }
 
   .sideBar {
@@ -602,4 +709,7 @@ body {
     scroll-behavior: smooth;
     height: 50vh;
   }
+  .upperSideButton h2{
+  font-size: 1.8rem;
+}
 }
