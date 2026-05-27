@@ -101,9 +101,11 @@ body {
 
 .upperSide {
   padding: 2rem;
-  height: 68vh;
+  height: 68vh;              /* keep your original design */
   border-bottom: 1px solid rgb(100, 100, 100);
-  overflow-y: hidden;
+
+  display: flex;
+  flex-direction: column;
 }
 
 .uppersideTop {
@@ -118,15 +120,22 @@ body {
    ✅ Fancy Scrollbar (Modern UI Style)
 ========================================================= */
 
-.upperSideButton {
-  margin-top: 3rem;
-  overflow-y: auto;                 /* allow scroll */
-  scroll-behavior: smooth;
-  height: 55vh;
+/* ===============================
+   Vertical Scrollbar (Right Side)
+   For Previous Chats List
+=============================== */
 
-  /* Firefox */
+.upperSideButton {
+  margin-top: 1.3rem;
+
+  flex: 1;              /* 👈 This is the key */
+  overflow-y: auto;      /* vertical scroll */
+  overflow-x: hidden;
+
+  scroll-behavior: smooth;
+
   scrollbar-width: thin;
-  scrollbar-color: rgba(120,120,120,0.4) transparent;
+  scrollbar-color: rgba(160,160,160,0.6) transparent;
 }
 .upperSideButton h2{
   font-size: 2.0rem;
@@ -137,35 +146,22 @@ body {
 
 /* scrollbar width */
 .upperSideButton::-webkit-scrollbar {
-  width: 8px;
+  width: 6px; /* vertical only */
 }
 
-/* Track (background) */
 .upperSideButton::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Scroll Thumb */
 .upperSideButton::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(140,140,140,0.35),
-    rgba(90,90,90,0.35)
-  );
-  border-radius: 20px;
-  backdrop-filter: blur(6px);
-  transition: all 0.3s ease;
+  background: rgba(160,160,160,0.6);
+  border-radius: 10px;
+  transition: background 0.3s ease;
 }
 
-/* Hover effect */
 .upperSideButton::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(180,180,180,0.6),
-    rgba(120,120,120,0.6)
-  );
+  background: rgba(200,200,200,0.9);
 }
-
 /* Active drag feel */
 .upperSideButton::-webkit-scrollbar-thumb:active {
   background: rgba(200,200,200,0.8);
@@ -703,9 +699,9 @@ body {
   }
 
   .upperSideButton {
-    margin-top: 3rem;
-    overflow-y: scroll;
-    scrollbar-width: none;
+    margin-top: 1.2rem;
+  overflow-y: auto; /* vertical scroll only */
+  overflow-x: hidden; /* hide bottom scrollbar */
     scroll-behavior: smooth;
     height: 50vh;
   }
