@@ -10,6 +10,7 @@ const root =
   ReactDOM.createRoot(
     document.getElementById('root')
   );
+  //fixing
 
 root.render(
   <React.StrictMode>

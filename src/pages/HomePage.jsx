@@ -1,6 +1,6 @@
 import '../App.css';
 import { useState, useEffect, useRef } from 'react';
-
+import { useNavigate } from "react-router-dom";
 import gptLogo from '../assets/DeeBees.svg';
 import addBtn from '../assets/add-30.png';
 import msgicon from '../assets/message.svg';
@@ -65,6 +65,8 @@ function HomePage() {
 
   const [isSending, setIsSending] =
     useState(false);
+
+  const navigate = useNavigate();
 
   const [files, setFiles] =
     useState([]);
@@ -793,10 +795,7 @@ function HomePage() {
 
           <div
             className='ListItems upgradeBtn'
-            onClick={() =>
-              window.location.href =
-                "/upgrade"
-            }
+            onClick={() => navigate("/upgrade")}
           >
             <img
               src={rocket}

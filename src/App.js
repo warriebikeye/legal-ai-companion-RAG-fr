@@ -9,7 +9,7 @@ import PaymentUpdating from './pages/PaymentUpdating';
 import HomePage from './pages/HomePage';
 import UpgradePage from './pages/UpgradePage';
 
-
+//fixing routing
 function App() {
   return (
     <Routes>
