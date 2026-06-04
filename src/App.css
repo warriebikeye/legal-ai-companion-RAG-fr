@@ -3,7 +3,49 @@
   padding: 0;
   box-sizing: border-box;
 }
+.bot-message-content p {
+  margin: 0 0 10px 0;
+  line-height: 1.6;
+}
 
+.bot-message-content ul,
+.bot-message-content ol {
+  padding-left: 20px;
+  margin: 8px 0 12px 0;
+}
+
+.bot-message-content li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.bot-message-content strong {
+  font-weight: 600;
+  color: #e2e2e2; /* adjust to your theme */
+}
+
+.bot-message-content code {
+  background: rgba(255,255,255,0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.bot-message-content blockquote {
+  border-left: 3px solid #555;
+  padding-left: 12px;
+  margin: 8px 0;
+  color: #aaa;
+}
+
+.bot-message-content h1,
+.bot-message-content h2,
+.bot-message-content h3 {
+  margin: 12px 0 6px 0;
+  font-size: 1em;
+  font-weight: 700;
+}
 html {
   font-size: 62.5%;
 }
