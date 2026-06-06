@@ -112,7 +112,10 @@ function HomePage() {
     autoDetectCountry();
   }, []);
   const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev);
+    // Only toggle sidebar on mobile
+    if (window.innerWidth <= 768) {
+      setSidebarOpen((prev) => !prev);
+    }
   };
   /* =========================================================
      FETCH CONVERSATIONS
