@@ -66,15 +66,11 @@ function UpgradePage() {
 
             <button
               className="upgradeButton"
-              onClick={() =>
-                window.location.href =
-                dailyLink
-              }
               onClick={() => {
                 window.location.href =
                   process.env.ENVIRONMENT === "production"
-                    ? dailyProdLink
-                    : dailyLink;
+                    ? dailyLink
+                    : dailyProdLink;
               }}
             >
               Upgrade Daily
@@ -126,8 +122,8 @@ function UpgradePage() {
               onClick={() => {
                 window.location.href =
                   process.env.ENVIRONMENT === "production"
-                    ? monthlyProdLink
-                    : monthlyLink;
+                    ? monthlyLink
+                    : monthlyProdLink;
               }}
             >
               Upgrade Monthly
