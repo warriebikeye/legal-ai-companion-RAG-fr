@@ -8,6 +8,7 @@ import {
 import PaymentUpdating from './pages/PaymentUpdating';
 import HomePage from './pages/HomePage';
 import UpgradePage from './pages/UpgradePage';
+import DashBoard from './pages/AdminDashboard'
 
 //fixing routing
 function App() {
@@ -17,7 +18,6 @@ function App() {
         path="/"
         element={<HomePage />}
       />
-
       <Route
         path="/upgrade"
         element={<UpgradePage />}
@@ -25,6 +25,10 @@ function App() {
       <Route
         path="/payment-updating"
         element={<PaymentUpdating />}
+      />
+      <Route
+        path="/dashboard"
+        element={<DashBoard />}
       />
     </Routes>
   );

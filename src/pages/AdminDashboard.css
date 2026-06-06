@@ -1,0 +1,790 @@
+/* =========================================================
+   BASE
+========================================================= */
+
+.dashPage {
+  min-height: 100vh;
+  background: rgb(3, 0, 31);
+  color: white;
+  padding: 3rem 2rem 5rem;
+  font-family: inherit;
+}
+
+.dashContainer {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.topBarLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dashTitle {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.topBarMeta {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.uptime,
+.lastRefresh {
+  font-size: 1.2rem;
+  opacity: 0.55;
+}
+
+/* =========================================================
+   REFRESH BUTTON
+========================================================= */
+
+.refreshBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  padding: 0.9rem 1.8rem;
+  border-radius: 1rem;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.refreshBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.refreshBtn.spinning {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   HEALTH STRIP
+========================================================= */
+
+.healthStrip {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.healthChip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1.2rem;
+}
+
+.healthLabel {
+  opacity: 0.6;
+}
+
+.healthVal {
+  font-weight: 600;
+}
+
+.textGreen { color: #4ade80; }
+.textRed   { color: #f87171; }
+
+/* =========================================================
+   DOTS
+========================================================= */
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotGreen  { background: #4ade80; }
+.dotAmber  { background: #fbbf24; }
+.dotRed    { background: #f87171; }
+
+/* =========================================================
+   PILLS
+========================================================= */
+
+.healthPill,
+.smallPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+}
+
+.pillGreen {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+
+.pillRed {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+/* =========================================================
+   STAT CARDS
+========================================================= */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: rgba(28, 30, 58, 1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.5rem;
+  padding: 2rem 2rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.statLabel {
+  font-size: 1.2rem;
+  opacity: 0.55;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.statSub {
+  font-size: 1.2rem;
+  opacity: 0.45;
+  margin-top: 0.2rem;
+}
+
+.statDelta {
+  font-size: 1.2rem;
+  margin-top: 0.2rem;
+}
+
+.statDelta.up   { color: #4ade80; }
+.statDelta.down { color: #f87171; }
+
+/* =========================================================
+   GENERIC CARD
+========================================================= */
+
+.dashCard {
+  background: rgba(28, 30, 58, 1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.5rem;
+  padding: 2.2rem 2.4rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.8rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* =========================================================
+   MID GRID (chart + queue)
+========================================================= */
+
+.midGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* =========================================================
+   HOURLY CHART
+========================================================= */
+
+.chartCard {
+  min-height: 200px;
+}
+
+.hourlyChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 130px;
+  padding-top: 0.5rem;
+}
+
+.hourlyCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+}
+
+.hourlyBar {
+  width: 100%;
+  background: rgba(111, 97, 255, 0.5);
+  border-radius: 3px 3px 0 0;
+  transition: background 0.2s;
+  min-height: 4px;
+}
+
+.hourlyBar:hover {
+  background: rgba(111, 97, 255, 0.9);
+}
+
+.hourlyLabel {
+  font-size: 1rem;
+  opacity: 0.4;
+}
+
+.chartEmpty {
+  font-size: 1.3rem;
+  opacity: 0.4;
+  text-align: center;
+  padding: 3rem 0;
+}
+
+/* =========================================================
+   QUEUE BARS
+========================================================= */
+
+.queueRow {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.queueRow:last-of-type {
+  border-bottom: none;
+}
+
+.queueLabel {
+  font-size: 1.3rem;
+  opacity: 0.65;
+  min-width: 90px;
+}
+
+.queueBarTrack {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.queueBarFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.barBlue  { background: #378ADD; }
+.barGreen { background: #1D9E75; }
+.barAmber { background: #fbbf24; }
+.barRed   { background: #f87171; }
+
+.queueVal {
+  font-size: 1.3rem;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+.queueFooter {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* =========================================================
+   BOTTOM GRID
+========================================================= */
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+
+.sideStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* =========================================================
+   USERS TABLE
+========================================================= */
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.usersTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.3rem;
+}
+
+.usersTable th {
+  text-align: left;
+  font-size: 1.1rem;
+  opacity: 0.45;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.usersTable td {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.usersTable tr:last-child td {
+  border-bottom: none;
+}
+
+.userCell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.userName {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.userEmail {
+  display: block;
+  font-size: 1.1rem;
+  opacity: 0.45;
+}
+
+.numCell {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.mutedCell {
+  font-size: 1.2rem;
+  opacity: 0.45;
+}
+
+.tableEmpty {
+  font-size: 1.3rem;
+  opacity: 0.4;
+  padding: 2rem 0;
+}
+
+/* =========================================================
+   BADGES
+========================================================= */
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgePremium    { background: rgba(29, 158, 117, 0.18); color: #4ade80; }
+.badgeEnterprise { background: rgba(127, 119, 221, 0.18); color: #a99fff; }
+.badgeFree       { background: rgba(255, 255, 255, 0.07); color: rgba(255,255,255,0.5); }
+.badgeExpired    { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+.badgeAmber      { background: rgba(251, 191, 36, 0.15);  color: #fbbf24; }
+
+/* =========================================================
+   MODEL BARS
+========================================================= */
+
+.modelRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 1.2rem;
+}
+
+.modelRow:last-of-type {
+  border-bottom: none;
+}
+
+.modelDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.modelName {
+  flex: 1;
+  opacity: 0.8;
+  font-size: 1.15rem;
+}
+
+.modelTrack {
+  width: 60px;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.modelFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.modelPct {
+  font-weight: 700;
+  min-width: 30px;
+  text-align: right;
+}
+
+.modelCount {
+  opacity: 0.4;
+  font-size: 1.1rem;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* =========================================================
+   TIER SPLIT
+========================================================= */
+
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 1.5rem 0;
+}
+
+.tierRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.3rem;
+  padding: 0.5rem 0;
+}
+
+.tierRow span:first-child {
+  min-width: 65px;
+  opacity: 0.7;
+}
+
+.tierTrack {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tierFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* =========================================================
+   VIOLATIONS
+========================================================= */
+
+.violationRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 1.2rem;
+}
+
+.violationRow:last-child {
+  border-bottom: none;
+}
+
+/* =========================================================
+   TABS
+========================================================= */
+
+.tabBar {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.tab {
+  font-size: 1.2rem;
+  padding: 0.4rem 1.1rem;
+  border-radius: 0.8rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.45);
+  background: none;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.04);
+}
+
+.tab.tabActive {
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-weight: 600;
+}
+
+/* =========================================================
+   LOGS
+========================================================= */
+
+.logsCard {
+  margin-bottom: 2rem;
+}
+
+.logRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 1.2rem;
+}
+
+.logRow:last-child {
+  border-bottom: none;
+}
+
+.logTime {
+  color: rgba(255,255,255,0.3);
+  white-space: nowrap;
+  min-width: 72px;
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+.logBadge {
+  display: inline-block;
+  font-size: 1rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.logOk   { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+.logWarn { background: rgba(251, 191, 36, 0.12);  color: #fbbf24; }
+.logErr  { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+
+.logMsg {
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+}
+
+.logMsg strong {
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+/* =========================================================
+   LOADING / ERROR STATES
+========================================================= */
+
+.loadingState,
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 2rem;
+  font-size: 1.6rem;
+  opacity: 0.7;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: #6f61ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.dashFooter {
+  text-align: center;
+  font-size: 1.2rem;
+  opacity: 0.3;
+  margin-top: 1rem;
+}
+
+/* =========================================================
+   RESPONSIVE — TABLET
+========================================================= */
+
+@media (max-width: 1024px) {
+  .statGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .midGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sideStack {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .dashPage {
+    padding: 2rem 1.2rem 4rem;
+  }
+
+  .dashTitle {
+    font-size: 2.2rem;
+  }
+
+  .statGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .statValue {
+    font-size: 2.4rem;
+  }
+
+  .dashCard {
+    padding: 1.8rem 1.6rem;
+  }
+
+  .sideStack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .refreshBtn {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE — SMALL PHONES
+========================================================= */
+
+@media (max-width: 480px) {
+  .statGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+  }
+
+  .statValue {
+    font-size: 2rem;
+  }
+
+  .healthStrip {
+    gap: 0.6rem;
+  }
+
+  .modelCount {
+    display: none;
+  }
+
+  .usersTable th:nth-child(3),
+  .usersTable td:nth-child(3),
+  .usersTable th:nth-child(4),
+  .usersTable td:nth-child(4) {
+    display: none;
+  }
+}

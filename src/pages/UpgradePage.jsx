@@ -8,10 +8,7 @@ function UpgradePage() {
     process.env.REACT_APP_FLW_DAILY_LINK;
   const monthlyLink =
     process.env.REACT_APP_FLW_MONTHLY_LINK;
-  const dailyProdLink =
-    process.env.REACT_APP_FLW_PROD_DAILY_LINK;
-  const monthlyProdLink =
-    process.env.REACT_APP_FLW_PROD_MONTHLY_LINK;
+    
   return (
     <div className="upgradePage">
       <div className="upgradeContainer">
@@ -67,10 +64,7 @@ function UpgradePage() {
             <button
               className="upgradeButton"
               onClick={() => {
-                window.location.href =
-                  process.env.ENVIRONMENT === "production"
-                    ? dailyLink
-                    : dailyProdLink;
+                window.location.href = dailyLink;
               }}
             >
               Upgrade Daily
@@ -120,10 +114,7 @@ function UpgradePage() {
             <button
               className="upgradeButton premiumBtn"
               onClick={() => {
-                window.location.href =
-                  process.env.ENVIRONMENT === "production"
-                    ? monthlyLink
-                    : monthlyProdLink;
+                window.location.href = monthlyLink;
               }}
             >
               Upgrade Monthly
