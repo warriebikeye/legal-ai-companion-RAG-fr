@@ -9,6 +9,11 @@ import {
 
 import gptLogo from '../assets/DeeBees.svg';
 
+console.log(
+  'REACT_APP_BASEURL:',
+  process.env.REACT_APP_BASEURL
+);
+
 const API_BASE_URL =
   process.env.REACT_APP_BASEURL;
 

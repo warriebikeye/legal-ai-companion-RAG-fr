@@ -6,10 +6,12 @@ const API_BASE_URL =
 function UpgradePage() {
   const dailyLink =
     process.env.REACT_APP_FLW_DAILY_LINK;
-
   const monthlyLink =
     process.env.REACT_APP_FLW_MONTHLY_LINK;
-
+  const dailyProdLink =
+    process.env.REACT_APP_FLW_PROD_DAILY_LINK;
+  const monthlyProdLink =
+    process.env.REACT_APP_FLW_PROD_MONTHLY_LINK;
   return (
     <div className="upgradePage">
       <div className="upgradeContainer">
@@ -34,7 +36,7 @@ function UpgradePage() {
               DAILY PASS
             </div>
 
-            <h2>₦400 / $0.29</h2>
+            <h2>₦700 / $0.5</h2>
 
             <p className="planDuration">
               24 Hours Access
@@ -66,8 +68,14 @@ function UpgradePage() {
               className="upgradeButton"
               onClick={() =>
                 window.location.href =
-                  dailyLink
+                dailyLink
               }
+              onClick={() => {
+                window.location.href =
+                  process.env.ENVIRONMENT === "production"
+                    ? dailyProdLink
+                    : dailyLink;
+              }}
             >
               Upgrade Daily
             </button>
@@ -85,7 +93,7 @@ function UpgradePage() {
               MONTHLY PRO
             </div>
 
-            <h2>₦4800 / $3.50</h2>
+            <h2>₦5500 / $4</h2>
 
             <p className="planDuration">
               30 Days Access
@@ -115,10 +123,12 @@ function UpgradePage() {
 
             <button
               className="upgradeButton premiumBtn"
-              onClick={() =>
+              onClick={() => {
                 window.location.href =
-                  monthlyLink
-              }
+                  process.env.ENVIRONMENT === "production"
+                    ? monthlyProdLink
+                    : monthlyLink;
+              }}
             >
               Upgrade Monthly
             </button>
