@@ -111,7 +111,9 @@ function HomePage() {
 
     autoDetectCountry();
   }, []);
-
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev);
+  };
   /* =========================================================
      FETCH CONVERSATIONS
   ========================================================= */
@@ -191,6 +193,7 @@ function HomePage() {
   ========================================================= */
 
   const startNewChat = () => {
+    toggleSidebar();
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
@@ -205,6 +208,7 @@ function HomePage() {
 
   const loadConversation = async (conversationId) => {
     // ✅ FIX 1: guard — don't call API if id is missing
+    toggleSidebar();
     if (!conversationId || conversationId === "undefined") {
       console.warn("loadConversation called with invalid id:", conversationId);
       return;
@@ -230,8 +234,8 @@ function HomePage() {
       const rawMessages = Array.isArray(data)
         ? data
         : Array.isArray(data.messages)
-        ? data.messages
-        : [];
+          ? data.messages
+          : [];
 
       if (rawMessages.length === 0) {
         setMessages([DEFAULT_BOT_MESSAGE]);
@@ -359,13 +363,18 @@ function HomePage() {
 
   return (
     <div className="App">
-
       <button
+        className="sidebarToggle"
+        onClick={toggleSidebar}
+      >
+        ☰
+      </button>
+      {/* <button
         className="sidebarToggle"
         onClick={() => setSidebarOpen((prev) => !prev)}
       >
         ☰
-      </button>
+      </button> */}
 
       <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
 
@@ -378,7 +387,10 @@ function HomePage() {
           <select
             className='query'
             value={userLocation}
-            onChange={(e) => setUserLocation(e.target.value)}
+            onChange={(e) => {
+              setUserLocation(e.target.value);
+              toggleSidebar();
+            }}
           >
             <option value="">-- Select Country --</option>
             {countries.map((c) => (
