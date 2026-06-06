@@ -355,7 +355,7 @@ function AdminDashboard() {
         {/* ── TOP BAR ── */}
         <div className="topBar">
           <div className="topBarLeft">
-            <h1 className="dashTitle">Legal RAG — Admin</h1>
+            <h1 className="dashTitle">Clauzify — Monitor Dash</h1>
             <div className="topBarMeta">
               <span className={`healthPill ${h.mongodb === "connected" ? "pillGreen" : "pillRed"}`}>
                 <span className="dot dotGreen" /> {h.mongodb === "connected" ? "All systems operational" : "Degraded"}
