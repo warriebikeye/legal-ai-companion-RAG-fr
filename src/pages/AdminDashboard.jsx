@@ -1,10 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from 'react';
 import "./AdminDashboard.css";
+
+/* =========================================================
+   CHANGE 1 — import the SSE hook, remove useState/useEffect/
+   useCallback imports that were only used for polling
+========================================================= */
+import { useAdminStream } from '../hooks/useAdminStream';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 /* =========================================================
-   HELPERS
+   HELPERS (unchanged)
 ========================================================= */
 
 function timeAgo(dateStr) {
@@ -32,12 +38,8 @@ function initials(name = "") {
 }
 
 const AVATAR_COLORS = [
-  "#3a1fff",
-  "#0f6e56",
-  "#712b13",
-  "#3c3489",
-  "#633806",
-  "#185fa5",
+  "#3a1fff", "#0f6e56", "#712b13",
+  "#3c3489", "#633806", "#185fa5",
 ];
 
 function avatarColor(str = "") {
@@ -47,7 +49,7 @@ function avatarColor(str = "") {
 }
 
 /* =========================================================
-   SUB-COMPONENTS
+   SUB-COMPONENTS (unchanged)
 ========================================================= */
 
 function StatCard({ label, value, sub, deltaUp, deltaDown }) {
@@ -81,8 +83,7 @@ function TierBadge({ tier }) {
 function SubBadge({ status }) {
   const cls =
     status === "active" ? "badgePremium"
-    : status === "expired" ? "badgeExpired"
-    : status === "cancelled" ? "badgeExpired"
+    : status === "expired" || status === "cancelled" ? "badgeExpired"
     : "badgeFree";
   return <span className={`badge ${cls}`}>{status}</span>;
 }
@@ -124,14 +125,10 @@ function getModelColor(name = "") {
   return MODEL_COLORS[name] || "#5a4bff";
 }
 
-/* =========================================================
-   MINI CHART — pure CSS bars
-========================================================= */
-
 function HourlyChart({ hourly = [] }) {
   if (!hourly.length) return <div className="chartEmpty">No data</div>;
   const max = Math.max(...hourly.map((h) => h.count), 1);
-  const show = hourly.filter((_, i) => i % 2 === 0); // every other hour to fit
+  const show = hourly.filter((_, i) => i % 2 === 0);
   return (
     <div className="hourlyChart" aria-label="Hourly query volume chart">
       {show.map(({ hour, count }) => (
@@ -148,10 +145,6 @@ function HourlyChart({ hourly = [] }) {
   );
 }
 
-/* =========================================================
-   LOG ROW
-========================================================= */
-
 function LogRow({ time, level, msg }) {
   const levelCls =
     level === "ok" ? "logOk"
@@ -167,12 +160,8 @@ function LogRow({ time, level, msg }) {
   );
 }
 
-/* =========================================================
-   USERS TABLE
-========================================================= */
-
 function UsersTable({ users = [], loading }) {
-  if (loading) return <div className="tableEmpty">Loading users…</div>;
+  if (loading) return <div className="tableEmpty">Connecting…</div>;
   if (!users.length) return <div className="tableEmpty">No users found.</div>;
 
   return (
@@ -191,11 +180,8 @@ function UsersTable({ users = [], loading }) {
         <tbody>
           {users.map((u) => {
             const bg = avatarColor(u.name || u.email);
-            const isActive =
-              Date.now() - new Date(u.lastActiveAt).getTime() < 5 * 60 * 1000;
-            const isIdle =
-              !isActive &&
-              Date.now() - new Date(u.lastActiveAt).getTime() < 60 * 60 * 1000;
+            const isActive = Date.now() - new Date(u.lastActiveAt).getTime() < 5 * 60 * 1000;
+            const isIdle = !isActive && Date.now() - new Date(u.lastActiveAt).getTime() < 60 * 60 * 1000;
             const status = isActive ? "active" : isIdle ? "idle" : "inactive";
 
             return (
@@ -230,88 +216,75 @@ function UsersTable({ users = [], loading }) {
 ========================================================= */
 
 function AdminDashboard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  /* =========================================================
+     CHANGE 2 — replace all fetch + setInterval polling with
+     a single SSE hook call.
+
+     Removed:
+       const [data, setData]           = useState(null);
+       const [loading, setLoading]     = useState(true);
+       const [error, setError]         = useState(null);
+       const [lastRefresh, ...]        = useState(null);
+       const [refreshing, ...]         = useState(false);
+       fetchStats()                    — the whole function
+       useEffect(() => fetchStats())   — initial load effect
+       useEffect(() => pollQueue())    — queue poll effect
+
+     Replaced with:
+       useAdminStream() which gives us:
+         data        — full snapshot, auto-refreshes every 60s
+         queueData   — live queue counts, pushed every 5s
+         connected   — true when SSE is open
+         error       — auth/server errors
+         lastUpdate  — timestamp of last server push
+         forceRefresh — wired to the Refresh button
+  ========================================================= */
+  const {
+    data,
+    queueData,
+    connected,
+    error,
+    lastUpdate,
+    forceRefresh,
+  } = useAdminStream();
+
+  /* =========================================================
+     CHANGE 3 — tier filter is local UI state only.
+     Filtering is done client-side against data.recentUsers
+     so we don't need to refetch on tab change.
+  ========================================================= */
   const [tierFilter, setTierFilter] = useState("all");
-  const [lastRefresh, setLastRefresh] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchStats = useCallback(async (bust = false) => {
-    try {
-      setRefreshing(true);
-      const params = new URLSearchParams();
-      if (tierFilter !== "all") params.set("tier", tierFilter);
-      if (bust) params.set("refresh", "true");
-
-      const res = await fetch(
-        `${API_BASE_URL}/admin/stats?${params.toString()}`,
-        { credentials: "include" }
-      );
-
-      if (res.status === 401) throw new Error("Unauthorized — please log in");
-      if (res.status === 403) throw new Error("Forbidden — admin access only");
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-
-      const json = await res.json();
-      setData(json);
-      setLastRefresh(new Date());
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [tierFilter]);
-
-  // Initial load + auto-refresh every 30s
-  useEffect(() => {
-    fetchStats();
-    const interval = setInterval(() => fetchStats(), 30000);
-    return () => clearInterval(interval);
-  }, [fetchStats]);
-
-  // Live queue polling every 10s (separate, uncached endpoint)
-  useEffect(() => {
-    const pollQueue = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/admin/queue`, {
-          credentials: "include",
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        setData((prev) =>
-          prev ? { ...prev, queue: json.queue, recentFailures: json.recentFailures } : prev
-        );
-      } catch {
-        // silent — queue polling is best-effort
-      }
-    };
-    const interval = setInterval(pollQueue, 10000);
-    return () => clearInterval(interval);
-  }, []);
 
   /* -------------------------------------------------------
      DERIVED DATA
+     CHANGE 4 — queue reads from queueData (5s pushes) first,
+     falls back to data.queue from the full snapshot.
   ------------------------------------------------------- */
 
-  const u = data?.users || {};
-  const q = data?.queue || {};
-  const v = data?.queryVolume || {};
-  const l = data?.latency || {};
-  const m = data?.modelUsage || {};
-  const h = data?.health || {};
-  const recentUsers = data?.recentUsers || [];
-  const failures = data?.queue?.recentFailures || [];
+  const u  = data?.users        || {};
+  const q  = queueData          || data?.queue || {};   // ← live queue preferred
+  const v  = data?.queryVolume  || {};
+  const l  = data?.latency      || {};
+  const m  = data?.modelUsage   || {};
+  const h  = data?.health       || {};
 
+  const allRecentUsers = data?.recentUsers || [];
+
+  /* CHANGE 5 — filter users client-side, no extra fetch */
+  const recentUsers =
+    tierFilter === "all"
+      ? allRecentUsers
+      : allRecentUsers.filter((u) => u.tier === tierFilter);
+
+  const failures = q?.recentFailures || [];
   const queueMax = Math.max(q.waiting || 0, 20);
 
   const mockLogs = [
-    { time: new Date().toLocaleTimeString(), level: "ok", msg: "<strong>RAG</strong> completed — latency 1.2s, gemini-2.5-flash, 4 sources" },
-    { time: new Date(Date.now() - 18000).toLocaleTimeString(), level: "ok", msg: "<strong>WORKER</strong> ingestion job completed successfully" },
+    { time: new Date().toLocaleTimeString(), level: "ok",  msg: "<strong>RAG</strong> completed — latency 1.2s, gemini-2.5-flash, 4 sources" },
+    { time: new Date(Date.now() - 18000).toLocaleTimeString(), level: "ok",  msg: "<strong>WORKER</strong> ingestion job completed successfully" },
     { time: new Date(Date.now() - 44000).toLocaleTimeString(), level: "warn", msg: "<strong>CLAUSE_CHECKER</strong> non-fatal timeout after 5000ms" },
-    { time: new Date(Date.now() - 90000).toLocaleTimeString(), level: "ok", msg: "<strong>AUTH</strong> Google OAuth login — user joined" },
+    { time: new Date(Date.now() - 90000).toLocaleTimeString(), level: "ok",  msg: "<strong>AUTH</strong> Google OAuth login — user joined" },
     { time: new Date(Date.now() - 140000).toLocaleTimeString(), level: "ok", msg: "<strong>RAG</strong> cache HIT — served in 43ms from Redis" },
     ...failures.map((f) => ({
       time: f.timestamp ? new Date(f.timestamp).toLocaleTimeString() : "—",
@@ -321,32 +294,38 @@ function AdminDashboard() {
   ];
 
   /* -------------------------------------------------------
-     RENDER
+     LOADING / ERROR STATES
+     CHANGE 6 — loading = no data yet (SSE not delivered first
+     snapshot); error = SSE auth/server failure.
   ------------------------------------------------------- */
 
-  if (loading) {
+  if (!data && !error) {
     return (
       <div className="dashPage">
         <div className="loadingState">
           <div className="spinner" />
-          <p>Loading dashboard…</p>
+          <p>Connecting to dashboard stream…</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="dashPage">
         <div className="errorState">
           <h2>⚠ {error}</h2>
-          <button className="refreshBtn" onClick={() => fetchStats(true)}>
+          <button className="refreshBtn" onClick={forceRefresh}>
             Try again
           </button>
         </div>
       </div>
     );
   }
+
+  /* -------------------------------------------------------
+     RENDER
+  ------------------------------------------------------- */
 
   return (
     <div className="dashPage">
@@ -357,22 +336,34 @@ function AdminDashboard() {
           <div className="topBarLeft">
             <h1 className="dashTitle">Legal RAG — Admin</h1>
             <div className="topBarMeta">
-              <span className={`healthPill ${h.mongodb === "connected" ? "pillGreen" : "pillRed"}`}>
-                <span className="dot dotGreen" /> {h.mongodb === "connected" ? "All systems operational" : "Degraded"}
+              {/*
+                CHANGE 7 — connection dot now reflects the live SSE
+                connection status rather than a MongoDB ping.
+                Green = SSE open, Red = SSE dropped / reconnecting.
+              */}
+              <span className={`healthPill ${connected ? "pillGreen" : "pillRed"}`}>
+                <span className={`dot ${connected ? "dotGreen" : "dotRed"}`} />
+                {connected
+                  ? h.mongodb === "connected" ? "All systems operational" : "Degraded"
+                  : "Reconnecting…"}
               </span>
               <span className="uptime">Uptime {Math.floor((h.uptime || 0) / 3600)}h</span>
-              {lastRefresh && (
+              {/* CHANGE 8 — lastRefresh comes from lastUpdate (SSE push time) */}
+              {lastUpdate && (
                 <span className="lastRefresh">
-                  Updated {timeAgo(lastRefresh)}
+                  Updated {timeAgo(lastUpdate)}
+                </span>
+              )}
+              {/* Show a non-fatal warning if there's an error but we still have data */}
+              {error && data && (
+                <span className="pill pillRed" style={{ fontSize: "1.1rem" }}>
+                  ⚠ Stream issue — showing last snapshot
                 </span>
               )}
             </div>
           </div>
-          <button
-            className={`refreshBtn ${refreshing ? "spinning" : ""}`}
-            onClick={() => fetchStats(true)}
-            disabled={refreshing}
-          >
+          {/* CHANGE 9 — Refresh button calls forceRefresh from the hook */}
+          <button className="refreshBtn" onClick={forceRefresh}>
             ↻ Refresh
           </button>
         </div>
@@ -381,13 +372,15 @@ function AdminDashboard() {
         <div className="healthStrip">
           {[
             { label: "MongoDB", val: h.mongodb },
-            { label: "Qdrant", val: h.qdrant },
-            { label: "Redis", val: h.redis },
+            { label: "Qdrant",  val: h.qdrant  },
+            { label: "Redis",   val: h.redis   },
           ].map(({ label, val }) => (
             <div key={label} className="healthChip">
               <span className={`dot ${val === "connected" ? "dotGreen" : "dotRed"}`} />
               <span className="healthLabel">{label}</span>
-              <span className={`healthVal ${val === "connected" ? "textGreen" : "textRed"}`}>{val || "—"}</span>
+              <span className={`healthVal ${val === "connected" ? "textGreen" : "textRed"}`}>
+                {val || "—"}
+              </span>
             </div>
           ))}
           <div className="healthChip">
@@ -397,9 +390,17 @@ function AdminDashboard() {
               {q.status || "—"}
             </span>
           </div>
+          {/* CHANGE 10 — live SSE connection chip */}
+          <div className="healthChip">
+            <span className={`dot ${connected ? "dotGreen" : "dotAmber"}`} />
+            <span className="healthLabel">Stream</span>
+            <span className={`healthVal ${connected ? "textGreen" : "textRed"}`}>
+              {connected ? "live" : "reconnecting"}
+            </span>
+          </div>
         </div>
 
-        {/* ── STAT CARDS ── */}
+        {/* ── STAT CARDS (unchanged) ── */}
         <div className="statGrid">
           <StatCard
             label="Total users"
@@ -429,7 +430,11 @@ function AdminDashboard() {
           <div className="dashCard chartCard">
             <div className="cardHeader">
               <span className="cardTitle">Query volume (24h)</span>
-              <span className="pillGreen smallPill"><span className="dot dotGreen" /> Live</span>
+              {/* CHANGE 11 — "Live" pill reflects actual SSE connection */}
+              <span className={`smallPill ${connected ? "pillGreen" : "pillRed"}`}>
+                <span className={`dot ${connected ? "dotGreen" : "dotRed"}`} />
+                {connected ? "Live" : "Offline"}
+              </span>
             </div>
             <HourlyChart hourly={v.hourly} />
           </div>
@@ -442,10 +447,12 @@ function AdminDashboard() {
                 {q.status || "—"}
               </span>
             </div>
-            <QueueBar label="Waiting" value={q.waiting || 0} max={queueMax} colorClass="barBlue" />
-            <QueueBar label="Active" value={q.active || 0} max={queueMax} colorClass="barGreen" />
-            <QueueBar label="Delayed" value={q.delayed || 0} max={queueMax} colorClass="barAmber" />
-            <QueueBar label="Failed (24h)" value={q.failed || 0} max={queueMax} colorClass="barRed" />
+            {/* CHANGE 12 — queue values now come from queueData (5s pushes)
+                via the `q` derived variable above, so bars animate in real time */}
+            <QueueBar label="Waiting"    value={q.waiting || 0} max={queueMax} colorClass="barBlue"  />
+            <QueueBar label="Active"     value={q.active  || 0} max={queueMax} colorClass="barGreen" />
+            <QueueBar label="Delayed"    value={q.delayed || 0} max={queueMax} colorClass="barAmber" />
+            <QueueBar label="Failed (24h)" value={q.failed || 0} max={queueMax} colorClass="barRed"  />
             <div className="queueFooter">
               <span className="mutedCell">{fmt(q.completed)} completed total</span>
             </div>
@@ -457,6 +464,7 @@ function AdminDashboard() {
           <div className="dashCard usersCard">
             <div className="cardHeader">
               <span className="cardTitle">Recent users</span>
+              {/* CHANGE 13 — tabs now filter client-side, no refetch */}
               <div className="tabBar">
                 {["all", "premium", "free"].map((t) => (
                   <button
@@ -469,7 +477,7 @@ function AdminDashboard() {
                 ))}
               </div>
             </div>
-            <UsersTable users={recentUsers} loading={refreshing && !data} />
+            <UsersTable users={recentUsers} loading={!data} />
           </div>
 
           <div className="sideStack">
@@ -569,8 +577,9 @@ function AdminDashboard() {
           ))}
         </div>
 
+        {/* CHANGE 14 — footer reflects actual push cadence */}
         <div className="dashFooter">
-          Legal RAG Admin · Auto-refreshes every 30s · Queue polls every 10s
+          Legal RAG Admin · Full snapshot every 60s · Queue pushes every 5s via SSE
         </div>
 
       </div>

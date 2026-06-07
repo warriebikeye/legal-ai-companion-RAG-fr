@@ -3,6 +3,41 @@
   padding: 0;
   box-sizing: border-box;
 }
+/* =========================================================
+   STREAMING ADDITIONS — append these to App.css
+========================================================= */
+
+/* Blinking cursor that appears at the end of streaming text */
+.stream-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.7s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Stop button — shown in place of Send while streaming */
+.send.stop {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  font-size: 1.4rem;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.send.stop:hover {
+  background: rgba(248, 113, 113, 0.28);
+}
 .bot-message-content p {
   margin: 0 0 10px 0;
   line-height: 1.6;

@@ -13,8 +13,9 @@ import ggllogo from '../assets/gglepro.jpg';
 import defaultUserIcon from '../assets/user-icon.png';
 
 /* =========================================================
-   ENV CONFIG
+   CHANGE 1 — import the streaming hook
 ========================================================= */
+import { useRAGStream } from '../hooks/useRAGStream';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -48,7 +49,6 @@ function HomePage() {
   ========================================================= */
 
   const [input, setInput] = useState("");
-  const [isSending, setIsSending] = useState(false);
   const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [userLocation, setUserLocation] = useState("");
@@ -71,6 +71,26 @@ function HomePage() {
   ========================================================= */
 
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
+
+  /* =========================================================
+     CHANGE 2 — replace isSending with the stream hook
+     The hook gives us: ask, cancel, answer, sources,
+     clauseAnalysis, status, conversationId, isStreaming
+  ========================================================= */
+  const {
+    ask,
+    cancel,
+    answer: streamAnswer,
+    sources: streamSources,
+    clauseAnalysis: streamClause,
+    status: streamStatus,
+    error: streamError,
+    conversationId: streamConvoId,
+  } = useRAGStream();
+
+  // Derived booleans that replace isSending
+  const isSending  = streamStatus === "preparing" || streamStatus === "streaming";
+  const isStreaming = streamStatus === "streaming";
 
   /* =========================================================
      COUNTRIES
@@ -111,12 +131,13 @@ function HomePage() {
 
     autoDetectCountry();
   }, []);
+
   const toggleSidebar = () => {
-    // Only toggle sidebar on mobile
     if (window.innerWidth <= 768) {
       setSidebarOpen((prev) => !prev);
     }
   };
+
   /* =========================================================
      FETCH CONVERSATIONS
   ========================================================= */
@@ -183,6 +204,91 @@ function HomePage() {
   }, []);
 
   /* =========================================================
+     CHANGE 3 — sync the live streaming bot message
+     As streamAnswer grows token by token, we update the last
+     bot message in place so the user sees text appearing live.
+     This effect runs every time streamAnswer or streamStatus changes.
+  ========================================================= */
+
+  useEffect(() => {
+    if (streamStatus === "idle" || streamStatus === "done") return;
+
+    setMessages((prev) => {
+      // Find and update the last bot message (the streaming placeholder)
+      const updated = [...prev];
+      const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
+
+      if (lastBotIdx === -1) return prev;
+
+      updated[lastBotIdx] = {
+        ...updated[lastBotIdx],
+        text: streamAnswer || "",
+        typing: streamStatus === "preparing",   // show dots while preparing
+        isStreaming: streamStatus === "streaming", // used for cursor below
+        sources: streamSources || [],
+        clauseAnalysis: streamClause || null,
+        hasSources: (streamSources || []).length > 0,
+        hasClauseAnalysis: !!streamClause,
+      };
+
+      return updated;
+    });
+  }, [streamAnswer, streamSources, streamClause, streamStatus]);
+
+  /* =========================================================
+     CHANGE 4 — once stream is done, sync conversationId +
+     refresh the sidebar conversations list
+  ========================================================= */
+
+  useEffect(() => {
+    if (streamStatus !== "done") return;
+
+    // Clear the blinking cursor on the last bot message
+    setMessages((prev) => {
+      const updated = [...prev];
+      const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
+      if (lastBotIdx === -1) return prev;
+      updated[lastBotIdx] = {
+        ...updated[lastBotIdx],
+        isStreaming: false,
+        typing: false,
+      };
+      return updated;
+    });
+
+    if (streamConvoId) {
+      setActiveConversationId(streamConvoId);
+    }
+
+    if (isAuthenticated) {
+      fetchRecentConversations();
+    }
+  }, [streamStatus, streamConvoId, isAuthenticated]);
+
+  /* =========================================================
+     CHANGE 5 — surface stream errors into the chat
+  ========================================================= */
+
+  useEffect(() => {
+    if (streamStatus !== "error" || !streamError) return;
+
+    setMessages((prev) => {
+      const updated = [...prev];
+      const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
+      if (lastBotIdx === -1) return prev;
+      updated[lastBotIdx] = {
+        isBot: true,
+        text: `⚠️ ${streamError}`,
+        typing: false,
+        isStreaming: false,
+        sources: [],
+        clauseAnalysis: null,
+      };
+      return updated;
+    });
+  }, [streamStatus, streamError]);
+
+  /* =========================================================
      FILE UPLOAD
   ========================================================= */
 
@@ -197,6 +303,7 @@ function HomePage() {
 
   const startNewChat = () => {
     toggleSidebar();
+    cancel(); // CHANGE 6 — cancel any in-flight stream
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
@@ -205,12 +312,9 @@ function HomePage() {
 
   /* =========================================================
      LOAD CONVERSATION
-     FIX: guard against undefined conversationId
-          and handle { success, messages } response shape
   ========================================================= */
 
   const loadConversation = async (conversationId) => {
-    // ✅ FIX 1: guard — don't call API if id is missing
     toggleSidebar();
     if (!conversationId || conversationId === "undefined") {
       console.warn("loadConversation called with invalid id:", conversationId);
@@ -218,6 +322,7 @@ function HomePage() {
     }
 
     try {
+      cancel(); // CHANGE 7 — cancel stream before switching conversation
       setActiveConversationId(conversationId);
 
       setMessages([
@@ -233,7 +338,6 @@ function HomePage() {
 
       const data = await res.json();
 
-      // ✅ FIX 2: handle both array response and { success, messages } shape
       const rawMessages = Array.isArray(data)
         ? data
         : Array.isArray(data.messages)
@@ -268,7 +372,13 @@ function HomePage() {
   };
 
   /* =========================================================
-     SEND MESSAGE
+     CHANGE 8 — handleSend: replace fetch() with ask()
+     The old fetch + setMessages pattern is gone.
+     Now we:
+       1. Append user message
+       2. Append an empty bot placeholder (typing dots)
+       3. Call ask() — the hook drives all subsequent updates
+          via the effects above
   ========================================================= */
 
   const handleSend = async () => {
@@ -279,105 +389,37 @@ function HomePage() {
       return;
     }
 
-    try {
-      setIsSending(true);
+    const query = input.trim();
 
-      setMessages((prev) => [
-        ...prev,
-        { text: input || "(Document Uploaded)", isBot: false },
-        { text: "", isBot: true, typing: true },
-      ]);
+    // Append user message + empty bot placeholder immediately
+    setMessages((prev) => [
+      ...prev,
+      { text: query || "(Document Uploaded)", isBot: false },
+      { text: "", isBot: true, typing: true, isStreaming: false },
+    ]);
 
-      const formData = new FormData();
-      formData.append("query", input);
-      formData.append("country", userLocation);
+    setInput("");
 
-      if (activeConversationId) {
-        formData.append("conversationId", activeConversationId);
-      }
+    // Start the stream — the useRAGStream effects take over from here
+    await ask({
+      query,
+      country: userLocation,
+      conversationId: activeConversationId,
+      files,
+    });
 
-      files.forEach((file) => {
-        formData.append("files", file);
-      });
-
-      const response = await fetch(`${API_BASE_URL}/ask/text`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) throw new Error(`Server error: ${response.status}`);
-
-      const data = await response.json();
-
-      // ✅ FIX 3: always update conversationId from server response
-      if (data.conversationId) {
-        setActiveConversationId(data.conversationId);
-      }
-
-      if (isAuthenticated) {
-        await fetchRecentConversations();
-      }
-
-      setInput("");
-
-      setMessages((prev) => {
-        const withoutTyping = prev.filter((msg) => !msg.typing);
-
-        return [
-          ...withoutTyping,
-          {
-            isBot: true,
-            text: data.answer || "Sorry, I couldn't get a reply.",
-            hasSources: Array.isArray(data.sources) && data.sources.length > 0,
-            hasDocumentText: !!data.documentText,
-            hasClauseAnalysis: !!data.clauseAnalysis,
-            sources: data.sources ?? [],
-            documentText: data.documentText ?? null,
-            clauseAnalysis: data.clauseAnalysis ?? null,
-          },
-        ];
-      });
-    } catch (error) {
-      console.error("Error fetching:", error);
-
-      setMessages((prev) => {
-        const withoutTyping = prev.filter((msg) => !msg.typing);
-
-        return [
-          ...withoutTyping,
-          {
-            isBot: true,
-            text: "⚠️ There was an error connecting to the server.",
-            hasSources: false,
-            hasDocumentText: false,
-            hasClauseAnalysis: false,
-            sources: [],
-            documentText: null,
-            clauseAnalysis: null,
-          },
-        ];
-      });
-    } finally {
-      setFiles([]);
-      setIsSending(false);
-    }
+    setFiles([]);
   };
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <div className="App">
-      <button
-        className="sidebarToggle"
-        onClick={toggleSidebar}
-      >
+      <button className="sidebarToggle" onClick={toggleSidebar}>
         ☰
       </button>
-      {/* <button
-        className="sidebarToggle"
-        onClick={() => setSidebarOpen((prev) => !prev)}
-      >
-        ☰
-      </button> */}
 
       <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
 
@@ -410,7 +452,6 @@ function HomePage() {
 
                 {Array.isArray(recentConversations) &&
                   recentConversations.map((conv) => {
-                    // ✅ FIX 4: use conv._id (MongoDB) not conv.id
                     const convId = conv._id || conv.id;
 
                     return (
@@ -479,17 +520,14 @@ function HomePage() {
               className={message.isBot ? 'chat bot' : 'chat'}
             >
               <img
-                src={
-                  message.isBot
-                    ? gptimglogo
-                    : userImage || defaultUserIcon
-                }
+                src={message.isBot ? gptimglogo : userImage || defaultUserIcon}
                 className='chtimg'
                 alt=''
               />
 
               <p className='txt'>
-                {message.typing ? (
+                {message.typing && !message.isStreaming ? (
+                  /* Waiting for first token — show animated dots */
                   <div className="typing-dots">
                     <span></span>
                     <span></span>
@@ -499,21 +537,28 @@ function HomePage() {
                   <>
                     <div className="bot-message-content">
                       <ReactMarkdown>{message.text}</ReactMarkdown>
+
+                      {/* CHANGE 9 — blinking cursor while streaming */}
+                      {message.isStreaming && (
+                        <span className="stream-cursor" aria-hidden="true" />
+                      )}
                     </div>
 
+                    {/* Sources — appear as soon as meta event arrives */}
+                    {message.sources && message.sources.length > 0 && (
+                      <span style={{ marginTop: '10px', display: 'block' }}>
+                        <strong>Sources:</strong>{" "}
+                        {message.sources.join(", ")}
+                      </span>
+                    )}
+
+                    {/* Clause analysis — appears after stream finishes */}
                     {message.clauseAnalysis && (
                       <span style={{ marginTop: '10px', display: 'block' }}>
                         <strong>Clause Analysis:</strong>{" "}
                         {typeof message.clauseAnalysis === "string"
                           ? message.clauseAnalysis
                           : JSON.stringify(message.clauseAnalysis)}
-                      </span>
-                    )}
-
-                    {message.sources && message.sources.length > 0 && (
-                      <span style={{ marginTop: '10px', display: 'block' }}>
-                        <strong>Sources:</strong>{" "}
-                        {message.sources.join(", ")}
                       </span>
                     )}
                   </>
@@ -579,20 +624,27 @@ function HomePage() {
               placeholder='Send a message'
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => e.key === "Enter" && !isSending && handleSend()}
             />
 
-            <button
-              className='send'
-              onClick={handleSend}
-              disabled={isSending}
-            >
-              {isSending ? (
-                <div className="loader"></div>
-              ) : (
-                <img src={sendBtn} alt='' />
-              )}
-            </button>
+            {/* CHANGE 10 — Stop button while streaming, Send otherwise */}
+            {isStreaming ? (
+              <button className='send stop' onClick={cancel} title="Stop generating">
+                ■
+              </button>
+            ) : (
+              <button
+                className='send'
+                onClick={handleSend}
+                disabled={isSending}
+              >
+                {isSending ? (
+                  <div className="loader"></div>
+                ) : (
+                  <img src={sendBtn} alt='' />
+                )}
+              </button>
+            )}
 
           </div>
 
