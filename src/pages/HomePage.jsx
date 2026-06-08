@@ -16,7 +16,7 @@ import defaultUserIcon from '../assets/user-icon.png';
    CHANGE 1 — import the streaming hook
 ========================================================= */
 import { useRAGStream } from '../hooks/useRAGStream';
-
+import { openGoogleAuth } from '../utils/openAuth';
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 /* =========================================================
@@ -470,9 +470,7 @@ function HomePage() {
             ) : (
               <button
                 className="queryxx google-sign-in"
-                onClick={() =>
-                  window.open(`${API_BASE_URL}/auth/google`, '_system')
-                }
+                onClick={() => openGoogleAuth(`${API_BASE_URL}/auth/google`)}
               >
                 Sign in with Google
                 <img src={ggllogo} alt="Google Logo" className="google-logo" />
