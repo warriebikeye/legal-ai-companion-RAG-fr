@@ -471,7 +471,7 @@ function HomePage() {
               <button
                 className="queryxx google-sign-in"
                 onClick={() =>
-                  (window.location.href = `${API_BASE_URL}/auth/google`)
+                  window.open(`${API_BASE_URL}/auth/google`, '_system')
                 }
               >
                 Sign in with Google
