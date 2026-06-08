@@ -12,11 +12,9 @@ import gptimglogo from '../assets/DeeBees.svg';
 import ggllogo from '../assets/gglepro.jpg';
 import defaultUserIcon from '../assets/user-icon.png';
 
-/* =========================================================
-   CHANGE 1 — import the streaming hook
-========================================================= */
 import { useRAGStream } from '../hooks/useRAGStream';
 import { openGoogleAuth } from '../utils/openAuth';
+
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 /* =========================================================
@@ -43,6 +41,9 @@ const log = (step, data = null) => {
 
 function HomePage() {
   const messagesEndRef = useRef(null);
+
+  // ✅ FIX: ref to trigger file input programmatically (WebView compatible)
+  const fileInputRef = useRef(null);
 
   /* =========================================================
      STATES
@@ -73,10 +74,9 @@ function HomePage() {
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
 
   /* =========================================================
-     CHANGE 2 — replace isSending with the stream hook
-     The hook gives us: ask, cancel, answer, sources,
-     clauseAnalysis, status, conversationId, isStreaming
+     STREAM HOOK
   ========================================================= */
+
   const {
     ask,
     cancel,
@@ -88,8 +88,7 @@ function HomePage() {
     conversationId: streamConvoId,
   } = useRAGStream();
 
-  // Derived booleans that replace isSending
-  const isSending  = streamStatus === "preparing" || streamStatus === "streaming";
+  const isSending = streamStatus === "preparing" || streamStatus === "streaming";
   const isStreaming = streamStatus === "streaming";
 
   /* =========================================================
@@ -204,27 +203,22 @@ function HomePage() {
   }, []);
 
   /* =========================================================
-     CHANGE 3 — sync the live streaming bot message
-     As streamAnswer grows token by token, we update the last
-     bot message in place so the user sees text appearing live.
-     This effect runs every time streamAnswer or streamStatus changes.
+     STREAM — sync live bot message
   ========================================================= */
 
   useEffect(() => {
     if (streamStatus === "idle" || streamStatus === "done") return;
 
     setMessages((prev) => {
-      // Find and update the last bot message (the streaming placeholder)
       const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
-
       if (lastBotIdx === -1) return prev;
 
       updated[lastBotIdx] = {
         ...updated[lastBotIdx],
         text: streamAnswer || "",
-        typing: streamStatus === "preparing",   // show dots while preparing
-        isStreaming: streamStatus === "streaming", // used for cursor below
+        typing: streamStatus === "preparing",
+        isStreaming: streamStatus === "streaming",
         sources: streamSources || [],
         clauseAnalysis: streamClause || null,
         hasSources: (streamSources || []).length > 0,
@@ -236,14 +230,12 @@ function HomePage() {
   }, [streamAnswer, streamSources, streamClause, streamStatus]);
 
   /* =========================================================
-     CHANGE 4 — once stream is done, sync conversationId +
-     refresh the sidebar conversations list
+     STREAM — done: sync conversationId + refresh sidebar
   ========================================================= */
 
   useEffect(() => {
     if (streamStatus !== "done") return;
 
-    // Clear the blinking cursor on the last bot message
     setMessages((prev) => {
       const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
@@ -256,17 +248,12 @@ function HomePage() {
       return updated;
     });
 
-    if (streamConvoId) {
-      setActiveConversationId(streamConvoId);
-    }
-
-    if (isAuthenticated) {
-      fetchRecentConversations();
-    }
+    if (streamConvoId) setActiveConversationId(streamConvoId);
+    if (isAuthenticated) fetchRecentConversations();
   }, [streamStatus, streamConvoId, isAuthenticated]);
 
   /* =========================================================
-     CHANGE 5 — surface stream errors into the chat
+     STREAM — surface errors into chat
   ========================================================= */
 
   useEffect(() => {
@@ -297,13 +284,23 @@ function HomePage() {
     setFiles(uploadedFiles);
   };
 
+  // ✅ FIX: programmatic trigger via ref — works in Android WebView
+  // WebView often silently ignores label[htmlFor] clicks,
+  // but direct .click() on the input element always works
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // ✅ reset so same file can be re-selected
+      fileInputRef.current.click();
+    }
+  };
+
   /* =========================================================
      NEW CHAT
   ========================================================= */
 
   const startNewChat = () => {
     toggleSidebar();
-    cancel(); // CHANGE 6 — cancel any in-flight stream
+    cancel();
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
@@ -316,13 +313,14 @@ function HomePage() {
 
   const loadConversation = async (conversationId) => {
     toggleSidebar();
+
     if (!conversationId || conversationId === "undefined") {
       console.warn("loadConversation called with invalid id:", conversationId);
       return;
     }
 
     try {
-      cancel(); // CHANGE 7 — cancel stream before switching conversation
+      cancel();
       setActiveConversationId(conversationId);
 
       setMessages([
@@ -372,13 +370,7 @@ function HomePage() {
   };
 
   /* =========================================================
-     CHANGE 8 — handleSend: replace fetch() with ask()
-     The old fetch + setMessages pattern is gone.
-     Now we:
-       1. Append user message
-       2. Append an empty bot placeholder (typing dots)
-       3. Call ask() — the hook drives all subsequent updates
-          via the effects above
+     SEND MESSAGE
   ========================================================= */
 
   const handleSend = async () => {
@@ -391,7 +383,6 @@ function HomePage() {
 
     const query = input.trim();
 
-    // Append user message + empty bot placeholder immediately
     setMessages((prev) => [
       ...prev,
       { text: query || "(Document Uploaded)", isBot: false },
@@ -400,7 +391,6 @@ function HomePage() {
 
     setInput("");
 
-    // Start the stream — the useRAGStream effects take over from here
     await ask({
       query,
       country: userLocation,
@@ -453,7 +443,6 @@ function HomePage() {
                 {Array.isArray(recentConversations) &&
                   recentConversations.map((conv) => {
                     const convId = conv._id || conv.id;
-
                     return (
                       <button
                         key={convId}
@@ -525,7 +514,6 @@ function HomePage() {
 
               <p className='txt'>
                 {message.typing && !message.isStreaming ? (
-                  /* Waiting for first token — show animated dots */
                   <div className="typing-dots">
                     <span></span>
                     <span></span>
@@ -536,13 +524,11 @@ function HomePage() {
                     <div className="bot-message-content">
                       <ReactMarkdown>{message.text}</ReactMarkdown>
 
-                      {/* CHANGE 9 — blinking cursor while streaming */}
                       {message.isStreaming && (
                         <span className="stream-cursor" aria-hidden="true" />
                       )}
                     </div>
 
-                    {/* Sources — appear as soon as meta event arrives */}
                     {message.sources && message.sources.length > 0 && (
                       <span style={{ marginTop: '10px', display: 'block' }}>
                         <strong>Sources:</strong>{" "}
@@ -550,7 +536,6 @@ function HomePage() {
                       </span>
                     )}
 
-                    {/* Clause analysis — appears after stream finishes */}
                     {message.clauseAnalysis && (
                       <span style={{ marginTop: '10px', display: 'block' }}>
                         <strong>Clause Analysis:</strong>{" "}
@@ -571,19 +556,21 @@ function HomePage() {
         <div className='chatfooter'>
           <div className='inp'>
 
+            {/* ✅ FIX: hidden input controlled via ref, no id/htmlFor needed */}
             <input
               type="file"
               multiple
               accept=".pdf,.txt,image/*"
-              className="filein"
+              ref={fileInputRef}
               style={{ display: "none" }}
               onChange={handleFileUpload}
-              id="file-input"
             />
 
-            <label
-              htmlFor="file-input"
+            {/* ✅ FIX: plain button with direct .click() — works in WebView */}
+            <button
+              type="button"
               className="file-label"
+              onClick={handleFileButtonClick}
               style={{
                 display: "flex",
                 justifyContent: "center",
@@ -593,10 +580,12 @@ function HomePage() {
                 fontSize: "30px",
                 cursor: "pointer",
                 borderRadius: "4px",
+                background: "none",
+                border: "none",
               }}
             >
               +
-            </label>
+            </button>
 
             {files.length > 0 && (
               <div className="file-preview">
@@ -625,7 +614,6 @@ function HomePage() {
               onKeyDown={(e) => e.key === "Enter" && !isSending && handleSend()}
             />
 
-            {/* CHANGE 10 — Stop button while streaming, Send otherwise */}
             {isStreaming ? (
               <button className='send stop' onClick={cancel} title="Stop generating">
                 ■
