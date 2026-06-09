@@ -12,7 +12,7 @@ import gptimglogo from '../assets/DeeBees.svg';
 import defaultUserIcon from '../assets/user-icon.png';
 
 import { useRAGStream } from '../hooks/useRAGStream';
-import AuthModal from './components/AuthModal';
+import AuthModal from '../components/AuthModal';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
