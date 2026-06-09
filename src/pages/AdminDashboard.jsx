@@ -1,16 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import "./AdminDashboard.css";
-
-/* =========================================================
-   CHANGE 1 — import the SSE hook, remove useState/useEffect/
-   useCallback imports that were only used for polling
-========================================================= */
 import { useAdminStream } from '../hooks/useAdminStream';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 /* =========================================================
-   HELPERS (unchanged)
+   HELPERS
 ========================================================= */
 
 function timeAgo(dateStr) {
@@ -49,7 +44,7 @@ function avatarColor(str = "") {
 }
 
 /* =========================================================
-   SUB-COMPONENTS (unchanged)
+   SUB-COMPONENTS
 ========================================================= */
 
 function StatCard({ label, value, sub, deltaUp, deltaDown }) {
@@ -218,27 +213,28 @@ function UsersTable({ users = [], loading }) {
 function AdminDashboard() {
 
   /* =========================================================
-     CHANGE 2 — replace all fetch + setInterval polling with
-     a single SSE hook call.
+     ADMIN AUTH GATE
+     Check /auth/me — if not authenticated or not admin,
+     show access denied instead of the dashboard.
+  ========================================================= */
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAdmin, setIsAdmin]         = useState(false);
 
-     Removed:
-       const [data, setData]           = useState(null);
-       const [loading, setLoading]     = useState(true);
-       const [error, setError]         = useState(null);
-       const [lastRefresh, ...]        = useState(null);
-       const [refreshing, ...]         = useState(false);
-       fetchStats()                    — the whole function
-       useEffect(() => fetchStats())   — initial load effect
-       useEffect(() => pollQueue())    — queue poll effect
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/auth/me`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        setIsAdmin(data?.user?.role === "admin");
+        setAuthChecked(true);
+      })
+      .catch(() => {
+        setIsAdmin(false);
+        setAuthChecked(true);
+      });
+  }, []);
 
-     Replaced with:
-       useAdminStream() which gives us:
-         data        — full snapshot, auto-refreshes every 60s
-         queueData   — live queue counts, pushed every 5s
-         connected   — true when SSE is open
-         error       — auth/server errors
-         lastUpdate  — timestamp of last server push
-         forceRefresh — wired to the Refresh button
+  /* =========================================================
+     SSE STREAM HOOK
   ========================================================= */
   const {
     data,
@@ -249,21 +245,13 @@ function AdminDashboard() {
     forceRefresh,
   } = useAdminStream();
 
-  /* =========================================================
-     CHANGE 3 — tier filter is local UI state only.
-     Filtering is done client-side against data.recentUsers
-     so we don't need to refetch on tab change.
-  ========================================================= */
   const [tierFilter, setTierFilter] = useState("all");
 
-  /* -------------------------------------------------------
+  /* =========================================================
      DERIVED DATA
-     CHANGE 4 — queue reads from queueData (5s pushes) first,
-     falls back to data.queue from the full snapshot.
-  ------------------------------------------------------- */
-
+  ========================================================= */
   const u  = data?.users        || {};
-  const q  = queueData          || data?.queue || {};   // ← live queue preferred
+  const q  = queueData          || data?.queue || {};
   const v  = data?.queryVolume  || {};
   const l  = data?.latency      || {};
   const m  = data?.modelUsage   || {};
@@ -271,7 +259,6 @@ function AdminDashboard() {
 
   const allRecentUsers = data?.recentUsers || [];
 
-  /* CHANGE 5 — filter users client-side, no extra fetch */
   const recentUsers =
     tierFilter === "all"
       ? allRecentUsers
@@ -284,7 +271,7 @@ function AdminDashboard() {
     { time: new Date().toLocaleTimeString(), level: "ok",  msg: "<strong>RAG</strong> completed — latency 1.2s, gemini-2.5-flash, 4 sources" },
     { time: new Date(Date.now() - 18000).toLocaleTimeString(), level: "ok",  msg: "<strong>WORKER</strong> ingestion job completed successfully" },
     { time: new Date(Date.now() - 44000).toLocaleTimeString(), level: "warn", msg: "<strong>CLAUSE_CHECKER</strong> non-fatal timeout after 5000ms" },
-    { time: new Date(Date.now() - 90000).toLocaleTimeString(), level: "ok",  msg: "<strong>AUTH</strong> Google OAuth login — user joined" },
+    { time: new Date(Date.now() - 90000).toLocaleTimeString(), level: "ok",  msg: "<strong>AUTH</strong> Email/password login — user joined" },
     { time: new Date(Date.now() - 140000).toLocaleTimeString(), level: "ok", msg: "<strong>RAG</strong> cache HIT — served in 43ms from Redis" },
     ...failures.map((f) => ({
       time: f.timestamp ? new Date(f.timestamp).toLocaleTimeString() : "—",
@@ -293,12 +280,38 @@ function AdminDashboard() {
     })),
   ];
 
-  /* -------------------------------------------------------
-     LOADING / ERROR STATES
-     CHANGE 6 — loading = no data yet (SSE not delivered first
-     snapshot); error = SSE auth/server failure.
-  ------------------------------------------------------- */
+  /* =========================================================
+     RENDER — auth not checked yet, show nothing
+  ========================================================= */
+  if (!authChecked) return null;
 
+  /* =========================================================
+     RENDER — not admin
+  ========================================================= */
+  if (!isAdmin) {
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgb(3, 0, 31)",
+        color: "white",
+        fontFamily: "Poppins, sans-serif",
+        gap: "1.2rem",
+      }}>
+        <h2 style={{ fontSize: "2.4rem" }}>⛔ Access Denied</h2>
+        <p style={{ opacity: 0.6, fontSize: "1.5rem" }}>
+          You don't have permission to view this page.
+        </p>
+      </div>
+    );
+  }
+
+  /* =========================================================
+     RENDER — loading (SSE not yet delivered first snapshot)
+  ========================================================= */
   if (!data && !error) {
     return (
       <div className="dashPage">
@@ -310,6 +323,9 @@ function AdminDashboard() {
     );
   }
 
+  /* =========================================================
+     RENDER — SSE error with no cached data
+  ========================================================= */
   if (error && !data) {
     return (
       <div className="dashPage">
@@ -323,10 +339,9 @@ function AdminDashboard() {
     );
   }
 
-  /* -------------------------------------------------------
-     RENDER
-  ------------------------------------------------------- */
-
+  /* =========================================================
+     RENDER — dashboard
+  ========================================================= */
   return (
     <div className="dashPage">
       <div className="dashContainer">
@@ -336,11 +351,6 @@ function AdminDashboard() {
           <div className="topBarLeft">
             <h1 className="dashTitle">Clauzify — Monitor Dash</h1>
             <div className="topBarMeta">
-              {/*
-                CHANGE 7 — connection dot now reflects the live SSE
-                connection status rather than a MongoDB ping.
-                Green = SSE open, Red = SSE dropped / reconnecting.
-              */}
               <span className={`healthPill ${connected ? "pillGreen" : "pillRed"}`}>
                 <span className={`dot ${connected ? "dotGreen" : "dotRed"}`} />
                 {connected
@@ -348,13 +358,11 @@ function AdminDashboard() {
                   : "Reconnecting…"}
               </span>
               <span className="uptime">Uptime {Math.floor((h.uptime || 0) / 3600)}h</span>
-              {/* CHANGE 8 — lastRefresh comes from lastUpdate (SSE push time) */}
               {lastUpdate && (
                 <span className="lastRefresh">
                   Updated {timeAgo(lastUpdate)}
                 </span>
               )}
-              {/* Show a non-fatal warning if there's an error but we still have data */}
               {error && data && (
                 <span className="pill pillRed" style={{ fontSize: "1.1rem" }}>
                   ⚠ Stream issue — showing last snapshot
@@ -362,7 +370,6 @@ function AdminDashboard() {
               )}
             </div>
           </div>
-          {/* CHANGE 9 — Refresh button calls forceRefresh from the hook */}
           <button className="refreshBtn" onClick={forceRefresh}>
             ↻ Refresh
           </button>
@@ -390,7 +397,6 @@ function AdminDashboard() {
               {q.status || "—"}
             </span>
           </div>
-          {/* CHANGE 10 — live SSE connection chip */}
           <div className="healthChip">
             <span className={`dot ${connected ? "dotGreen" : "dotAmber"}`} />
             <span className="healthLabel">Stream</span>
@@ -400,7 +406,7 @@ function AdminDashboard() {
           </div>
         </div>
 
-        {/* ── STAT CARDS (unchanged) ── */}
+        {/* ── STAT CARDS ── */}
         <div className="statGrid">
           <StatCard
             label="Total users"
@@ -430,7 +436,6 @@ function AdminDashboard() {
           <div className="dashCard chartCard">
             <div className="cardHeader">
               <span className="cardTitle">Query volume (24h)</span>
-              {/* CHANGE 11 — "Live" pill reflects actual SSE connection */}
               <span className={`smallPill ${connected ? "pillGreen" : "pillRed"}`}>
                 <span className={`dot ${connected ? "dotGreen" : "dotRed"}`} />
                 {connected ? "Live" : "Offline"}
@@ -447,12 +452,10 @@ function AdminDashboard() {
                 {q.status || "—"}
               </span>
             </div>
-            {/* CHANGE 12 — queue values now come from queueData (5s pushes)
-                via the `q` derived variable above, so bars animate in real time */}
-            <QueueBar label="Waiting"    value={q.waiting || 0} max={queueMax} colorClass="barBlue"  />
-            <QueueBar label="Active"     value={q.active  || 0} max={queueMax} colorClass="barGreen" />
-            <QueueBar label="Delayed"    value={q.delayed || 0} max={queueMax} colorClass="barAmber" />
-            <QueueBar label="Failed (24h)" value={q.failed || 0} max={queueMax} colorClass="barRed"  />
+            <QueueBar label="Waiting"      value={q.waiting || 0} max={queueMax} colorClass="barBlue"  />
+            <QueueBar label="Active"       value={q.active  || 0} max={queueMax} colorClass="barGreen" />
+            <QueueBar label="Delayed"      value={q.delayed || 0} max={queueMax} colorClass="barAmber" />
+            <QueueBar label="Failed (24h)" value={q.failed  || 0} max={queueMax} colorClass="barRed"   />
             <div className="queueFooter">
               <span className="mutedCell">{fmt(q.completed)} completed total</span>
             </div>
@@ -464,7 +467,6 @@ function AdminDashboard() {
           <div className="dashCard usersCard">
             <div className="cardHeader">
               <span className="cardTitle">Recent users</span>
-              {/* CHANGE 13 — tabs now filter client-side, no refetch */}
               <div className="tabBar">
                 {["all", "premium", "free"].map((t) => (
                   <button
@@ -577,7 +579,6 @@ function AdminDashboard() {
           ))}
         </div>
 
-        {/* CHANGE 14 — footer reflects actual push cadence */}
         <div className="dashFooter">
           Legal RAG Admin · Full snapshot every 60s · Queue pushes every 5s via SSE
         </div>
