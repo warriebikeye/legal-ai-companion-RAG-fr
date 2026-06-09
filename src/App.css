@@ -4,6 +4,137 @@
   box-sizing: border-box;
 }
 /* =========================================================
+   AUTH MODAL
+========================================================= */
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 0, 31, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+}
+
+.auth-modal {
+  background: rgba(28, 30, 58, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  padding: 4rem;
+  width: 100%;
+  max-width: 42rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.auth-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-subtitle {
+  font-size: 1.4rem;
+  opacity: 0.6;
+  text-align: center;
+  margin-top: -0.6rem;
+}
+
+.auth-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  padding: 1.3rem 1.6rem;
+  color: white;
+  font-size: 1.5rem;
+  font-family: 'Poppins', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-input:focus {
+  border-color: #5a4bff;
+}
+
+.token-input {
+  text-align: center;
+  font-size: 3rem;
+  letter-spacing: 1.2rem;
+  font-weight: 700;
+}
+
+.auth-btn {
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1.4rem;
+  font-size: 1.6rem;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-top: 0.4rem;
+}
+
+.auth-btn.primary {
+  background: #5a4bff;
+  color: white;
+}
+
+.auth-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.auth-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  font-size: 1.3rem;
+  color: #f87171;
+  text-align: center;
+}
+
+.auth-message {
+  font-size: 1.3rem;
+  color: #6ee7b7;
+  text-align: center;
+}
+
+.auth-switch {
+  font-size: 1.3rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.auth-switch span {
+  color: #8b7bff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.auth-switch span:hover {
+  text-decoration: underline;
+}
+
+.auth-loader {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+
+/* =========================================================
    STREAMING ADDITIONS — append these to App.css
 ========================================================= */
 
@@ -832,4 +963,8 @@ body {
 html {
   font-size: 62.5%;
 }
+ .auth-modal {
+    margin: 2rem;
+    padding: 3rem 2rem;
+  }
 }

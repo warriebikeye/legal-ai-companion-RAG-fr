@@ -1,5 +1,5 @@
 import '../App.css';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from 'react-markdown';
 import gptLogo from '../assets/DeeBees.svg';
@@ -9,11 +9,10 @@ import saved from '../assets/bookmark.svg';
 import rocket from '../assets/rocket.svg';
 import sendBtn from '../assets/send.svg';
 import gptimglogo from '../assets/DeeBees.svg';
-import ggllogo from '../assets/gglepro.jpg';
 import defaultUserIcon from '../assets/user-icon.png';
 
 import { useRAGStream } from '../hooks/useRAGStream';
-import { openGoogleAuth } from '../utils/openAuth';
+import AuthModal from './components/AuthModal';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -41,8 +40,6 @@ const log = (step, data = null) => {
 
 function HomePage() {
   const messagesEndRef = useRef(null);
-
-  // ✅ FIX: ref to trigger file input programmatically (WebView compatible)
   const fileInputRef = useRef(null);
 
   /* =========================================================
@@ -55,6 +52,7 @@ function HomePage() {
   const [userLocation, setUserLocation] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false); // ✅ prevents flash
   const [userEmail, setUserEmail] = useState(null);
   const [userImage, setUserImage] = useState(null);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -166,41 +164,44 @@ function HomePage() {
   };
 
   /* =========================================================
-     AUTH CHECK
+     AUTH CHECK — extracted so AuthModal can call it too
   ========================================================= */
 
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/auth/me`, {
-          method: "GET",
-          credentials: "include",
-        });
+  const checkAuthentication = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-        if (!res.ok) {
-          setIsAuthenticated(false);
-          return;
-        }
-
-        const data = await res.json();
-
-        setIsAuthenticated(Boolean(data.isAuthenticated));
-        setUserEmail(data.userEmail || null);
-        setUserImage(data.userImage || defaultUserIcon);
-        setSubscriptionTier(data.subscriptionTier || "free");
-        setSubscriptionExpiry(data.subscriptionExpiry || null);
-
-        if (data.isAuthenticated) {
-          await fetchRecentConversations();
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error);
+      if (!res.ok) {
         setIsAuthenticated(false);
+        setAuthChecked(true);
+        return;
       }
-    };
 
-    checkAuthentication();
+      const data = await res.json();
+
+      setIsAuthenticated(Boolean(data.isAuthenticated));
+      setUserEmail(data.userEmail || null);
+      setUserImage(data.userImage || defaultUserIcon);
+      setSubscriptionTier(data.subscriptionTier || "free");
+      setSubscriptionExpiry(data.subscriptionExpiry || null);
+
+      if (data.isAuthenticated) {
+        await fetchRecentConversations();
+      }
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      setIsAuthenticated(false);
+    } finally {
+      setAuthChecked(true); // ✅ always mark as checked
+    }
   }, []);
+
+  useEffect(() => {
+    checkAuthentication();
+  }, [checkAuthentication]);
 
   /* =========================================================
      STREAM — sync live bot message
@@ -284,12 +285,9 @@ function HomePage() {
     setFiles(uploadedFiles);
   };
 
-  // ✅ FIX: programmatic trigger via ref — works in Android WebView
-  // WebView often silently ignores label[htmlFor] clicks,
-  // but direct .click() on the input element always works
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // ✅ reset so same file can be re-selected
+      fileInputRef.current.value = "";
       fileInputRef.current.click();
     }
   };
@@ -402,11 +400,23 @@ function HomePage() {
   };
 
   /* =========================================================
+     RENDER — hold until auth check completes (prevents flash)
+  ========================================================= */
+
+  if (!authChecked) return null;
+
+  /* =========================================================
      RENDER
   ========================================================= */
 
   return (
     <div className="App">
+
+      {/* ✅ Login wall — blocks everything until authenticated */}
+      {!isAuthenticated && (
+        <AuthModal onAuthenticated={checkAuthentication} />
+      )}
+
       <button className="sidebarToggle" onClick={toggleSidebar}>
         ☰
       </button>
@@ -436,35 +446,25 @@ function HomePage() {
           </select>
 
           <div className='upperSideButton'>
-            {isAuthenticated ? (
-              <>
-                <h2>Previous Chats</h2>
+            <>
+              <h2>Previous Chats</h2>
 
-                {Array.isArray(recentConversations) &&
-                  recentConversations.map((conv) => {
-                    const convId = conv._id || conv.id;
-                    return (
-                      <button
-                        key={convId}
-                        className='query'
-                        onClick={() => loadConversation(convId)}
-                      >
-                        <span className="queryText">
-                          {conv.title || "Untitled Chat"}
-                        </span>
-                      </button>
-                    );
-                  })}
-              </>
-            ) : (
-              <button
-                className="queryxx google-sign-in"
-                onClick={() => openGoogleAuth(`${API_BASE_URL}/auth/google`)}
-              >
-                Sign in with Google
-                <img src={ggllogo} alt="Google Logo" className="google-logo" />
-              </button>
-            )}
+              {Array.isArray(recentConversations) &&
+                recentConversations.map((conv) => {
+                  const convId = conv._id || conv.id;
+                  return (
+                    <button
+                      key={convId}
+                      className='query'
+                      onClick={() => loadConversation(convId)}
+                    >
+                      <span className="queryText">
+                        {conv.title || "Untitled Chat"}
+                      </span>
+                    </button>
+                  );
+                })}
+            </>
           </div>
         </div>
 
@@ -490,11 +490,12 @@ function HomePage() {
 
           <div className='ListItems'>
             <img
-              src={isAuthenticated && userImage ? userImage : saved}
+              src={userImage || saved}
               alt=''
             />
-            {isAuthenticated ? userEmail : "Saved"}
+            {userEmail || "Account"}
           </div>
+
         </div>
       </div>
 
@@ -556,7 +557,6 @@ function HomePage() {
         <div className='chatfooter'>
           <div className='inp'>
 
-            {/* ✅ FIX: hidden input controlled via ref, no id/htmlFor needed */}
             <input
               type="file"
               multiple
@@ -566,7 +566,6 @@ function HomePage() {
               onChange={handleFileUpload}
             />
 
-            {/* ✅ FIX: plain button with direct .click() — works in WebView */}
             <button
               type="button"
               className="file-label"
