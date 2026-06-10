@@ -589,7 +589,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   /* 👇 THIS is what most people miss in flex layouts */
   min-width: 0;
   flex: 1;
