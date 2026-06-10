@@ -560,7 +560,7 @@ function HomePage() {
             <input
               type="file"
               multiple
-              accept=".pdf,.jpg,.jpeg,.png,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               ref={fileInputRef}
               style={{ display: "none" }}
               onChange={handleFileUpload}
