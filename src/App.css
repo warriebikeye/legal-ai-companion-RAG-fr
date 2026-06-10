@@ -3,9 +3,25 @@
   padding: 0;
   box-sizing: border-box;
 }
+
 /* =========================================================
    AUTH MODAL
 ========================================================= */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.show-password-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+}
 
 .auth-overlay {
   position: fixed;
@@ -126,7 +142,7 @@
 .auth-loader {
   width: 18px;
   height: 18px;
-  border: 3px solid rgba(255,255,255,0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -150,8 +166,15 @@
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Stop button — shown in place of Send while streaming */
@@ -169,6 +192,7 @@
 .send.stop:hover {
   background: rgba(248, 113, 113, 0.28);
 }
+
 .bot-message-content p {
   margin: 0 0 10px 0;
   line-height: 1.6;
@@ -187,11 +211,12 @@
 
 .bot-message-content strong {
   font-weight: 600;
-  color: #e2e2e2; /* adjust to your theme */
+  color: #e2e2e2;
+  /* adjust to your theme */
 }
 
 .bot-message-content code {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
@@ -212,6 +237,7 @@
   font-size: 1em;
   font-weight: 700;
 }
+
 html {
   font-size: 62.5%;
 }
@@ -262,7 +288,9 @@ body {
 
 .App {
   /* min-height: 100vh; */
-  height: 100vh; height: 100dvh; overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
 }
 
@@ -310,7 +338,8 @@ body {
 
 .upperSide {
   padding: 2rem;
-  height: 68vh;              /* keep your original design */
+  height: 68vh;
+  /* keep your original design */
   border-bottom: 1px solid rgb(100, 100, 100);
 
   display: flex;
@@ -337,25 +366,30 @@ body {
 .upperSideButton {
   margin-top: 1.3rem;
 
-  flex: 1;              /* 👈 This is the key */
-  overflow-y: auto;      /* vertical scroll */
+  flex: 1;
+  /* 👈 This is the key */
+  overflow-y: auto;
+  /* vertical scroll */
   overflow-x: hidden;
 
   scroll-behavior: smooth;
 
   scrollbar-width: thin;
-  scrollbar-color: rgba(160,160,160,0.6) transparent;
+  scrollbar-color: rgba(160, 160, 160, 0.6) transparent;
 }
-.upperSideButton h2{
+
+.upperSideButton h2 {
   font-size: 2.0rem;
 }
+
 /* ===============================
    Chrome / Edge / Safari
 =============================== */
 
 /* scrollbar width */
 .upperSideButton::-webkit-scrollbar {
-  width: 6px; /* vertical only */
+  width: 6px;
+  /* vertical only */
 }
 
 .upperSideButton::-webkit-scrollbar-track {
@@ -363,21 +397,24 @@ body {
 }
 
 .upperSideButton::-webkit-scrollbar-thumb {
-  background: rgba(160,160,160,0.6);
+  background: rgba(160, 160, 160, 0.6);
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 .upperSideButton::-webkit-scrollbar-thumb:hover {
-  background: rgba(200,200,200,0.9);
+  background: rgba(200, 200, 200, 0.9);
 }
+
 /* Active drag feel */
 .upperSideButton::-webkit-scrollbar-thumb:active {
-  background: rgba(200,200,200,0.8);
+  background: rgba(200, 200, 200, 0.8);
 }
+
 .upperSideButton::-webkit-scrollbar-thumb {
   opacity: 0;
 }
+
 .upgradeBtn {
   cursor: pointer;
   transition: all 0.25s ease;
@@ -387,6 +424,7 @@ body {
   transform: translateY(-2px);
   color: #8b7cff;
 }
+
 .upperSideButton:hover::-webkit-scrollbar-thumb {
   opacity: 1;
 }
@@ -520,6 +558,23 @@ body {
   outline: none;
   padding: 1.25rem;
   color: white;
+}
+
+.chat-input {
+  width: calc(100% - 3rem);
+  outline: none;
+  padding: 1.25rem;
+  color: white;
+  background: transparent;
+  border: none;
+
+  font-size: 16px;
+  font-family: inherit;
+
+  resize: none;
+  overflow-y: auto;
+  max-height: 120px;
+  line-height: 1.4;
 }
 
 .inp>input,
@@ -705,6 +760,7 @@ body {
 .file-label {
   font-size: larger;
 }
+
 /* =========================================================
    UPGRADE PAGE
 ========================================================= */
@@ -745,7 +801,7 @@ body {
 }
 
 .priceCard {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   padding: 3rem;
   border-radius: 2rem;
   transition: 0.3s;
@@ -804,6 +860,7 @@ body {
     font-size: 3rem;
   }
 }
+
 /* Responsive for mobile */
 @media (max-width: 768px) {
   .sidebarToggle {
@@ -910,61 +967,68 @@ body {
 
   .upperSideButton {
     margin-top: 1.2rem;
-  overflow-y: auto; /* vertical scroll only */
-  overflow-x: hidden; /* hide bottom scrollbar */
+    overflow-y: auto;
+    /* vertical scroll only */
+    overflow-x: hidden;
+    /* hide bottom scrollbar */
     scroll-behavior: smooth;
     height: 50vh;
   }
-  .upperSideButton h2{
-  font-size: 1.8rem;
-}
-.bot-message-content p {
-  margin: 0 0 10px 0;
-  line-height: 1.6;
-}
 
-.bot-message-content ul,
-.bot-message-content ol {
-  padding-left: 10px;
-  margin: 8px 0 12px 0;
-}
+  .upperSideButton h2 {
+    font-size: 1.8rem;
+  }
 
-.bot-message-content li {
-  margin-bottom: 6px;
-  line-height: 1.6;
-}
+  .bot-message-content p {
+    margin: 0 0 10px 0;
+    line-height: 1.6;
+  }
 
-.bot-message-content strong {
-  font-weight: 600;
-  color: #e2e2e2; /* adjust to your theme */
-}
+  .bot-message-content ul,
+  .bot-message-content ol {
+    padding-left: 10px;
+    margin: 8px 0 12px 0;
+  }
 
-.bot-message-content code {
-  background: rgba(255,255,255,0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.9em;
-}
+  .bot-message-content li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+  }
 
-.bot-message-content blockquote {
-  border-left: 3px solid #555;
-  padding-left: 12px;
-  margin: 8px 0;
-  color: #aaa;
-}
+  .bot-message-content strong {
+    font-weight: 600;
+    color: #e2e2e2;
+    /* adjust to your theme */
+  }
 
-.bot-message-content h1,
-.bot-message-content h2,
-.bot-message-content h3 {
-  margin: 12px 0 6px 0;
-  font-size: 1em;
-  font-weight: 700;
-}
-html {
-  font-size: 62.5%;
-}
- .auth-modal {
+  .bot-message-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .bot-message-content blockquote {
+    border-left: 3px solid #555;
+    padding-left: 12px;
+    margin: 8px 0;
+    color: #aaa;
+  }
+
+  .bot-message-content h1,
+  .bot-message-content h2,
+  .bot-message-content h3 {
+    margin: 12px 0 6px 0;
+    font-size: 1em;
+    font-weight: 700;
+  }
+
+  html {
+    font-size: 62.5%;
+  }
+
+  .auth-modal {
     margin: 2rem;
     padding: 3rem 2rem;
   }

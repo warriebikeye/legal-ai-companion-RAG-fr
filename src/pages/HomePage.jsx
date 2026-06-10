@@ -557,10 +557,10 @@ function HomePage() {
         <div className='chatfooter'>
           <div className='inp'>
 
-             <input
+            <input
               type="file"
               multiple
-              accept=".pdf,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.jpg,.jpeg,.png,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               ref={fileInputRef}
               style={{ display: "none" }}
               onChange={handleFileUpload}
@@ -576,7 +576,7 @@ function HomePage() {
                 width: "50px",
                 height: "50px",
                 fontSize: "30px",
-                color:"#fff",
+                color: "#fff",
                 cursor: "pointer",
                 borderRadius: "4px",
                 background: "none",
@@ -605,12 +605,17 @@ function HomePage() {
               </div>
             )}
 
-            <input
-              type='text'
-              placeholder='Send a message'
+            <textarea
+              placeholder="Send a message"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !isSending && handleSend()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !isSending) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              className="chat-input"
             />
 
             {isStreaming ? (

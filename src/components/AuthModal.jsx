@@ -9,13 +9,16 @@ const API_BASE_URL = process.env.REACT_APP_BASEURL;
 export default function AuthModal({ onAuthenticated }) {
   const [view, setView] = useState("signup");
 
-  const [name, setName]           = useState("");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [token, setToken]         = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [message, setMessage]     = useState("");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword]  = useState("");
+  const [token, setToken]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [message, setMessage]   = useState("");
+
+  // ✅ NEW: password visibility toggle
+  const [showPassword, setShowPassword] = useState(false);
 
   const clearFeedback = () => { setError(""); setMessage(""); };
 
@@ -60,7 +63,7 @@ export default function AuthModal({ onAuthenticated }) {
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Verification failed.");
-      onAuthenticated(); // tell HomePage to re-check auth
+      onAuthenticated();
     } catch {
       setError("Network error. Try again.");
     } finally {
@@ -110,6 +113,7 @@ export default function AuthModal({ onAuthenticated }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+
             <input
               className="auth-input"
               type="email"
@@ -117,15 +121,27 @@ export default function AuthModal({ onAuthenticated }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <input
-              className="auth-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
 
-            {error   && <p className="auth-error">{error}</p>}
+            {/* ✅ PASSWORD TOGGLE (SIGNUP) */}
+            <div className="password-wrapper">
+              <input
+                className="auth-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <button
+                type="button"
+                className="show-password-btn"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
             <button
@@ -163,7 +179,7 @@ export default function AuthModal({ onAuthenticated }) {
               onChange={(e) => setToken(e.target.value.replace(/\D/, ""))}
             />
 
-            {error   && <p className="auth-error">{error}</p>}
+            {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
             <button
@@ -196,16 +212,28 @@ export default function AuthModal({ onAuthenticated }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <input
-              className="auth-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            />
 
-            {error   && <p className="auth-error">{error}</p>}
+            {/* ✅ PASSWORD TOGGLE (LOGIN) */}
+            <div className="password-wrapper">
+              <input
+                className="auth-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              />
+
+              <button
+                type="button"
+                className="show-password-btn"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
             <button
