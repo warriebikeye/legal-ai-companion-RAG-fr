@@ -560,15 +560,7 @@ function HomePage() {
              <input
               type="file"
               multiple
-              accept="
-                image/*,
-                .pdf,
-                .txt,
-                application/pdf,
-                text/plain,
-                application/msword,
-                application/vnd.openxmlformats-officedocument.wordprocessingml.document
-              "
+              accept=".pdf,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               ref={fileInputRef}
               style={{ display: "none" }}
               onChange={handleFileUpload}
@@ -641,7 +633,7 @@ function HomePage() {
 
           </div>
 
-          <p>~ Africa's Legal Intelligence Engine ~</p>
+          <p>~ Africa's Legal Intelligence Engine Pipeline ~</p>
         </div>
       </div>
     </div>
