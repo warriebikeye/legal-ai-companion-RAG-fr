@@ -584,6 +584,7 @@ function HomePage() {
                 width: "50px",
                 height: "50px",
                 fontSize: "30px",
+                color:"#fff",
                 cursor: "pointer",
                 borderRadius: "4px",
                 background: "none",
