@@ -550,7 +550,7 @@ body {
   align-items: center;
   border-radius: .5em;
   width: 100%;
-  padding: 5px 10px;
+  padding:5px;
 }
 
 .inp>input {
@@ -582,7 +582,7 @@ body {
 .send {
   background: transparent;
   border: none;
-  font-size: 16px;
+  font-size: 30px;
 }
 
 .addBtn {
@@ -867,11 +867,6 @@ body {
   .sidebarToggle {
     display: block;
   }
-
-  .file-label {
-    font-size: large;
-  }
-
   .App {
     min-height: 100vh;
     display: flex;
