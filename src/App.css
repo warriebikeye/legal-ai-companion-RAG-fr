@@ -453,6 +453,7 @@ body {
   align-items: center;
   margin: 6rem 10rem;
   margin-bottom: 0;
+  border:1px solid red;
 }
 
 .chats {
@@ -463,6 +464,7 @@ body {
   scroll-behavior: smooth;
   width: 100%;
   height: 68rem;
+  border:1px solid white;
 }
 
 .chats::-webkit-scrollbar {
