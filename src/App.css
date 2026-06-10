@@ -288,7 +288,6 @@ body {
 
 .App {
   /* min-height: 100vh; */
-  height: 100vh;
   height: 100dvh;
   overflow: hidden;
   display: flex;
@@ -870,7 +869,7 @@ body {
     display: block;
   }
   .App {
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     height: -webkit-fill-available;
