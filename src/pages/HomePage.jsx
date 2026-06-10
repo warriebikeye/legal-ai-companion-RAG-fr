@@ -560,11 +560,13 @@ function HomePage() {
             <input
               type="file"
               multiple
-              accept=".pdf,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept="*/*"
+              //accept=".pdf,.txt,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               ref={fileInputRef}
-              style={{ display: "none" }}
+              style={{ display: "none" }} 
               onChange={handleFileUpload}
             />
+
             <button
               type="button"
               className="file-label"
