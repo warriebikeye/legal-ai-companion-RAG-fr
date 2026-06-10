@@ -562,6 +562,7 @@ body {
 
 .chat-input {
   width: calc(100% - 3rem);
+
   outline: none;
   padding: 1.25rem;
   color: white;
@@ -570,7 +571,7 @@ body {
 
   font-size: 16px;
   font-family: inherit;
-
+  margin-top:20px;
   resize: none;
   overflow-y: auto;
   max-height: 120px;
