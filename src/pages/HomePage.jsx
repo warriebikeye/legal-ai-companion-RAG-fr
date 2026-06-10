@@ -557,15 +557,22 @@ function HomePage() {
         <div className='chatfooter'>
           <div className='inp'>
 
-            <input
+             <input
               type="file"
               multiple
-              accept=".pdf,.txt,image/*"
+              accept="
+                image/*,
+                .pdf,
+                .txt,
+                application/pdf,
+                text/plain,
+                application/msword,
+                application/vnd.openxmlformats-officedocument.wordprocessingml.document
+              "
               ref={fileInputRef}
               style={{ display: "none" }}
               onChange={handleFileUpload}
             />
-
             <button
               type="button"
               className="file-label"
