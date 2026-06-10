@@ -853,6 +853,7 @@ body {
     background: rgba(28, 30, 58, 1);
     z-index: 99;
     width: 28rem;
+    border: none;
     transition: transform 0.3s ease;
   }
 
