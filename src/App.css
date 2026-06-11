@@ -151,10 +151,9 @@
 
 
 /* =========================================================
-   STREAMING ADDITIONS — append these to App.css
+   STREAMING ADDITIONS
 ========================================================= */
 
-/* Blinking cursor that appears at the end of streaming text */
 .stream-cursor {
   display: inline-block;
   width: 2px;
@@ -166,18 +165,10 @@
 }
 
 @keyframes blink {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
-/* Stop button — shown in place of Send while streaming */
 .send.stop {
   background: rgba(248, 113, 113, 0.15);
   color: #f87171;
@@ -193,9 +184,22 @@
   background: rgba(248, 113, 113, 0.28);
 }
 
+/* =========================================================
+   BOT MESSAGE CONTENT — overflow-safe base styles
+========================================================= */
+
+.bot-message-content {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 .bot-message-content p {
   margin: 0 0 10px 0;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .bot-message-content ul,
@@ -207,20 +211,34 @@
 .bot-message-content li {
   margin-bottom: 6px;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .bot-message-content strong {
   font-weight: 600;
   color: #e2e2e2;
-  /* adjust to your theme */
 }
 
+/* ── KEY FIX: inline code tags must wrap on mobile ── */
 .bot-message-content code {
   background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
   font-size: 0.9em;
+  /* Allow wrapping — this fixes the horizontal overflow from source citations */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  display: inline;
+}
+
+/* Code blocks (pre) scroll horizontally rather than overflow */
+.bot-message-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
 }
 
 .bot-message-content blockquote {
@@ -228,6 +246,8 @@
   padding-left: 12px;
   margin: 8px 0;
   color: #aaa;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .bot-message-content h1,
@@ -238,6 +258,10 @@
   font-weight: 700;
 }
 
+/* =========================================================
+   BASE
+========================================================= */
+
 html {
   font-size: 62.5%;
 }
@@ -247,7 +271,6 @@ html {
   display: flex;
   align-items: center;
   background-color: #4285f4;
-  /* Google blue */
   color: white;
   font-size: 2rem;
   padding: 12px 20px;
@@ -257,25 +280,20 @@ html {
   transition: all 0.3s ease;
   width: auto;
   gap: 10px;
-  /* Space between the icon and the text */
 }
 
 .google-sign-in:hover {
   border: 1px solid #ccd;
   transform: translateY(-2px);
-  /* Slight lift effect on hover */
 }
 
 .google-sign-in:active {
   background-color: #3367d6;
-  /* Even darker blue on click */
   transform: translateY(1px);
-  /* Button slightly moves down on click */
 }
 
 .google-logo {
   width: 40px;
-  /* Icon size */
   height: 40px;
   object-fit: contain;
 }
@@ -287,13 +305,17 @@ body {
 }
 
 .App {
-  /* min-height: 100vh; */
   height: 100dvh;
   overflow: hidden;
   display: flex;
+  /* Prevent any child from blowing out the viewport width */
+  max-width: 100vw;
 }
 
-/* File input width reduced */
+/* =========================================================
+   FILE UPLOAD
+========================================================= */
+
 .filein {
   width: 20%;
   margin-right: 1rem;
@@ -304,7 +326,6 @@ body {
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* File preview container */
 .file-preview {
   display: flex;
   flex-wrap: wrap;
@@ -317,7 +338,6 @@ body {
   border-radius: 0.5rem;
 }
 
-/* Image thumbnails */
 .file-thumb {
   width: 50px;
   height: 50px;
@@ -326,7 +346,6 @@ body {
   border: 1px solid #ccc;
 }
 
-/* Non-image file items */
 .file-item {
   padding: 0.3rem 0.5rem;
   background: rgba(0, 0, 0, 0.3);
@@ -335,12 +354,14 @@ body {
   font-size: 1.5rem;
 }
 
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
 .upperSide {
   padding: 2rem;
   height: 68vh;
-  /* keep your original design */
   border-bottom: 1px solid rgb(100, 100, 100);
-
   display: flex;
   flex-direction: column;
 }
@@ -350,29 +371,14 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 2.5rem;
-
 }
-
-/* =========================================================
-   ✅ Fancy Scrollbar (Modern UI Style)
-========================================================= */
-
-/* ===============================
-   Vertical Scrollbar (Right Side)
-   For Previous Chats List
-=============================== */
 
 .upperSideButton {
   margin-top: 1.3rem;
-
   flex: 1;
-  /* 👈 This is the key */
   overflow-y: auto;
-  /* vertical scroll */
   overflow-x: hidden;
-
   scroll-behavior: smooth;
-
   scrollbar-width: thin;
   scrollbar-color: rgba(160, 160, 160, 0.6) transparent;
 }
@@ -381,14 +387,8 @@ body {
   font-size: 2.0rem;
 }
 
-/* ===============================
-   Chrome / Edge / Safari
-=============================== */
-
-/* scrollbar width */
 .upperSideButton::-webkit-scrollbar {
   width: 6px;
-  /* vertical only */
 }
 
 .upperSideButton::-webkit-scrollbar-track {
@@ -399,19 +399,19 @@ body {
   background: rgba(160, 160, 160, 0.6);
   border-radius: 10px;
   transition: background 0.3s ease;
+  opacity: 0;
 }
 
 .upperSideButton::-webkit-scrollbar-thumb:hover {
   background: rgba(200, 200, 200, 0.9);
 }
 
-/* Active drag feel */
 .upperSideButton::-webkit-scrollbar-thumb:active {
   background: rgba(200, 200, 200, 0.8);
 }
 
-.upperSideButton::-webkit-scrollbar-thumb {
-  opacity: 0;
+.upperSideButton:hover::-webkit-scrollbar-thumb {
+  opacity: 1;
 }
 
 .upgradeBtn {
@@ -422,10 +422,6 @@ body {
 .upgradeBtn:hover {
   transform: translateY(-2px);
   color: #8b7cff;
-}
-
-.upperSideButton:hover::-webkit-scrollbar-thumb {
-  opacity: 1;
 }
 
 .logo {
@@ -444,32 +440,41 @@ body {
   overflow: hidden;
 }
 
+/* =========================================================
+   MAIN CHAT AREA
+========================================================= */
+
 .main {
   flex: 9;
-  min-height: calc(100vh-14rem);
+  min-width: 0; /* ── KEY FIX: prevents flex child from overflowing */
+  min-height: calc(100vh - 14rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   margin: 6rem 10rem;
   margin-bottom: 0;
+  overflow: hidden; /* contain children */
 }
 
 .chats {
   overflow: hidden;
   overflow-y: auto;
-  /* or scroll */
   scrollbar-width: none;
   scroll-behavior: smooth;
   width: 100%;
   max-height: 70dvh;
+  /* Prevent horizontal blowout */
+  overflow-x: hidden;
 }
 
 .chats::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari, Edge */
 }
 
-/* App.css */
+/* =========================================================
+   TYPING DOTS
+========================================================= */
+
 .typing-dots {
   display: inline-block;
 }
@@ -484,26 +489,17 @@ body {
   animation: bounce 1.4s infinite;
 }
 
-.typing-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes bounce {
-
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-
-  40% {
-    transform: scale(1);
-  }
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
 }
+
+/* =========================================================
+   CHAT BUBBLES
+========================================================= */
 
 .chat {
   margin: 1rem;
@@ -512,22 +508,43 @@ body {
   display: flex;
   align-items: flex-start;
   text-align: justify;
+  /* ── KEY FIX: constrain width so content can't overflow ── */
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bot {
   background: rgba(28, 30, 58, 1);
   width: fit-content;
+  /* ── KEY FIX: but never wider than the container ── */
+  max-width: 100%;
   border-radius: .5rem;
   overflow-y: auto;
   height: auto;
+  /* prevent horizontal overflow */
+  overflow-x: hidden;
+}
+
+.txt {
+  /* ── KEY FIX: allow text to wrap within its parent ── */
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  flex: 1;
 }
 
 .chtimg {
   object-fit: cover;
   width: 3.5rem;
+  /* Don't shrink the avatar */
+  flex-shrink: 0;
   margin-right: 2rem;
   border-radius: .5rem;
 }
+
+/* =========================================================
+   CHAT FOOTER
+========================================================= */
 
 .chatfooter {
   width: 100%;
@@ -539,7 +556,7 @@ body {
   height: 30dvh;
 }
 
-.chatfooter>p {
+.chatfooter > p {
   margin: 0.5rem 0;
 }
 
@@ -550,10 +567,9 @@ body {
   align-items: center;
   border-radius: .5em;
   width: 100%;
-  padding: 5px;
 }
 
-.inp>input {
+.inp > input {
   width: calc(100% - 3rem);
   outline: none;
   padding: 1.25rem;
@@ -562,13 +578,11 @@ body {
 
 .chat-input {
   width: calc(100% - 3rem);
-
   outline: none;
   padding: 1.25rem;
   color: white;
   background: transparent;
   border: none;
-
   font-size: 16px;
   font-family: inherit;
   margin-top: 20px;
@@ -578,7 +592,7 @@ body {
   line-height: 1.4;
 }
 
-.inp>input,
+.inp > input,
 .send {
   background: transparent;
   border: none;
@@ -589,6 +603,10 @@ body {
   height: 2rem;
   padding-right: 1.5rem;
 }
+
+/* =========================================================
+   SIDEBAR BUTTONS
+========================================================= */
 
 .midBtn {
   background: #5a4bff;
@@ -604,7 +622,6 @@ body {
   border-radius: 0.5rem;
 }
 
-/* ⭐ NEW: send button loader */
 .loader {
   width: 20px;
   height: 20px;
@@ -616,9 +633,7 @@ body {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .send:disabled {
@@ -637,7 +652,6 @@ body {
   border-radius: 0.5rem;
   border: none;
   color: rgb(222, 222, 222, 1);
-  ;
 }
 
 .queryText {
@@ -646,12 +660,10 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 1.4rem;
-  /* 👇 THIS is what most people miss in flex layouts */
   min-width: 0;
   flex: 1;
 }
 
-/* ✅ Capitalize only the first visible character */
 .queryText::first-letter {
   text-transform: uppercase;
 }
@@ -667,23 +679,19 @@ body {
   border-radius: 0.5rem;
   border: none;
   color: rgb(222, 222, 222, 1);
-  ;
 }
 
-/* Remove default arrow background on Chrome */
 .query::-ms-expand {
   display: none;
 }
 
 .query option {
   background: #00000080;
-  /* semi-transparent black */
   color: white;
   padding: 10px;
   border: none;
 }
 
-/* Optional: highlight selected option */
 .query option:checked {
   background: #222 !important;
 }
@@ -699,7 +707,7 @@ body {
   color: rgb(222, 222, 222, 1);
 }
 
-.query>img {
+.query > img {
   margin-right: 2rem;
   object-fit: cover;
   height: 1.75rem;
@@ -722,15 +730,18 @@ body {
   border-radius: 50%;
 }
 
-.ListItems:nth-child(1)>.ListItems img {
+.ListItems:nth-child(1) > .ListItems img {
   margin-right: 0.5rem;
 }
 
-.ListItems:nth-child(3)>.ListItems img {
+.ListItems:nth-child(3) > .ListItems img {
   margin-right: 0.75rem;
 }
 
-/* Sidebar collapse toggle button */
+/* =========================================================
+   SIDEBAR TOGGLE
+========================================================= */
+
 .sidebarToggle {
   display: none;
   position: fixed;
@@ -745,14 +756,12 @@ body {
   padding: 0.5rem 1rem;
 }
 
-/* Sidebar collapsed state */
 .sideBar.collapsed {
   width: 0;
   overflow: hidden;
   transition: width 0.3s ease;
 }
 
-/* Main full width when sidebar collapsed */
 .main.fullWidth {
   flex: 1 1 100%;
   margin: 2rem;
@@ -760,6 +769,17 @@ body {
 
 .file-label {
   font-size: larger;
+}
+
+/* =========================================================
+   AD BANNER — must never cause horizontal overflow
+========================================================= */
+
+.response-ad-middle,
+.response-ad-bottom {
+  max-width: 100%;
+  overflow: hidden;
+  display: block;
 }
 
 /* =========================================================
@@ -848,7 +868,12 @@ body {
   transform: scale(1.03);
 }
 
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
 @media (max-width: 768px) {
+
   .pricingGrid {
     grid-template-columns: 1fr;
   }
@@ -860,10 +885,7 @@ body {
   .upgradeCard h1 {
     font-size: 3rem;
   }
-}
 
-/* Responsive for mobile */
-@media (max-width: 768px) {
   .sidebarToggle {
     display: block;
   }
@@ -873,36 +895,69 @@ body {
     display: flex;
     flex-direction: column;
     height: -webkit-fill-available;
-    /* For iOS Safari */
+    /* Prevent horizontal scroll at the root */
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  .main {
+    /* ── KEY FIX: constrain main area on mobile ── */
+    min-width: 0;
+    max-width: 100vw;
+    overflow-x: hidden;
+    margin: 2rem 1rem;
   }
 
   .chats {
-    overflow: hidden;
+    overflow-x: hidden;
     overflow-y: auto;
-    /* or scroll */
     scrollbar-width: none;
     scroll-behavior: smooth;
     width: 100%;
+    max-width: 100%;
     max-height: 79dvh;
   }
+
   .chats::-webkit-scrollbar {
     display: none;
-    /* Chrome, Safari, Edge */
   }
+
   .chat {
     margin: 1.2rem 0.75rem;
-    padding: 0.75rem 0.75rem;
+    padding: 0.75rem;
     font-size: 1.4rem;
     display: flex;
     align-items: flex-start;
     text-align: justify;
+    /* ── KEY FIX ── */
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
   }
-  .chatfooter{
-    height:16dvh;
+
+  .bot {
+    /* ── KEY FIX: hard cap so it never exceeds screen ── */
+    max-width: calc(100vw - 2rem);
+    overflow-x: hidden;
   }
+
+  .txt {
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    /* ── KEY FIX: let .txt shrink inside flex ── */
+    flex: 1;
+    max-width: 100%;
+  }
+
+  .chatfooter {
+    height: 16dvh;
+  }
+
   .chtimg {
     object-fit: cover;
     width: 1.6rem;
+    flex-shrink: 0;
     margin-right: 0.5rem;
     border-radius: .5rem;
   }
@@ -937,10 +992,8 @@ body {
     border-radius: 0.5rem;
     border: none;
     color: rgb(222, 222, 222, 1);
-    ;
   }
 
-  /* ✅ Capitalize only the first visible character */
   .queryText::first-letter {
     text-transform: uppercase;
   }
@@ -951,11 +1004,6 @@ body {
     height: 0;
     overflow: hidden;
     transition: width 0.3s ease;
-
-  }
-
-  .main {
-    margin: 2rem 1rem;
   }
 
   .main.fullWidth {
@@ -974,15 +1022,12 @@ body {
     align-items: center;
     justify-content: center;
     margin-bottom: 2.5rem;
-
   }
 
   .upperSideButton {
     margin-top: 1.2rem;
     overflow-y: auto;
-    /* vertical scroll only */
     overflow-x: hidden;
-    /* hide bottom scrollbar */
     scroll-behavior: smooth;
     height: 50vh;
   }
@@ -991,9 +1036,17 @@ body {
     font-size: 1.8rem;
   }
 
+  /* ── Mobile bot message content overrides ── */
+  .bot-message-content {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .bot-message-content p {
     margin: 0 0 10px 0;
     line-height: 1.6;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .bot-message-content ul,
@@ -1005,20 +1058,32 @@ body {
   .bot-message-content li {
     margin-bottom: 6px;
     line-height: 1.6;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .bot-message-content strong {
     font-weight: 600;
     color: #e2e2e2;
-    /* adjust to your theme */
   }
 
+  /* ── KEY FIX: source citation chips wrap on mobile ── */
   .bot-message-content code {
     background: rgba(255, 255, 255, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: monospace;
-    font-size: 0.9em;
+    font-size: 0.85em;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    display: inline;
+  }
+
+  .bot-message-content pre {
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: pre-wrap;
   }
 
   .bot-message-content blockquote {
@@ -1026,6 +1091,8 @@ body {
     padding-left: 12px;
     margin: 8px 0;
     color: #aaa;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .bot-message-content h1,
