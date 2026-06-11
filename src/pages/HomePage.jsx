@@ -8,6 +8,7 @@ import home from '../assets/home.svg';
 import rocket from '../assets/rocket.svg';
 import sendBtn from '../assets/send.svg';
 import gptimglogo from '../assets/DeeBees.svg';
+import logout from '../assets/logout.svg';
 import defaultUserIcon from '../assets/user-icon.png';
 
 import { useRAGStream } from '../hooks/useRAGStream';
@@ -28,6 +29,7 @@ const API_BASE_URL = process.env.REACT_APP_BASEURL;
 const DEFAULT_BOT_MESSAGE = {
   text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
   isBot: true,
+  isWelcome: true,
 };
 
 /* =========================================================
@@ -208,6 +210,7 @@ function HomePage() {
     checkAuthentication();
   }, [checkAuthentication]);
   const renderBotMessage = (message) => {
+  const isWelcomeMessage = message.isWelcome === true;
     const paragraphs = message.text
       ?.split("\n\n")
       .filter((p) => p.trim());
@@ -221,6 +224,7 @@ function HomePage() {
             <ReactMarkdown>{paragraph}</ReactMarkdown>
 
             {showAds &&
+            !isWelcomeMessage &&
               message.isBot &&
               !message.typing &&
               !message.isStreaming &&
@@ -236,6 +240,7 @@ function HomePage() {
         ))}
 
         {showAds &&
+        !isWelcomeMessage &&
           message.isBot &&
           !message.typing &&
           !message.isStreaming && (
@@ -485,10 +490,10 @@ function HomePage() {
 
           {/* ✅ Logout button */}
           {isAuthenticated && (
-            <button className='ListItems logoutBtn' onClick={handleLogout}>
-              <span className="logoutIcon">⎋</span>
+            <div className='ListItems logoutBtn' onClick={handleLogout}>
+              <img src={logout} alt='' />
               Sign out
-            </button>
+            </div>
           )}
 
         </div>
