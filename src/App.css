@@ -523,7 +523,6 @@ body {
   height: auto;
   /* prevent horizontal overflow */
   overflow-x: hidden;
-  padding: 0px 5px;
 }
 
 .txt {
@@ -925,7 +924,7 @@ body {
 
   .chat {
     margin: 1.2rem 0.75rem;
-    padding: 0.75rem;
+    padding: 0.75rem 1.2rem 0.75rem 0.75rem; /* extra right padding so text never hits edge */
     font-size: 1.4rem;
     display: flex;
     align-items: flex-start;
@@ -937,9 +936,10 @@ body {
   }
 
   .bot {
-    /* ── KEY FIX: hard cap so it never exceeds screen ── */
-    max-width: calc(100vw - 2rem);
+    /* ── Constrain width with room on both sides ── */
+    max-width: calc(100vw - 4rem);
     overflow-x: hidden;
+    padding-right: 1rem; /* internal right clearance so text never hits edge */
   }
 
   .txt {
@@ -1071,7 +1071,7 @@ body {
   /* ── KEY FIX: source citation chips wrap on mobile ── */
   .bot-message-content code {
     background: rgba(255, 255, 255, 0.1);
-    padding: 2px 6px;
+    padding: 2px 8px 2px 6px; /* extra right padding inside chip */
     border-radius: 4px;
     font-family: monospace;
     font-size: 0.85em;
@@ -1079,6 +1079,7 @@ body {
     word-break: break-word;
     overflow-wrap: break-word;
     display: inline;
+    margin-right: 2px; /* small gap so chip doesn't touch bubble edge */
   }
 
   .bot-message-content pre {
