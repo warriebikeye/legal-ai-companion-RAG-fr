@@ -891,7 +891,19 @@ body {
 ========================================================= */
 
 @media (max-width: 768px) {
+.response-ad-middle {
+  min-height: 100px;
+  max-height: 150px;
+  margin: 8px 0;
+  border-radius: 6px;
+}
 
+.response-ad-bottom {
+  min-height: 80px;
+  max-height: 150px;
+  margin: 10px 0 4px 0;
+  border-radius: 6px;
+}
   .pricingGrid {
     grid-template-columns: 1fr;
   }
