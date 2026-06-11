@@ -446,14 +446,14 @@ body {
 
 .main {
   flex: 9;
-  min-width: 0; /* ── KEY FIX: prevents flex child from overflowing */
+  min-width: 0;
   min-height: calc(100vh - 14rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   margin: 6rem 10rem;
   margin-bottom: 0;
-  overflow: hidden; /* contain children */
+  overflow: hidden;
 }
 
 .chats {
@@ -782,6 +782,21 @@ body {
   display: block;
 }
 
+/* ── Ad size controls — adjust these to tune ad appearance ── */
+.response-ad-middle {
+  min-height: 100px;
+  max-height: 280px;
+  margin: 8px 0;
+  border-radius: 6px;
+}
+
+.response-ad-bottom {
+  min-height: 80px;
+  max-height: 200px;
+  margin: 10px 0 4px 0;
+  border-radius: 6px;
+}
+
 /* =========================================================
    UPGRADE PAGE
 ========================================================= */
@@ -901,11 +916,17 @@ body {
   }
 
   .main {
-    /* ── KEY FIX: constrain main area on mobile ── */
     min-width: 0;
     max-width: 100vw;
     overflow-x: hidden;
-    margin: 2rem 1rem;
+    /* ── KEY FIX: fill all remaining height, flex-column so footer anchors to bottom
+       regardless of whether ads are shown or not ── */
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 4rem 1rem 0 1rem;
   }
 
   .chats {
@@ -915,7 +936,10 @@ body {
     scroll-behavior: smooth;
     width: 100%;
     max-width: 100%;
-    max-height: 79dvh;
+    /* ── KEY FIX: grow to fill space between top and footer
+       min-height: 0 is required for flex children to scroll ── */
+    flex: 1;
+    min-height: 0;
   }
 
   .chats::-webkit-scrollbar {
@@ -952,7 +976,13 @@ body {
   }
 
   .chatfooter {
-    height: 16dvh;
+    /* ── KEY FIX: don't use a fixed height — size to content
+       margin-top: auto is already on the base rule; here we just
+       ensure it never collapses and has breathing room ── */
+    height: auto;
+    flex-shrink: 0;
+    padding: 0.8rem 0 1rem 0;
+    width: 100%;
   }
 
   .chtimg {
