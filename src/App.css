@@ -523,6 +523,7 @@ body {
   height: auto;
   /* prevent horizontal overflow */
   overflow-x: hidden;
+  padding: 0px 5px;
 }
 
 .txt {
