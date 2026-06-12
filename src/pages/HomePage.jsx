@@ -245,6 +245,7 @@ function HomePage() {
                   adSlot="7325824814"
                   adFormat="fluid"
                   adLayoutKey="-fb+5w+4e-db+86"
+                  height={100}
                   className="response-ad-middle"
                 />
               )}
@@ -260,6 +261,7 @@ function HomePage() {
               key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
               adSlot="4473601628"
               adFormat="auto"
+              height={80}
               className="response-ad-bottom"
             />
           )}
