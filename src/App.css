@@ -150,7 +150,7 @@
 }
 
 /* =========================================================
-   STREAMING ADDITIONS
+   STREAMING
 ========================================================= */
 
 .stream-cursor {
@@ -165,7 +165,7 @@
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  50%       { opacity: 0; }
 }
 
 .send.stop {
@@ -184,7 +184,7 @@
 }
 
 /* =========================================================
-   BOT MESSAGE CONTENT — overflow-safe base styles
+   BOT MESSAGE CONTENT
 ========================================================= */
 
 .bot-message-content {
@@ -262,7 +262,12 @@ html {
   font-size: 62.5%;
 }
 
-/* Google Sign-In Button */
+body {
+  background: rgb(3, 0, 31);
+  color: white;
+  font-family: 'Poppins', sans-serif;
+}
+
 .google-sign-in {
   display: flex;
   align-items: center;
@@ -294,22 +299,17 @@ html {
   object-fit: contain;
 }
 
-body {
-  background: rgb(3, 0, 31);
-  color: white;
-  font-family: 'Poppins', sans-serif;
-}
+/* =========================================================
+   APP SHELL
+   Classic chat layout — sidebar + main side by side,
+   both locked to viewport height, no body scroll ever.
+========================================================= */
 
-/*
- * .App is the outermost flex row (sidebar + main).
- * It must be exactly one viewport tall with no internal scroll —
- * all scrolling happens inside .chats only.
- */
 .App {
-  height: 100dvh;
-  overflow: hidden;
   display: flex;
-  max-width: 100vw;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 /* =========================================================
@@ -358,12 +358,24 @@ body {
    SIDEBAR
 ========================================================= */
 
+.sideBar {
+  width: 28rem;
+  flex-shrink: 0;
+  border-right: 1px solid rgb(100, 100, 100);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
 .upperSide {
   padding: 2rem;
-  height: 68vh;
+  flex: 1;
+  min-height: 0;
   border-bottom: 1px solid rgb(100, 100, 100);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .uppersideTop {
@@ -371,11 +383,13 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 2.5rem;
+  flex-shrink: 0;
 }
 
 .upperSideButton {
   margin-top: 1.3rem;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -385,34 +399,16 @@ body {
 
 .upperSideButton h2 {
   font-size: 2.0rem;
+  flex-shrink: 0;
 }
 
-.upperSideButton::-webkit-scrollbar {
-  width: 6px;
-}
-
-.upperSideButton::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.upperSideButton::-webkit-scrollbar { width: 6px; }
+.upperSideButton::-webkit-scrollbar-track { background: transparent; }
 .upperSideButton::-webkit-scrollbar-thumb {
   background: rgba(160, 160, 160, 0.6);
   border-radius: 10px;
-  transition: background 0.3s ease;
-  opacity: 0;
 }
-
-.upperSideButton::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 200, 200, 0.9);
-}
-
-.upperSideButton::-webkit-scrollbar-thumb:active {
-  background: rgba(200, 200, 200, 0.8);
-}
-
-.upperSideButton:hover::-webkit-scrollbar-thumb {
-  opacity: 1;
-}
+.upperSideButton::-webkit-scrollbar-thumb:hover { background: rgba(200,200,200,0.9); }
 
 .upgradeBtn {
   cursor: pointer;
@@ -425,64 +421,52 @@ body {
 }
 
 .logo {
-  margin-right: 1rem;
   height: 120px;
   width: auto;
 }
 
-.brand {
-  font-size: 2rem;
-}
+.brand { font-size: 2rem; }
 
-.sideBar {
-  flex: 3;
-  border-right: 1px solid rgb(100, 100, 100);
-  overflow: hidden;
+.lowerside {
+  padding: 2rem;
+  flex-shrink: 0;
 }
 
 /* =========================================================
-   MAIN CHAT AREA
-   ── The key scroll architecture:
-      .App         → overflow: hidden  (viewport lock)
-      .main        → flex column, overflow: hidden, fills remaining width
-      .chats       → flex: 1, min-height: 0, overflow-y: auto  ← ONLY scroller
-      .chatfooter  → flex-shrink: 0  (always visible, never squashed)
-   AdSense iframes live inside .chats inside .bot divs.
-   Because .chats is the sole scroll container and every ad wrapper
-   has a fixed pixel height + flexShrink:0, AdSense reflows inside
-   the iframe cannot shift or reset the parent scroll position.
+   MAIN — the chat panel
+   This is the entire right column. It is a flex column with
+   three layers:
+     .chats      — scrollable message history, grows to fill space
+     .chatfooter — fixed-height input bar, always at bottom
+   No margins that fight height. Padding handled inside children.
 ========================================================= */
 
 .main {
-  flex: 9;
+  flex: 1;
   min-width: 0;
-  /* Use full viewport height minus top margin so flex children
-     can divide it cleanly without overflow */
-  height: calc(100dvh - 6rem);
-  margin: 6rem 10rem 0 10rem;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  /* No overflow here — .chats handles it */
-  overflow: hidden;
+  height: 100dvh;        /* full viewport, no offsets */
+  overflow: hidden;      /* only .chats scrolls */
+  padding: 0 10rem;      /* horizontal breathing room */
 }
 
+/* =========================================================
+   CHATS — the ONE scroll container
+   overflow-y: scroll (not auto) forces a scrollbar track to
+   exist even when content fits, which stops layout reflow
+   when content changes height. scroll-behavior on the
+   container so programmatic scrollTop changes animate too.
+========================================================= */
+
 .chats {
-  /* ── THE scroll contract ──────────────────────────────────
-     flex: 1      → fills all space between top and footer
-     min-height:0 → lets a flex child actually shrink + scroll
-                    (without this, the browser ignores overflow-y)
-     overflow-y:auto → scrolls when content exceeds available height
-     No max-height — that was fighting with ad-injected height and
-     resetting scroll position on every AdSense reflow.
-  ────────────────────────────────────────────────────────── */
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  flex: 1;               /* fills all space above the footer */
+  min-height: 0;         /* required — without this flex ignores overflow */
+  overflow-y: scroll;
   overflow-x: hidden;
-  scrollbar-width: none;
   scroll-behavior: smooth;
-  width: 100%;
+  scrollbar-width: none;
+  padding: 2rem 0 2rem 0;
 }
 
 .chats::-webkit-scrollbar {
@@ -493,9 +477,7 @@ body {
    TYPING DOTS
 ========================================================= */
 
-.typing-dots {
-  display: inline-block;
-}
+.typing-dots { display: inline-block; }
 
 .typing-dots span {
   display: inline-block;
@@ -512,7 +494,7 @@ body {
 
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+  40%           { transform: scale(1); }
 }
 
 /* =========================================================
@@ -520,35 +502,28 @@ body {
 ========================================================= */
 
 .chat {
-  margin: 1rem;
-  padding: 2rem 3rem;
+  margin: 1rem 0;
+  padding: 1.5rem 2rem;
   font-size: 1.6rem;
   display: flex;
   align-items: flex-start;
-  text-align: justify;
   min-width: 0;
-  max-width: 100%;
+  width: 100%;
 }
 
 .bot {
   background: rgba(28, 30, 58, 1);
-  width: fit-content;
-  max-width: 100%;
-  border-radius: .5rem;
-  /* overflow-y must be visible — not auto or hidden —
-     so the fixed-height ad wrappers inside stack normally
-     and are counted in the parent's scroll height.
-     overflow-x hidden prevents any horizontal blowout. */
+  border-radius: 0.5rem;
+  width: 100%;
   overflow-x: hidden;
   overflow-y: visible;
-  height: auto;
 }
 
 .txt {
+  flex: 1;
   min-width: 0;
   overflow-wrap: break-word;
   word-break: break-word;
-  flex: 1;
 }
 
 .chtimg {
@@ -556,28 +531,28 @@ body {
   width: 3.5rem;
   flex-shrink: 0;
   margin-right: 2rem;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
 }
 
 /* =========================================================
    CHAT FOOTER
-   flex-shrink: 0 — never let the footer get squashed by .chats
-   margin-top: 0  — flex gap handles spacing, not margin
+   flex-shrink: 0 so it never gets compressed by .chats.
 ========================================================= */
 
 .chatfooter {
-  width: 100%;
   flex-shrink: 0;
-  margin-top: 0;
+  width: 100%;
+  padding: 1.5rem 0 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 30dvh;
+  gap: 0.8rem;
+  background: rgb(3, 0, 31);  /* matches body so it looks pinned */
 }
 
 .chatfooter > p {
-  margin: 0.5rem 0;
+  font-size: 1.3rem;
+  opacity: 0.5;
 }
 
 .inp {
@@ -585,7 +560,7 @@ body {
   background: rgba(28, 30, 58, 1);
   display: flex;
   align-items: center;
-  border-radius: .5em;
+  border-radius: 0.5em;
   width: 100%;
 }
 
@@ -594,10 +569,12 @@ body {
   outline: none;
   padding: 1.25rem;
   color: white;
+  background: transparent;
+  border: none;
 }
 
 .chat-input {
-  width: calc(100% - 3rem);
+  flex: 1;
   outline: none;
   padding: 1.25rem;
   color: white;
@@ -605,7 +582,6 @@ body {
   border: none;
   font-size: 16px;
   font-family: inherit;
-  margin-top: 20px;
   resize: none;
   overflow-y: auto;
   max-height: 120px;
@@ -640,6 +616,7 @@ body {
   justify-content: center;
   margin: 3rem auto;
   border-radius: 0.5rem;
+  cursor: pointer;
 }
 
 .loader {
@@ -665,13 +642,13 @@ body {
   display: flex;
   margin: 5px auto;
   align-items: center;
-  text-align: justify;
   background: transparent;
   padding: 10px;
-  width: 30rem;
+  width: 100%;
   border-radius: 0.5rem;
   border: none;
-  color: rgb(222, 222, 222, 1);
+  color: rgba(222, 222, 222, 1);
+  cursor: pointer;
 }
 
 .queryText {
@@ -688,22 +665,7 @@ body {
   text-transform: uppercase;
 }
 
-.queryxx {
-  display: flex;
-  margin: 1rem auto;
-  align-items: center;
-  background: transparent;
-  padding: 1.5rem;
-  width: 30rem;
-  height: 45px;
-  border-radius: 0.5rem;
-  border: none;
-  color: rgb(222, 222, 222, 1);
-}
-
-.query::-ms-expand {
-  display: none;
-}
+.query::-ms-expand { display: none; }
 
 .query option {
   background: #00000080;
@@ -716,32 +678,12 @@ body {
   background: #222 !important;
 }
 
-.queryx {
-  display: flex;
-  margin: 1rem auto;
-  align-items: center;
-  background: transparent;
-  padding: 1.5rem;
-  width: 30rem;
-  border-radius: 0.5rem;
-  color: rgb(222, 222, 222, 1);
-}
-
-.query > img {
-  margin-right: 2rem;
-  object-fit: cover;
-  height: 1.75rem;
-}
-
-.lowerSide {
-  padding: 2rem;
-}
-
 .ListItems {
   margin: 0.75rem;
   align-items: center;
   display: flex;
   font-size: 1.6rem;
+  cursor: pointer;
 }
 
 .ListItems img {
@@ -750,16 +692,12 @@ body {
   border-radius: 50%;
 }
 
-.ListItems:nth-child(1) > .ListItems img {
-  margin-right: 0.5rem;
-}
-
-.ListItems:nth-child(3) > .ListItems img {
-  margin-right: 0.75rem;
+.logoutBtn:hover {
+  opacity: 0.7;
 }
 
 /* =========================================================
-   SIDEBAR TOGGLE
+   SIDEBAR TOGGLE (mobile only)
 ========================================================= */
 
 .sidebarToggle {
@@ -783,47 +721,33 @@ body {
 }
 
 .main.fullWidth {
-  flex: 1 1 100%;
-  min-height: 0;
-  height: calc(100dvh - 6rem);
-  margin: 6rem 2rem 0 2rem;
-  display: flex;
-  flex-direction: column;
+  padding: 0 2rem;
 }
 
-.file-label {
-  font-size: larger;
-}
+.file-label { font-size: larger; }
 
 /* =========================================================
-   AD BANNER WRAPPERS
-   These classes are applied by renderBotMessage via className prop.
-
-   Rules:
-   - Fixed pixel height matching the height prop passed to AdBanner
-   - display: block so they stack vertically inside .bot-message-content
-   - overflow: hidden so no internal iframe bleed
-   - NO position: absolute/fixed/sticky — must stay in normal flow
-     so the parent scroll container counts them in its scroll height
-   - flexShrink: 0 handled in the AdBanner component inline style
+   AD BANNERS
 ========================================================= */
 
 .response-ad-middle {
   width: 100%;
-  height: 100px;   /* must match height={100} in renderBotMessage */
+  height: 100px;
   margin: 8px 0;
   display: block;
   overflow: hidden;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .response-ad-bottom {
   width: 100%;
-  height: 80px;    /* must match height={80} in renderBotMessage */
+  height: 80px;
   margin: 10px 0 4px 0;
   display: block;
   overflow: hidden;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 /* =========================================================
@@ -872,29 +796,12 @@ body {
   transition: 0.3s;
 }
 
-.priceCard:hover {
-  transform: translateY(-5px);
-}
+.priceCard:hover { transform: translateY(-5px); }
+.priceCard h2 { font-size: 2.5rem; margin-bottom: 2rem; }
+.priceCard h3 { font-size: 4rem; color: #8b7bff; margin-bottom: 2rem; }
+.priceCard p  { font-size: 1.5rem; margin-bottom: 3rem; }
 
-.priceCard h2 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-}
-
-.priceCard h3 {
-  font-size: 4rem;
-  color: #8b7bff;
-  margin-bottom: 2rem;
-}
-
-.priceCard p {
-  font-size: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.featured {
-  border: 2px solid #5a4bff;
-}
+.featured { border: 2px solid #5a4bff; }
 
 .upgradeButton {
   background: #5a4bff;
@@ -913,100 +820,88 @@ body {
 }
 
 /* =========================================================
-   RESPONSIVE — MOBILE
+   MOBILE
 ========================================================= */
 
 @media (max-width: 768px) {
 
-  .pricingGrid {
-    grid-template-columns: 1fr;
-  }
+  .pricingGrid { grid-template-columns: 1fr; }
+  .upgradeCard { padding: 2rem; }
+  .upgradeCard h1 { font-size: 3rem; }
 
-  .upgradeCard {
-    padding: 2rem;
-  }
+  .sidebarToggle { display: block; }
 
-  .upgradeCard h1 {
-    font-size: 3rem;
-  }
-
-  .sidebarToggle {
-    display: block;
-  }
-
-  /*
-   * On mobile .App becomes a column (sidebar overlays via fixed position).
-   * Height must be explicit so flex children can fill it.
-   */
   .App {
+    display: flex;
+    flex-direction: row;   /* sidebar still overlays, main fills all */
     height: 100dvh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
+    width: 100vw;
     overflow: hidden;
-    overflow-x: hidden;
-    max-width: 100vw;
   }
 
-  /*
-   * .main fills whatever height .App has after the fixed header toggle.
-   * margin: 0, padding accounts for the toggle button space at top.
-   * overflow: hidden — .chats is still the only scroll container.
-   */
+  /* Sidebar slides in over the top on mobile */
+  .sideBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: 28rem;
+    z-index: 99;
+    background: rgba(28, 30, 58, 1);
+    border: none;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+
+  .sideBar.collapsed {
+    transform: translateX(-100%);
+    width: 28rem;   /* keep width so transition works */
+    overflow: hidden;
+  }
+
+  /* Main fills the full screen on mobile */
   .main {
-    min-width: 0;
-    max-width: 100vw;
-    overflow: hidden;
-    overflow-x: hidden;
     flex: 1;
-    min-height: 0;
-    height: auto; /* let flex: 1 do the sizing, not a hard height */
+    width: 100%;
+    min-width: 0;
+    height: 100dvh;
+    padding: 0 1rem;
+    padding-top: 5rem;  /* clear the hamburger button */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    margin: 0;
-    padding: 4rem 1rem 0 1rem;
   }
 
-  /*
-   * .chats on mobile: same flex:1 + min-height:0 contract as desktop.
-   * No max-height — it caused ads to push content past the cap and
-   * made the scroller reset on every AdSense reflow event.
-   */
+  .main.fullWidth {
+    padding: 0 1rem;
+    padding-top: 5rem;
+  }
+
   .chats {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
-    scrollbar-width: none;
     scroll-behavior: smooth;
-    width: 100%;
-    max-width: 100%;
-    /* Explicitly unset any inherited max-height */
-    max-height: none;
+    scrollbar-width: none;
+    padding: 1rem 0 2rem 0;
+    /* No max-height, no fixed height — flex:1 + min-height:0 is enough */
   }
 
-  .chats::-webkit-scrollbar {
-    display: none;
-  }
+  .chats::-webkit-scrollbar { display: none; }
 
   .chat {
-    margin: 1.2rem 0.75rem;
-    padding: 0.75rem 1.2rem 0.75rem 0.75rem;
+    margin: 0.8rem 0;
+    padding: 1rem 1.2rem;
     font-size: 1.4rem;
-    display: flex;
-    align-items: flex-start;
-    text-align: justify;
     min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
+    width: 100%;
   }
 
   .bot {
-    max-width: calc(100vw - 4rem);
+    width: 100%;
     overflow-x: hidden;
-    overflow-y: visible; /* keep visible so ads stack in normal flow */
-    padding-right: 1rem;
+    overflow-y: visible;
   }
 
   .txt {
@@ -1014,194 +909,69 @@ body {
     overflow-wrap: break-word;
     word-break: break-word;
     flex: 1;
-    max-width: 100%;
   }
 
-  /*
-   * Footer: flex-shrink:0 is the key — without it the footer
-   * gets squashed when .chats has a lot of content + ads.
-   * height: auto so it sizes to its content rather than a fixed dvh.
-   */
   .chatfooter {
-    height: auto;
     flex-shrink: 0;
-    padding: 0.8rem 0 1rem 0;
-    width: 100%;
-    margin-top: 0;
+    padding: 1rem 0 1.5rem;
+    gap: 0.5rem;
   }
 
   .chtimg {
-    object-fit: cover;
-    width: 1.6rem;
+    width: 2rem;
     flex-shrink: 0;
-    margin-right: 0.5rem;
-    border-radius: .5rem;
-  }
-
-  .ListItems {
-    margin: 0.65rem;
-    align-items: center;
-    display: flex;
-    font-size: 1.4rem;
-  }
-
-  .sideBar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: rgba(28, 30, 58, 1);
-    z-index: 99;
-    width: 28rem;
-    border: none;
-    transition: transform 0.3s ease;
-  }
-
-  .query {
-    display: flex;
-    margin: 5px auto;
-    align-items: center;
-    text-align: justify;
-    background: transparent;
-    padding: 10px;
-    width: 25rem;
-    border-radius: 0.5rem;
-    border: none;
-    color: rgb(222, 222, 222, 1);
-  }
-
-  .queryText::first-letter {
-    text-transform: uppercase;
-  }
-
-  .sideBar .collapsed {
-    transform: translateX(-100%);
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    transition: width 0.3s ease;
-  }
-
-  .main.fullWidth {
-    margin: 0;
-    padding: 4rem 1rem 0 1rem;
-    flex: 1;
-    min-height: 0;
-    height: auto;
-    display: flex;
-    flex-direction: column;
+    margin-right: 0.8rem;
+    border-radius: 0.4rem;
   }
 
   .upperSide {
     padding: 2rem;
-    height: 58vh;
-    border-bottom: 1px solid rgb(100, 100, 100);
-    overflow-y: hidden;
-  }
-
-  .uppersideTop {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 2.5rem;
+    height: auto;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .upperSideButton {
-    margin-top: 1.2rem;
+    height: auto;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
-    scroll-behavior: smooth;
-    height: 50vh;
   }
 
-  .upperSideButton h2 {
-    font-size: 1.8rem;
+  .upperSideButton h2 { font-size: 1.8rem; }
+
+  .ListItems {
+    margin: 0.65rem;
+    font-size: 1.4rem;
   }
 
-  /* ── Mobile bot message content ── */
-  .bot-message-content {
-    max-width: 100%;
-    overflow-x: hidden;
+  .query {
+    width: 100%;
+    padding: 10px 6px;
   }
 
-  .bot-message-content p {
-    margin: 0 0 10px 0;
-    line-height: 1.6;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  .bot-message-content ul,
-  .bot-message-content ol {
-    padding-left: 10px;
-    margin: 8px 0 12px 0;
-  }
-
-  .bot-message-content li {
-    margin-bottom: 6px;
-    line-height: 1.6;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  .bot-message-content strong {
-    font-weight: 600;
-    color: #e2e2e2;
-  }
+  .bot-message-content { max-width: 100%; overflow-x: hidden; }
 
   .bot-message-content code {
-    background: rgba(255, 255, 255, 0.1);
     padding: 2px 8px 2px 6px;
-    border-radius: 4px;
-    font-family: monospace;
     font-size: 0.85em;
     white-space: normal;
     word-break: break-word;
     overflow-wrap: break-word;
     display: inline;
-    margin-right: 2px;
   }
 
-  .bot-message-content pre {
-    overflow-x: auto;
-    max-width: 100%;
-    white-space: pre-wrap;
-  }
+  .bot-message-content ul,
+  .bot-message-content ol { padding-left: 10px; }
 
-  .bot-message-content blockquote {
-    border-left: 3px solid #555;
-    padding-left: 12px;
-    margin: 8px 0;
-    color: #aaa;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  .bot-message-content h1,
-  .bot-message-content h2,
-  .bot-message-content h3 {
-    margin: 12px 0 6px 0;
-    font-size: 1em;
-    font-weight: 700;
-  }
-
-  html {
-    font-size: 62.5%;
-  }
+  html { font-size: 62.5%; }
 
   .auth-modal {
     margin: 2rem;
     padding: 3rem 2rem;
   }
 
-  /* ── Ad wrappers on mobile ── */
-  .response-ad-middle {
-    height: 100px;
-    margin: 6px 0;
-  }
-
-  .response-ad-bottom {
-    height: 80px;
-    margin: 8px 0 2px 0;
-  }
+  .response-ad-middle { height: 100px; margin: 6px 0; }
+  .response-ad-bottom { height: 80px;  margin: 8px 0 2px 0; }
 }
