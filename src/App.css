@@ -787,22 +787,23 @@ body {
 
 /* ── Ad size controls — adjust these to tune ad appearance ── */
 .response-ad-middle {
-  min-height: 100px;
-  max-height: 280px;
   height: 100px;
   margin: 8px 0;
   border-radius: 6px;
-  /* contain reflow if the AdSense iframe loads async after mount */
-  contain: layout;
+  /* Hard size lock: AdSense's injected <ins>/iframe is constrained
+     to 100% width/height of this box and cannot grow it, since
+     overflow is clipped. This is what prevents async ad loading
+     from shifting .chatfooter. */
+  overflow: hidden;
+  contain: strict;
 }
 
 .response-ad-bottom {
-  min-height: 80px;
-  max-height: 200px;
   height: 80px;
   margin: 10px 0 4px 0;
   border-radius: 6px;
-  contain: layout;
+  overflow: hidden;
+  contain: strict;
 }
 
 /* =========================================================
@@ -956,11 +957,6 @@ body {
        min-height: 0 is required for flex children to scroll ── */
     flex: 1;
     min-height: 0;
-    /* ── Safety net for async AdSense growth (free-tier ads):
-       contain any overflow caused by ad iframes loading after
-       initial layout, so .chatfooter never gets pushed/squeezed ── */
-    contain: layout size;
-    overscroll-behavior: contain;
   }
 
   .chats::-webkit-scrollbar {
