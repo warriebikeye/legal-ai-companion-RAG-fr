@@ -249,7 +249,21 @@ function HomePage() {
         {paragraphs.map((paragraph, index) => (
           <div key={index}>
             <ReactMarkdown>{paragraph}</ReactMarkdown>
-
+            {/* TOP AD — after first paragraph */}
+            {showAds &&
+              !isWelcomeMessage &&
+              message.isBot &&
+              !message.typing &&
+              !message.isStreaming &&
+              index === 0 && (
+                <AdBanner
+                  key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
+                  adSlot="4638051915"
+                  adFormat="auto"
+                  height={120}
+                  className="response-ad-top"
+                />
+              )}
             {showAds &&
               !isWelcomeMessage &&
               message.isBot &&
