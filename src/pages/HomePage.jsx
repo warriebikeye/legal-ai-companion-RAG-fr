@@ -35,6 +35,7 @@ const countries = [
 function HomePage() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatsRef = useRef(null);        // ref on the .chats div for direct scroll
   const navigate = useNavigate();
 
   /* ── state ────────────────────────────────────────────── */
@@ -58,17 +59,14 @@ function HomePage() {
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
 
   /*
-   * shouldAutoScroll controls whether new content snaps to bottom.
-   *
-   * TRUE  → during active chat (user sent a message, bot is replying)
-   * FALSE → when loading a past conversation (user should be free to scroll)
-   *
-   * We never set it true inside the auto-scroll useEffect itself,
-   * only at the point where the user actually triggers a new message.
+   * isLiveChat — true only while a new message exchange is in flight.
+   * Controls whether stream updates scroll to bottom.
+   * Explicitly NOT a useEffect dependency — we call scrollToBottom()
+   * imperatively so there is no reactive scroll that fights the user.
    */
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
+  const isLiveChatRef = useRef(false);
 
-  /* ── derived: show ads only to free-tier users ────────── */
+  /* ── derived ──────────────────────────────────────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
 
   /* ── stream hook ──────────────────────────────────────── */
@@ -85,17 +83,14 @@ function HomePage() {
   const isSending = streamStatus === "preparing" || streamStatus === "streaming";
   const isStreaming = streamStatus === "streaming";
 
-  /* =========================================================
-     AUTO SCROLL
-     Only fires when shouldAutoScroll is true — i.e. the user
-     just sent a message and we want to follow the bot reply.
-     Loading a conversation sets shouldAutoScroll=false so the
-     user lands at the bottom once but can freely scroll up.
-  ========================================================= */
-  useEffect(() => {
-    if (!shouldAutoScroll) return;
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, shouldAutoScroll]);
+  /*
+   * scrollToBottom — imperative, called only when we explicitly want
+   * to snap to the latest message. Never called from a useEffect that
+   * watches messages, so it cannot fight user scroll.
+   */
+  const scrollToBottom = useCallback((behavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
   /* =========================================================
      COUNTRY AUTO-DETECT
@@ -218,7 +213,6 @@ function HomePage() {
         {paragraphs.map((paragraph, index) => (
           <div key={index}>
             <ReactMarkdown>{paragraph}</ReactMarkdown>
-
             {showAds &&
               !isWelcomeMessage &&
               message.isBot &&
@@ -236,7 +230,6 @@ function HomePage() {
               )}
           </div>
         ))}
-
         {showAds &&
           !isWelcomeMessage &&
           message.isBot &&
@@ -265,6 +258,7 @@ function HomePage() {
     } catch (err) {
       console.error("Logout error:", err);
     }
+    isLiveChatRef.current = false;
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);
@@ -274,11 +268,13 @@ function HomePage() {
     setRecentConversations([]);
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
-    setShouldAutoScroll(false);
   };
 
   /* =========================================================
-     STREAM — sync live bot message
+     STREAM — sync live bot message and scroll during streaming.
+     scrollToBottom() is called here directly — not via a
+     useEffect watching messages — so it only fires during an
+     active exchange, never when passively viewing history.
   ========================================================= */
   useEffect(() => {
     if (streamStatus === "idle" || streamStatus === "done") return;
@@ -298,7 +294,9 @@ function HomePage() {
       };
       return updated;
     });
-  }, [streamAnswer, streamSources, streamClause, streamStatus]);
+    // Only scroll during a live chat the user initiated
+    if (isLiveChatRef.current) scrollToBottom();
+  }, [streamAnswer, streamSources, streamClause, streamStatus, scrollToBottom]);
 
   /* =========================================================
      STREAM — done
@@ -314,9 +312,7 @@ function HomePage() {
     });
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
-    // Stream finished — we can relax auto-scroll lock now.
-    // User can scroll freely; next send will re-enable it.
-    setShouldAutoScroll(false);
+    isLiveChatRef.current = false;  // exchange finished, unlock scroll
   }, [streamStatus, streamConvoId, isAuthenticated]);
 
   /* =========================================================
@@ -334,7 +330,7 @@ function HomePage() {
       };
       return updated;
     });
-    setShouldAutoScroll(false);
+    isLiveChatRef.current = false;
   }, [streamStatus, streamError]);
 
   /* =========================================================
@@ -351,20 +347,18 @@ function HomePage() {
   const startNewChat = () => {
     toggleSidebar();
     cancel();
+    isLiveChatRef.current = false;
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
     setFiles([]);
-    setShouldAutoScroll(false);
   };
 
   /* =========================================================
      LOAD CONVERSATION
-     1. Set shouldAutoScroll=false so the user can scroll freely
-        once the history loads.
-     2. After messages render, do ONE programmatic scroll to bottom
-        so they land at the most recent message (normal chat UX).
-     3. Never lock scroll again until the user sends a new message.
+     Scroll to bottom once after load via instant jump (not smooth)
+     so the user lands at the latest message, then scroll is free.
+     isLiveChatRef stays false so no further auto-scroll happens.
   ========================================================= */
   const loadConversation = async (conversationId) => {
     toggleSidebar();
@@ -372,9 +366,7 @@ function HomePage() {
 
     try {
       cancel();
-      // Disable auto-scroll before setting messages so the
-      // useEffect above does not fire during the load.
-      setShouldAutoScroll(false);
+      isLiveChatRef.current = false;
       setActiveConversationId(conversationId);
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
@@ -400,14 +392,13 @@ function HomePage() {
       })));
 
       /*
-       * Single one-off scroll to bottom after the conversation loads.
-       * We do this manually with a timeout (to let React paint first)
-       * rather than through shouldAutoScroll, so it only fires once
-       * and the user can immediately scroll up after.
+       * One-shot jump to bottom so user lands at the latest message.
+       * "auto" (instant) not "smooth" so it completes before they
+       * can touch the screen — no fighting an in-progress smooth scroll.
+       * After this setTimeout resolves, isLiveChatRef is still false
+       * so nothing will scroll again until they send a message.
        */
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      setTimeout(() => scrollToBottom("auto"), 150);
 
     } catch (err) {
       console.error("Error loading conversation:", err);
@@ -417,31 +408,27 @@ function HomePage() {
 
   /* =========================================================
      SEND MESSAGE
-     Enable auto-scroll here — the user initiated a new exchange
-     so we should follow the reply as it streams in.
+     Set isLiveChatRef=true here — the ONLY place — so stream
+     updates will scroll to bottom during this exchange only.
   ========================================================= */
   const handleSend = async () => {
     if (!input.trim() && files.length === 0) return;
     if (!userLocation) { alert("Please select your country first."); return; }
 
     const query = input.trim();
-
-    // Lock scroll to bottom for the duration of this exchange.
-    setShouldAutoScroll(true);
+    isLiveChatRef.current = true;  // enable scroll-to-bottom for this exchange
 
     setMessages((prev) => [
       ...prev,
       { text: query || "(Document Uploaded)", isBot: false },
       { text: "", isBot: true, typing: true, isStreaming: false },
     ]);
+    scrollToBottom();  // snap to the new user message immediately
     setInput("");
     await ask({ query, country: userLocation, conversationId: activeConversationId, files });
     setFiles([]);
   };
 
-  /* =========================================================
-     HOLD RENDER UNTIL AUTH CHECK DONE
-  ========================================================= */
   if (!authChecked) return null;
 
   /* =========================================================
@@ -460,9 +447,7 @@ function HomePage() {
           SIDEBAR
       ═══════════════════════════════════════════════════ */}
       <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
-
         <div className='upperSide'>
-
           <div className='uppersideTop'>
             <img src={gptLogo} alt='Logo' className='logo' />
           </div>
@@ -494,7 +479,6 @@ function HomePage() {
         </div>
 
         <div className='lowerside'>
-
           <button className='midBtn' onClick={startNewChat}>
             <img src={addBtn} alt='' className='addBtn' />
             New Chat
@@ -521,7 +505,6 @@ function HomePage() {
               Sign out
             </div>
           )}
-
         </div>
       </div>
 
@@ -530,7 +513,7 @@ function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
 
-        <div className='chats'>
+        <div className='chats' ref={chatsRef}>
           {messages.map((message, i) => (
             <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
               <img
@@ -538,7 +521,6 @@ function HomePage() {
                 className='chtimg'
                 alt=''
               />
-
               <p className='txt'>
                 {message.typing && !message.isStreaming ? (
                   <div className="typing-dots">
@@ -550,7 +532,6 @@ function HomePage() {
                       {message.isBot
                         ? renderBotMessage(message, i)
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
-
                       {message.isStreaming && (
                         <span className="stream-cursor" aria-hidden="true" />
                       )}
@@ -582,7 +563,6 @@ function HomePage() {
         {/* ── Chat footer ───────────────────────────────── */}
         <div className='chatfooter'>
           <div className='inp'>
-
             <input
               type="file"
               multiple
@@ -638,7 +618,6 @@ function HomePage() {
                 {isSending ? <div className="loader" /> : <img src={sendBtn} alt='' />}
               </button>
             )}
-
           </div>
 
           <p>~ Africa's Legal Intelligence Engine Pipeline ~</p>
