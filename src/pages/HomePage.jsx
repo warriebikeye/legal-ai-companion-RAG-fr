@@ -209,7 +209,18 @@ function HomePage() {
   useEffect(() => {
     checkAuthentication();
   }, [checkAuthentication]);
-  const renderBotMessage = (message) => {
+
+  /* =========================================================
+     RENDER BOT MESSAGE
+     ── KEY FIX: accepts msgIndex so each AdBanner gets a
+     unique, stable key scoped to the active conversation +
+     message position. This forces React to mount a fresh
+     <ins> element per AdBanner instance instead of reusing a
+     DOM node that AdSense has already mutated (which was the
+     source of layout corruption persisting across navigation
+     / conversation loads on the free tier). ──
+  ========================================================= */
+  const renderBotMessage = (message, msgIndex) => {
   const isWelcomeMessage = message.isWelcome === true;
     const paragraphs = message.text
       ?.split("\n\n")
@@ -230,6 +241,7 @@ function HomePage() {
               !message.isStreaming &&
               index === middleIndex && (
                 <AdBanner
+                  key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
                   adSlot="7325824814"
                   adFormat="fluid"
                   adLayoutKey="-fb+5w+4e-db+86"
@@ -245,6 +257,7 @@ function HomePage() {
           !message.typing &&
           !message.isStreaming && (
             <AdBanner
+              key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
               adSlot="4473601628"
               adFormat="auto"
               className="response-ad-bottom"
@@ -522,7 +535,7 @@ function HomePage() {
                   <>
                     <div className="bot-message-content">
                       {message.isBot
-                        ? renderBotMessage(message)
+                        ? renderBotMessage(message, i)
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
 
                       {message.isStreaming && (
