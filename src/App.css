@@ -787,23 +787,19 @@ body {
 
 /* ── Ad size controls — adjust these to tune ad appearance ── */
 .response-ad-middle {
+  width: 100%;
   height: 100px;
   margin: 8px 0;
   border-radius: 6px;
-  /* Hard size lock: AdSense's injected <ins>/iframe is constrained
-     to 100% width/height of this box and cannot grow it, since
-     overflow is clipped. This is what prevents async ad loading
-     from shifting .chatfooter. */
   overflow: hidden;
-  contain: strict;
 }
 
 .response-ad-bottom {
+  width: 100%;
   height: 80px;
   margin: 10px 0 4px 0;
   border-radius: 6px;
   overflow: hidden;
-  contain: strict;
 }
 
 /* =========================================================
