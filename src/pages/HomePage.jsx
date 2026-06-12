@@ -18,23 +18,12 @@ import { readAuthCookie } from '../hooks/useAuthCookie';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
-// ── AdSense slot IDs ──────────────────────────────────────
-// Set these in your .env:
-//   REACT_APP_ADSENSE_CLIENT = ca-pub-XXXXXXXXXXXXXXXX
-//   REACT_APP_AD_SLOT_TOP    = 1234567890
-//   REACT_APP_AD_SLOT_BOTTOM = 0987654321
-/* =========================================================
-   DEFAULT BOT MESSAGE
-========================================================= */
 const DEFAULT_BOT_MESSAGE = {
   text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
   isBot: true,
   isWelcome: true,
 };
 
-/* =========================================================
-   COUNTRIES
-========================================================= */
 const countries = [
   { name: "Nigeria", flag: "🇳🇬" },
   { name: "Kenya", flag: "🇰🇪" },
@@ -43,9 +32,6 @@ const countries = [
   { name: "United States", flag: "🇺🇸" },
 ];
 
-/* =========================================================
-   HOMEPAGE
-========================================================= */
 function HomePage() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -71,6 +57,17 @@ function HomePage() {
   /* ── messages ─────────────────────────────────────────── */
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
 
+  /*
+   * shouldAutoScroll controls whether new content snaps to bottom.
+   *
+   * TRUE  → during active chat (user sent a message, bot is replying)
+   * FALSE → when loading a past conversation (user should be free to scroll)
+   *
+   * We never set it true inside the auto-scroll useEffect itself,
+   * only at the point where the user actually triggers a new message.
+   */
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
+
   /* ── derived: show ads only to free-tier users ────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
 
@@ -90,10 +87,15 @@ function HomePage() {
 
   /* =========================================================
      AUTO SCROLL
+     Only fires when shouldAutoScroll is true — i.e. the user
+     just sent a message and we want to follow the bot reply.
+     Loading a conversation sets shouldAutoScroll=false so the
+     user lands at the bottom once but can freely scroll up.
   ========================================================= */
   useEffect(() => {
+    if (!shouldAutoScroll) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, shouldAutoScroll]);
 
   /* =========================================================
      COUNTRY AUTO-DETECT
@@ -137,7 +139,7 @@ function HomePage() {
   };
 
   /* =========================================================
-     AUTH — cookie-first, then /auth/me fallback
+     AUTH
   ========================================================= */
   const applyUserData = useCallback((data) => {
     setIsAuthenticated(true);
@@ -149,13 +151,10 @@ function HomePage() {
   }, []);
 
   const checkAuthentication = useCallback(async () => {
-    // ── Step 1: try cookie (zero network cost) ──────────────
     const cookie = readAuthCookie();
     if (cookie) {
       applyUserData(cookie);
       setAuthChecked(true);
-
-      // Fire-and-forget: load conversations + silently refresh cookie
       fetchRecentConversations();
       fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
         .then((r) => r.ok ? r.json() : null)
@@ -168,24 +167,20 @@ function HomePage() {
             subscriptionStatus: data.subscriptionStatus,
           });
         })
-        .catch(() => {/* silent — cookie data already shown */ });
+        .catch(() => {});
       return;
     }
 
-    // ── Step 2: no cookie — hit the server ──────────────────
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET", credentials: "include",
       });
-
       if (!res.ok) {
         setIsAuthenticated(false);
         setAuthChecked(true);
         return;
       }
-
       const data = await res.json();
-
       if (data.isAuthenticated) {
         applyUserData({
           email: data.userEmail,
@@ -212,20 +207,10 @@ function HomePage() {
 
   /* =========================================================
      RENDER BOT MESSAGE
-     ── KEY FIX: accepts msgIndex so each AdBanner gets a
-     unique, stable key scoped to the active conversation +
-     message position. This forces React to mount a fresh
-     <ins> element per AdBanner instance instead of reusing a
-     DOM node that AdSense has already mutated (which was the
-     source of layout corruption persisting across navigation
-     / conversation loads on the free tier). ──
   ========================================================= */
   const renderBotMessage = (message, msgIndex) => {
-  const isWelcomeMessage = message.isWelcome === true;
-    const paragraphs = message.text
-      ?.split("\n\n")
-      .filter((p) => p.trim());
-
+    const isWelcomeMessage = message.isWelcome === true;
+    const paragraphs = message.text?.split("\n\n").filter((p) => p.trim());
     const middleIndex = Math.floor(paragraphs.length / 2);
 
     return (
@@ -235,7 +220,7 @@ function HomePage() {
             <ReactMarkdown>{paragraph}</ReactMarkdown>
 
             {showAds &&
-            !isWelcomeMessage &&
+              !isWelcomeMessage &&
               message.isBot &&
               !message.typing &&
               !message.isStreaming &&
@@ -253,7 +238,7 @@ function HomePage() {
         ))}
 
         {showAds &&
-        !isWelcomeMessage &&
+          !isWelcomeMessage &&
           message.isBot &&
           !message.typing &&
           !message.isStreaming && (
@@ -268,6 +253,7 @@ function HomePage() {
       </>
     );
   };
+
   /* =========================================================
      LOGOUT
   ========================================================= */
@@ -279,7 +265,6 @@ function HomePage() {
     } catch (err) {
       console.error("Logout error:", err);
     }
-    // Reset all state
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);
@@ -289,6 +274,7 @@ function HomePage() {
     setRecentConversations([]);
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
+    setShouldAutoScroll(false);
   };
 
   /* =========================================================
@@ -328,6 +314,9 @@ function HomePage() {
     });
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
+    // Stream finished — we can relax auto-scroll lock now.
+    // User can scroll freely; next send will re-enable it.
+    setShouldAutoScroll(false);
   }, [streamStatus, streamConvoId, isAuthenticated]);
 
   /* =========================================================
@@ -345,6 +334,7 @@ function HomePage() {
       };
       return updated;
     });
+    setShouldAutoScroll(false);
   }, [streamStatus, streamError]);
 
   /* =========================================================
@@ -365,10 +355,16 @@ function HomePage() {
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
     setFiles([]);
+    setShouldAutoScroll(false);
   };
 
   /* =========================================================
      LOAD CONVERSATION
+     1. Set shouldAutoScroll=false so the user can scroll freely
+        once the history loads.
+     2. After messages render, do ONE programmatic scroll to bottom
+        so they land at the most recent message (normal chat UX).
+     3. Never lock scroll again until the user sends a new message.
   ========================================================= */
   const loadConversation = async (conversationId) => {
     toggleSidebar();
@@ -376,6 +372,9 @@ function HomePage() {
 
     try {
       cancel();
+      // Disable auto-scroll before setting messages so the
+      // useEffect above does not fire during the load.
+      setShouldAutoScroll(false);
       setActiveConversationId(conversationId);
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
@@ -400,7 +399,16 @@ function HomePage() {
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      /*
+       * Single one-off scroll to bottom after the conversation loads.
+       * We do this manually with a timeout (to let React paint first)
+       * rather than through shouldAutoScroll, so it only fires once
+       * and the user can immediately scroll up after.
+       */
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
@@ -409,12 +417,18 @@ function HomePage() {
 
   /* =========================================================
      SEND MESSAGE
+     Enable auto-scroll here — the user initiated a new exchange
+     so we should follow the reply as it streams in.
   ========================================================= */
   const handleSend = async () => {
     if (!input.trim() && files.length === 0) return;
     if (!userLocation) { alert("Please select your country first."); return; }
 
     const query = input.trim();
+
+    // Lock scroll to bottom for the duration of this exchange.
+    setShouldAutoScroll(true);
+
     setMessages((prev) => [
       ...prev,
       { text: query || "(Document Uploaded)", isBot: false },
@@ -426,7 +440,7 @@ function HomePage() {
   };
 
   /* =========================================================
-     HOLD RENDER UNTIL AUTH CHECK DONE (prevents flash)
+     HOLD RENDER UNTIL AUTH CHECK DONE
   ========================================================= */
   if (!authChecked) return null;
 
@@ -436,7 +450,6 @@ function HomePage() {
   return (
     <div className="App">
 
-      {/* ── Login wall ───────────────────────────────────── */}
       {!isAuthenticated && (
         <AuthModal onAuthenticated={checkAuthentication} />
       )}
@@ -480,7 +493,6 @@ function HomePage() {
           </div>
         </div>
 
-        {/* ── Lower sidebar ─────────────────────────────── */}
         <div className='lowerside'>
 
           <button className='midBtn' onClick={startNewChat}>
@@ -503,7 +515,6 @@ function HomePage() {
             {userName || userEmail || "Account"}
           </div>
 
-          {/* ✅ Logout button */}
           {isAuthenticated && (
             <div className='ListItems logoutBtn' onClick={handleLogout}>
               <img src={logout} alt='' />
@@ -541,10 +552,7 @@ function HomePage() {
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
 
                       {message.isStreaming && (
-                        <span
-                          className="stream-cursor"
-                          aria-hidden="true"
-                        />
+                        <span className="stream-cursor" aria-hidden="true" />
                       )}
                     </div>
 
@@ -562,7 +570,6 @@ function HomePage() {
                           : JSON.stringify(message.clauseAnalysis)}
                       </span>
                     )}
-
                   </>
                 )}
               </p>
