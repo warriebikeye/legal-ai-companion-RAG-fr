@@ -55,7 +55,9 @@ function HomePage() {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState([]);
   const [userLocation, setUserLocation] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    window.innerWidth > 768
+  );
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [userEmail, setUserEmail] = useState(null);
@@ -91,10 +93,24 @@ function HomePage() {
   /* =========================================================
      AUTO SCROLL
   ========================================================= */
+  const closeSidebarOnMobile = () => {
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(false);
+    }
+  };
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setSidebarOpen(true);
+      }
+    };
 
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   /* =========================================================
      COUNTRY AUTO-DETECT
   ========================================================= */
@@ -113,7 +129,7 @@ function HomePage() {
   }, []);
 
   const toggleSidebar = () => {
-    if (window.innerWidth <= 768) setSidebarOpen((p) => !p);
+    setSidebarOpen((prev) => !prev);
   };
 
   /* =========================================================
@@ -221,7 +237,7 @@ function HomePage() {
      / conversation loads on the free tier). ──
   ========================================================= */
   const renderBotMessage = (message, msgIndex) => {
-  const isWelcomeMessage = message.isWelcome === true;
+    const isWelcomeMessage = message.isWelcome === true;
     const paragraphs = message.text
       ?.split("\n\n")
       .filter((p) => p.trim());
@@ -235,7 +251,7 @@ function HomePage() {
             <ReactMarkdown>{paragraph}</ReactMarkdown>
 
             {showAds &&
-            !isWelcomeMessage &&
+              !isWelcomeMessage &&
               message.isBot &&
               !message.typing &&
               !message.isStreaming &&
@@ -253,7 +269,7 @@ function HomePage() {
         ))}
 
         {showAds &&
-        !isWelcomeMessage &&
+          !isWelcomeMessage &&
           message.isBot &&
           !message.typing &&
           !message.isStreaming && (
@@ -359,7 +375,8 @@ function HomePage() {
      NEW CHAT
   ========================================================= */
   const startNewChat = () => {
-    toggleSidebar();
+    closeSidebarOnMobile();
+
     cancel();
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
@@ -371,7 +388,7 @@ function HomePage() {
      LOAD CONVERSATION
   ========================================================= */
   const loadConversation = async (conversationId) => {
-    toggleSidebar();
+    closeSidebarOnMobile();
     if (!conversationId || conversationId === "undefined") return;
 
     try {
@@ -446,7 +463,7 @@ function HomePage() {
       {/* ═══════════════════════════════════════════════════
           SIDEBAR
       ═══════════════════════════════════════════════════ */}
-      <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
+      <div className={`sideBar ${sidebarOpen ? "open" : "collapsed"}`}>
 
         <div className='upperSide'>
 
@@ -457,7 +474,10 @@ function HomePage() {
           <select
             className='query'
             value={userLocation}
-            onChange={(e) => { setUserLocation(e.target.value); toggleSidebar(); }}
+            onChange={(e) => {
+              setUserLocation(e.target.value);
+              closeSidebarOnMobile();
+            }}
           >
             <option value="">-- Select Country --</option>
             {countries.map((c) => (
