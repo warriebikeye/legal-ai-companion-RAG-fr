@@ -940,7 +940,14 @@ body {
     scroll-behavior: smooth;
     width: 100%;
     max-width: 100%;
-    /* ── KEY FIX: grow to fill space between top and footer
+    /* ── KEY FIX: clear the 70dvh max-height inherited from the
+       base (.chats) rule. Without this, .chats is capped at
+       70% of viewport height regardless of available space,
+       which pushes .chatfooter out of view or leaves a gap
+       below it — most visible after loading a conversation
+       with a different number of messages. ── */
+    max-height: none;
+    /* ── grow to fill space between top and footer
        min-height: 0 is required for flex children to scroll ── */
     flex: 1;
     min-height: 0;
