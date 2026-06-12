@@ -27,7 +27,7 @@ const API_BASE_URL = process.env.REACT_APP_BASEURL;
    DEFAULT BOT MESSAGE
 ========================================================= */
 const DEFAULT_BOT_MESSAGE = {
-  text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
+  text: " Before you sign any Agreement or Contract, upload it here or ask me questions. I will show you problematic clause which isn't in compliance with the Law of your country.",
   isBot: true,
   isWelcome: true,
 };
