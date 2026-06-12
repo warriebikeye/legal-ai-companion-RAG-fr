@@ -18,12 +18,23 @@ import { readAuthCookie } from '../hooks/useAuthCookie';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
+// ── AdSense slot IDs ──────────────────────────────────────
+// Set these in your .env:
+//   REACT_APP_ADSENSE_CLIENT = ca-pub-XXXXXXXXXXXXXXXX
+//   REACT_APP_AD_SLOT_TOP    = 1234567890
+//   REACT_APP_AD_SLOT_BOTTOM = 0987654321
+/* =========================================================
+   DEFAULT BOT MESSAGE
+========================================================= */
 const DEFAULT_BOT_MESSAGE = {
   text: " Before you sign anything, upload it here or ask questions. I will show you if any part violates the law. Works for rent, loans, and job offers.",
   isBot: true,
   isWelcome: true,
 };
 
+/* =========================================================
+   COUNTRIES
+========================================================= */
 const countries = [
   { name: "Nigeria", flag: "🇳🇬" },
   { name: "Kenya", flag: "🇰🇪" },
@@ -32,10 +43,12 @@ const countries = [
   { name: "United States", flag: "🇺🇸" },
 ];
 
+/* =========================================================
+   HOMEPAGE
+========================================================= */
 function HomePage() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const chatsRef = useRef(null);        // ref on the .chats div for direct scroll
   const navigate = useNavigate();
 
   /* ── state ────────────────────────────────────────────── */
@@ -58,15 +71,7 @@ function HomePage() {
   /* ── messages ─────────────────────────────────────────── */
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
 
-  /*
-   * isLiveChat — true only while a new message exchange is in flight.
-   * Controls whether stream updates scroll to bottom.
-   * Explicitly NOT a useEffect dependency — we call scrollToBottom()
-   * imperatively so there is no reactive scroll that fights the user.
-   */
-  const isLiveChatRef = useRef(false);
-
-  /* ── derived ──────────────────────────────────────────── */
+  /* ── derived: show ads only to free-tier users ────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
 
   /* ── stream hook ──────────────────────────────────────── */
@@ -83,14 +88,12 @@ function HomePage() {
   const isSending = streamStatus === "preparing" || streamStatus === "streaming";
   const isStreaming = streamStatus === "streaming";
 
-  /*
-   * scrollToBottom — imperative, called only when we explicitly want
-   * to snap to the latest message. Never called from a useEffect that
-   * watches messages, so it cannot fight user scroll.
-   */
-  const scrollToBottom = useCallback((behavior = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
-  }, []);
+  /* =========================================================
+     AUTO SCROLL
+  ========================================================= */
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   /* =========================================================
      COUNTRY AUTO-DETECT
@@ -134,7 +137,7 @@ function HomePage() {
   };
 
   /* =========================================================
-     AUTH
+     AUTH — cookie-first, then /auth/me fallback
   ========================================================= */
   const applyUserData = useCallback((data) => {
     setIsAuthenticated(true);
@@ -146,10 +149,13 @@ function HomePage() {
   }, []);
 
   const checkAuthentication = useCallback(async () => {
+    // ── Step 1: try cookie (zero network cost) ──────────────
     const cookie = readAuthCookie();
     if (cookie) {
       applyUserData(cookie);
       setAuthChecked(true);
+
+      // Fire-and-forget: load conversations + silently refresh cookie
       fetchRecentConversations();
       fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
         .then((r) => r.ok ? r.json() : null)
@@ -162,20 +168,24 @@ function HomePage() {
             subscriptionStatus: data.subscriptionStatus,
           });
         })
-        .catch(() => {});
+        .catch(() => {/* silent — cookie data already shown */ });
       return;
     }
 
+    // ── Step 2: no cookie — hit the server ──────────────────
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET", credentials: "include",
       });
+
       if (!res.ok) {
         setIsAuthenticated(false);
         setAuthChecked(true);
         return;
       }
+
       const data = await res.json();
+
       if (data.isAuthenticated) {
         applyUserData({
           email: data.userEmail,
@@ -202,10 +212,20 @@ function HomePage() {
 
   /* =========================================================
      RENDER BOT MESSAGE
+     ── KEY FIX: accepts msgIndex so each AdBanner gets a
+     unique, stable key scoped to the active conversation +
+     message position. This forces React to mount a fresh
+     <ins> element per AdBanner instance instead of reusing a
+     DOM node that AdSense has already mutated (which was the
+     source of layout corruption persisting across navigation
+     / conversation loads on the free tier). ──
   ========================================================= */
   const renderBotMessage = (message, msgIndex) => {
-    const isWelcomeMessage = message.isWelcome === true;
-    const paragraphs = message.text?.split("\n\n").filter((p) => p.trim());
+  const isWelcomeMessage = message.isWelcome === true;
+    const paragraphs = message.text
+      ?.split("\n\n")
+      .filter((p) => p.trim());
+
     const middleIndex = Math.floor(paragraphs.length / 2);
 
     return (
@@ -213,8 +233,9 @@ function HomePage() {
         {paragraphs.map((paragraph, index) => (
           <div key={index}>
             <ReactMarkdown>{paragraph}</ReactMarkdown>
+
             {showAds &&
-              !isWelcomeMessage &&
+            !isWelcomeMessage &&
               message.isBot &&
               !message.typing &&
               !message.isStreaming &&
@@ -230,8 +251,9 @@ function HomePage() {
               )}
           </div>
         ))}
+
         {showAds &&
-          !isWelcomeMessage &&
+        !isWelcomeMessage &&
           message.isBot &&
           !message.typing &&
           !message.isStreaming && (
@@ -246,7 +268,6 @@ function HomePage() {
       </>
     );
   };
-
   /* =========================================================
      LOGOUT
   ========================================================= */
@@ -258,7 +279,7 @@ function HomePage() {
     } catch (err) {
       console.error("Logout error:", err);
     }
-    isLiveChatRef.current = false;
+    // Reset all state
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);
@@ -271,10 +292,7 @@ function HomePage() {
   };
 
   /* =========================================================
-     STREAM — sync live bot message and scroll during streaming.
-     scrollToBottom() is called here directly — not via a
-     useEffect watching messages — so it only fires during an
-     active exchange, never when passively viewing history.
+     STREAM — sync live bot message
   ========================================================= */
   useEffect(() => {
     if (streamStatus === "idle" || streamStatus === "done") return;
@@ -294,9 +312,7 @@ function HomePage() {
       };
       return updated;
     });
-    // Only scroll during a live chat the user initiated
-    if (isLiveChatRef.current) scrollToBottom();
-  }, [streamAnswer, streamSources, streamClause, streamStatus, scrollToBottom]);
+  }, [streamAnswer, streamSources, streamClause, streamStatus]);
 
   /* =========================================================
      STREAM — done
@@ -312,7 +328,6 @@ function HomePage() {
     });
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
-    isLiveChatRef.current = false;  // exchange finished, unlock scroll
   }, [streamStatus, streamConvoId, isAuthenticated]);
 
   /* =========================================================
@@ -330,7 +345,6 @@ function HomePage() {
       };
       return updated;
     });
-    isLiveChatRef.current = false;
   }, [streamStatus, streamError]);
 
   /* =========================================================
@@ -347,7 +361,6 @@ function HomePage() {
   const startNewChat = () => {
     toggleSidebar();
     cancel();
-    isLiveChatRef.current = false;
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
@@ -356,9 +369,6 @@ function HomePage() {
 
   /* =========================================================
      LOAD CONVERSATION
-     Scroll to bottom once after load via instant jump (not smooth)
-     so the user lands at the latest message, then scroll is free.
-     isLiveChatRef stays false so no further auto-scroll happens.
   ========================================================= */
   const loadConversation = async (conversationId) => {
     toggleSidebar();
@@ -366,7 +376,6 @@ function HomePage() {
 
     try {
       cancel();
-      isLiveChatRef.current = false;
       setActiveConversationId(conversationId);
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
@@ -391,15 +400,7 @@ function HomePage() {
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
-      /*
-       * One-shot jump to bottom so user lands at the latest message.
-       * "auto" (instant) not "smooth" so it completes before they
-       * can touch the screen — no fighting an in-progress smooth scroll.
-       * After this setTimeout resolves, isLiveChatRef is still false
-       * so nothing will scroll again until they send a message.
-       */
-      setTimeout(() => scrollToBottom("auto"), 150);
-
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
@@ -408,27 +409,25 @@ function HomePage() {
 
   /* =========================================================
      SEND MESSAGE
-     Set isLiveChatRef=true here — the ONLY place — so stream
-     updates will scroll to bottom during this exchange only.
   ========================================================= */
   const handleSend = async () => {
     if (!input.trim() && files.length === 0) return;
     if (!userLocation) { alert("Please select your country first."); return; }
 
     const query = input.trim();
-    isLiveChatRef.current = true;  // enable scroll-to-bottom for this exchange
-
     setMessages((prev) => [
       ...prev,
       { text: query || "(Document Uploaded)", isBot: false },
       { text: "", isBot: true, typing: true, isStreaming: false },
     ]);
-    scrollToBottom();  // snap to the new user message immediately
     setInput("");
     await ask({ query, country: userLocation, conversationId: activeConversationId, files });
     setFiles([]);
   };
 
+  /* =========================================================
+     HOLD RENDER UNTIL AUTH CHECK DONE (prevents flash)
+  ========================================================= */
   if (!authChecked) return null;
 
   /* =========================================================
@@ -437,6 +436,7 @@ function HomePage() {
   return (
     <div className="App">
 
+      {/* ── Login wall ───────────────────────────────────── */}
       {!isAuthenticated && (
         <AuthModal onAuthenticated={checkAuthentication} />
       )}
@@ -447,7 +447,9 @@ function HomePage() {
           SIDEBAR
       ═══════════════════════════════════════════════════ */}
       <div className={`sideBar ${sidebarOpen ? "collapsed" : "open"}`}>
+
         <div className='upperSide'>
+
           <div className='uppersideTop'>
             <img src={gptLogo} alt='Logo' className='logo' />
           </div>
@@ -478,7 +480,9 @@ function HomePage() {
           </div>
         </div>
 
+        {/* ── Lower sidebar ─────────────────────────────── */}
         <div className='lowerside'>
+
           <button className='midBtn' onClick={startNewChat}>
             <img src={addBtn} alt='' className='addBtn' />
             New Chat
@@ -499,12 +503,14 @@ function HomePage() {
             {userName || userEmail || "Account"}
           </div>
 
+          {/* ✅ Logout button */}
           {isAuthenticated && (
             <div className='ListItems logoutBtn' onClick={handleLogout}>
               <img src={logout} alt='' />
               Sign out
             </div>
           )}
+
         </div>
       </div>
 
@@ -513,7 +519,7 @@ function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
 
-        <div className='chats' ref={chatsRef}>
+        <div className='chats'>
           {messages.map((message, i) => (
             <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
               <img
@@ -521,6 +527,7 @@ function HomePage() {
                 className='chtimg'
                 alt=''
               />
+
               <p className='txt'>
                 {message.typing && !message.isStreaming ? (
                   <div className="typing-dots">
@@ -532,8 +539,12 @@ function HomePage() {
                       {message.isBot
                         ? renderBotMessage(message, i)
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
+
                       {message.isStreaming && (
-                        <span className="stream-cursor" aria-hidden="true" />
+                        <span
+                          className="stream-cursor"
+                          aria-hidden="true"
+                        />
                       )}
                     </div>
 
@@ -551,6 +562,7 @@ function HomePage() {
                           : JSON.stringify(message.clauseAnalysis)}
                       </span>
                     )}
+
                   </>
                 )}
               </p>
@@ -563,6 +575,7 @@ function HomePage() {
         {/* ── Chat footer ───────────────────────────────── */}
         <div className='chatfooter'>
           <div className='inp'>
+
             <input
               type="file"
               multiple
@@ -618,6 +631,7 @@ function HomePage() {
                 {isSending ? <div className="loader" /> : <img src={sendBtn} alt='' />}
               </button>
             )}
+
           </div>
 
           <p>~ Africa's Legal Intelligence Engine Pipeline ~</p>
