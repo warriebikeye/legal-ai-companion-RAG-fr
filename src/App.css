@@ -149,7 +149,6 @@
   display: inline-block;
 }
 
-
 /* =========================================================
    STREAMING ADDITIONS
 ========================================================= */
@@ -220,21 +219,18 @@
   color: #e2e2e2;
 }
 
-/* ── KEY FIX: inline code tags must wrap on mobile ── */
 .bot-message-content code {
   background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
   font-size: 0.9em;
-  /* Allow wrapping — this fixes the horizontal overflow from source citations */
   white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
   display: inline;
 }
 
-/* Code blocks (pre) scroll horizontally rather than overflow */
 .bot-message-content pre {
   overflow-x: auto;
   max-width: 100%;
@@ -304,11 +300,15 @@ body {
   font-family: 'Poppins', sans-serif;
 }
 
+/*
+ * .App is the outermost flex row (sidebar + main).
+ * It must be exactly one viewport tall with no internal scroll —
+ * all scrolling happens inside .chats only.
+ */
 .App {
   height: 100dvh;
   overflow: hidden;
   display: flex;
-  /* Prevent any child from blowing out the viewport width */
   max-width: 100vw;
 }
 
@@ -442,29 +442,47 @@ body {
 
 /* =========================================================
    MAIN CHAT AREA
+   ── The key scroll architecture:
+      .App         → overflow: hidden  (viewport lock)
+      .main        → flex column, overflow: hidden, fills remaining width
+      .chats       → flex: 1, min-height: 0, overflow-y: auto  ← ONLY scroller
+      .chatfooter  → flex-shrink: 0  (always visible, never squashed)
+   AdSense iframes live inside .chats inside .bot divs.
+   Because .chats is the sole scroll container and every ad wrapper
+   has a fixed pixel height + flexShrink:0, AdSense reflows inside
+   the iframe cannot shift or reset the parent scroll position.
 ========================================================= */
 
 .main {
   flex: 9;
   min-width: 0;
-  min-height: calc(100vh - 14rem);
+  /* Use full viewport height minus top margin so flex children
+     can divide it cleanly without overflow */
+  height: calc(100dvh - 6rem);
+  margin: 6rem 10rem 0 10rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 6rem 10rem;
-  margin-bottom: 0;
+  /* No overflow here — .chats handles it */
   overflow: hidden;
 }
 
 .chats {
-  overflow: hidden;
+  /* ── THE scroll contract ──────────────────────────────────
+     flex: 1      → fills all space between top and footer
+     min-height:0 → lets a flex child actually shrink + scroll
+                    (without this, the browser ignores overflow-y)
+     overflow-y:auto → scrolls when content exceeds available height
+     No max-height — that was fighting with ad-injected height and
+     resetting scroll position on every AdSense reflow.
+  ────────────────────────────────────────────────────────── */
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: none;
   scroll-behavior: smooth;
   width: 100%;
-  max-height: 70dvh;
-  /* Prevent horizontal blowout */
-  overflow-x: hidden;
 }
 
 .chats::-webkit-scrollbar {
@@ -508,7 +526,6 @@ body {
   display: flex;
   align-items: flex-start;
   text-align: justify;
-  /* ── KEY FIX: constrain width so content can't overflow ── */
   min-width: 0;
   max-width: 100%;
 }
@@ -516,17 +533,18 @@ body {
 .bot {
   background: rgba(28, 30, 58, 1);
   width: fit-content;
-  /* ── KEY FIX: but never wider than the container ── */
   max-width: 100%;
   border-radius: .5rem;
-  overflow-y: auto;
-  height: auto;
-  /* prevent horizontal overflow */
+  /* overflow-y must be visible — not auto or hidden —
+     so the fixed-height ad wrappers inside stack normally
+     and are counted in the parent's scroll height.
+     overflow-x hidden prevents any horizontal blowout. */
   overflow-x: hidden;
+  overflow-y: visible;
+  height: auto;
 }
 
 .txt {
-  /* ── KEY FIX: allow text to wrap within its parent ── */
   min-width: 0;
   overflow-wrap: break-word;
   word-break: break-word;
@@ -536,7 +554,6 @@ body {
 .chtimg {
   object-fit: cover;
   width: 3.5rem;
-  /* Don't shrink the avatar */
   flex-shrink: 0;
   margin-right: 2rem;
   border-radius: .5rem;
@@ -544,11 +561,14 @@ body {
 
 /* =========================================================
    CHAT FOOTER
+   flex-shrink: 0 — never let the footer get squashed by .chats
+   margin-top: 0  — flex gap handles spacing, not margin
 ========================================================= */
 
 .chatfooter {
   width: 100%;
-  margin-top: auto;
+  flex-shrink: 0;
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -765,7 +785,8 @@ body {
 .main.fullWidth {
   flex: 1 1 100%;
   min-height: 0;
-  margin: 2rem;
+  height: calc(100dvh - 6rem);
+  margin: 6rem 2rem 0 2rem;
   display: flex;
   flex-direction: column;
 }
@@ -775,31 +796,34 @@ body {
 }
 
 /* =========================================================
-   AD BANNER — must never cause horizontal overflow
+   AD BANNER WRAPPERS
+   These classes are applied by renderBotMessage via className prop.
+
+   Rules:
+   - Fixed pixel height matching the height prop passed to AdBanner
+   - display: block so they stack vertically inside .bot-message-content
+   - overflow: hidden so no internal iframe bleed
+   - NO position: absolute/fixed/sticky — must stay in normal flow
+     so the parent scroll container counts them in its scroll height
+   - flexShrink: 0 handled in the AdBanner component inline style
 ========================================================= */
 
-.response-ad-middle,
-.response-ad-bottom {
-  max-width: 100%;
-  overflow: hidden;
-  display: block;
-}
-
-/* ── Ad size controls — adjust these to tune ad appearance ── */
 .response-ad-middle {
   width: 100%;
-  height: 100px;
+  height: 100px;   /* must match height={100} in renderBotMessage */
   margin: 8px 0;
-  border-radius: 6px;
+  display: block;
   overflow: hidden;
+  border-radius: 6px;
 }
 
 .response-ad-bottom {
   width: 100%;
-  height: 80px;
+  height: 80px;    /* must match height={80} in renderBotMessage */
   margin: 10px 0 4px 0;
-  border-radius: 6px;
+  display: block;
   overflow: hidden;
+  border-radius: 6px;
 }
 
 /* =========================================================
@@ -910,8 +934,12 @@ body {
     display: block;
   }
 
+  /*
+   * On mobile .App becomes a column (sidebar overlays via fixed position).
+   * Height must be explicit so flex children can fill it.
+   */
   .App {
-    height: 100dvh; /* explicit height so flex children can fill it */
+    height: 100dvh;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -920,39 +948,42 @@ body {
     max-width: 100vw;
   }
 
+  /*
+   * .main fills whatever height .App has after the fixed header toggle.
+   * margin: 0, padding accounts for the toggle button space at top.
+   * overflow: hidden — .chats is still the only scroll container.
+   */
   .main {
     min-width: 0;
     max-width: 100vw;
-    overflow-x: hidden;
     overflow: hidden;
-    /* flex: 1 expands to fill remaining height inside .App column flex.
-       Do NOT use height: 100% — it fights with flex sizing */
+    overflow-x: hidden;
     flex: 1;
     min-height: 0;
+    height: auto; /* let flex: 1 do the sizing, not a hard height */
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     margin: 0;
     padding: 4rem 1rem 0 1rem;
   }
 
+  /*
+   * .chats on mobile: same flex:1 + min-height:0 contract as desktop.
+   * No max-height — it caused ads to push content past the cap and
+   * made the scroller reset on every AdSense reflow event.
+   */
   .chats {
-    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     scroll-behavior: smooth;
     width: 100%;
     max-width: 100%;
-    /* ── KEY FIX: clear the 70dvh max-height inherited from the
-       base (.chats) rule. Without this, .chats is capped at
-       70% of viewport height regardless of available space,
-       which pushes .chatfooter out of view or leaves a gap
-       below it — most visible after loading a conversation
-       with a different number of messages. ── */
+    /* Explicitly unset any inherited max-height */
     max-height: none;
-    /* ── grow to fill space between top and footer
-       min-height: 0 is required for flex children to scroll ── */
-    flex: 1;
-    min-height: 0;
   }
 
   .chats::-webkit-scrollbar {
@@ -961,41 +992,42 @@ body {
 
   .chat {
     margin: 1.2rem 0.75rem;
-    padding: 0.75rem 1.2rem 0.75rem 0.75rem; /* extra right padding so text never hits edge */
+    padding: 0.75rem 1.2rem 0.75rem 0.75rem;
     font-size: 1.4rem;
     display: flex;
     align-items: flex-start;
     text-align: justify;
-    /* ── KEY FIX ── */
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
   }
 
   .bot {
-    /* ── Constrain width with room on both sides ── */
     max-width: calc(100vw - 4rem);
     overflow-x: hidden;
-    padding-right: 1rem; /* internal right clearance so text never hits edge */
+    overflow-y: visible; /* keep visible so ads stack in normal flow */
+    padding-right: 1rem;
   }
 
   .txt {
     min-width: 0;
     overflow-wrap: break-word;
     word-break: break-word;
-    /* ── KEY FIX: let .txt shrink inside flex ── */
     flex: 1;
     max-width: 100%;
   }
 
+  /*
+   * Footer: flex-shrink:0 is the key — without it the footer
+   * gets squashed when .chats has a lot of content + ads.
+   * height: auto so it sizes to its content rather than a fixed dvh.
+   */
   .chatfooter {
-    /* ── KEY FIX: don't use a fixed height — size to content
-       margin-top: auto is already on the base rule; here we just
-       ensure it never collapses and has breathing room ── */
     height: auto;
     flex-shrink: 0;
     padding: 0.8rem 0 1rem 0;
     width: 100%;
+    margin-top: 0;
   }
 
   .chtimg {
@@ -1055,6 +1087,7 @@ body {
     padding: 4rem 1rem 0 1rem;
     flex: 1;
     min-height: 0;
+    height: auto;
     display: flex;
     flex-direction: column;
   }
@@ -1085,7 +1118,7 @@ body {
     font-size: 1.8rem;
   }
 
-  /* ── Mobile bot message content overrides ── */
+  /* ── Mobile bot message content ── */
   .bot-message-content {
     max-width: 100%;
     overflow-x: hidden;
@@ -1116,10 +1149,9 @@ body {
     color: #e2e2e2;
   }
 
-  /* ── KEY FIX: source citation chips wrap on mobile ── */
   .bot-message-content code {
     background: rgba(255, 255, 255, 0.1);
-    padding: 2px 8px 2px 6px; /* extra right padding inside chip */
+    padding: 2px 8px 2px 6px;
     border-radius: 4px;
     font-family: monospace;
     font-size: 0.85em;
@@ -1127,7 +1159,7 @@ body {
     word-break: break-word;
     overflow-wrap: break-word;
     display: inline;
-    margin-right: 2px; /* small gap so chip doesn't touch bubble edge */
+    margin-right: 2px;
   }
 
   .bot-message-content pre {
@@ -1160,5 +1192,16 @@ body {
   .auth-modal {
     margin: 2rem;
     padding: 3rem 2rem;
+  }
+
+  /* ── Ad wrappers on mobile ── */
+  .response-ad-middle {
+    height: 100px;
+    margin: 6px 0;
+  }
+
+  .response-ad-bottom {
+    height: 80px;
+    margin: 8px 0 2px 0;
   }
 }
