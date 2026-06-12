@@ -789,15 +789,20 @@ body {
 .response-ad-middle {
   min-height: 100px;
   max-height: 280px;
+  height: 100px;
   margin: 8px 0;
   border-radius: 6px;
+  /* contain reflow if the AdSense iframe loads async after mount */
+  contain: layout;
 }
 
 .response-ad-bottom {
   min-height: 80px;
   max-height: 200px;
+  height: 80px;
   margin: 10px 0 4px 0;
   border-radius: 6px;
+  contain: layout;
 }
 
 /* =========================================================
@@ -951,6 +956,11 @@ body {
        min-height: 0 is required for flex children to scroll ── */
     flex: 1;
     min-height: 0;
+    /* ── Safety net for async AdSense growth (free-tier ads):
+       contain any overflow caused by ad iframes loading after
+       initial layout, so .chatfooter never gets pushed/squeezed ── */
+    contain: layout size;
+    overscroll-behavior: contain;
   }
 
   .chats::-webkit-scrollbar {
