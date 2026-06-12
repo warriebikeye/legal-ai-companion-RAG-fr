@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 /**
  * AdBanner — full iframe isolation (AdSense-recommended SPA pattern)
@@ -34,6 +34,37 @@ export default function AdBanner({
 }) {
   const client = process.env.REACT_APP_ADSENSE_CLIENT;
 
+  const wrapperRef = useRef(null);
+  const iframeRef = useRef(null);
+  const touchStartRef = useRef(null);
+
+  // ── Fallback for touch-action: pan-y not being honored ──
+  // Some Android WebViews (Median/GoNative wrappers) capture all touch
+  // events on an iframe regardless of touch-action, preventing the
+  // ancestor .chats container from ever receiving a scroll gesture.
+  //
+  // Strategy: the iframe defaults to pointer-events: none, so vertical
+  // scroll/drag gestures always fall through to .chats untouched. On
+  // touchstart (received by the wrapper div, BEFORE the gesture would
+  // enter the iframe), we briefly enable pointer-events on the iframe
+  // for a short window — long enough for a genuine tap-to-click on the
+  // ad to register inside the iframe, but short enough that a
+  // scroll/drag gesture (which takes longer than a tap) never gets
+  // captured by the iframe in the first place.
+  const TAP_WINDOW_MS = 250;
+
+  const handleTouchStart = () => {
+    if (touchStartRef.current) clearTimeout(touchStartRef.current);
+    if (iframeRef.current) {
+      iframeRef.current.style.pointerEvents = "auto";
+    }
+    touchStartRef.current = setTimeout(() => {
+      if (iframeRef.current) {
+        iframeRef.current.style.pointerEvents = "none";
+      }
+    }, TAP_WINDOW_MS);
+  };
+
   const insAttrs = adLayoutKey
     ? `data-ad-layout-key="${adLayoutKey}"`
     : `data-full-width-responsive="${fullWidthResponsive.toString()}"`;
@@ -48,7 +79,8 @@ export default function AdBanner({
         margin: 0;
         padding: 0;
         background: transparent;
-        overflow: hidden;
+        height: 100%;
+        touch-action: pan-y;
       }
       .ad-wrap {
         width: 100%;
@@ -57,6 +89,7 @@ export default function AdBanner({
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        touch-action: pan-y;
       }
       ins.adsbygoogle {
         display: block;
@@ -82,8 +115,14 @@ export default function AdBanner({
   `, [client, adSlot, adFormat, adLayoutKey, fullWidthResponsive, insAttrs]);
 
   return (
-    <div className={className} style={{ width: "100%", height: `${height}px`, overflow: "hidden" }}>
+    <div
+      className={className}
+      ref={wrapperRef}
+      style={{ width: "100%", height: `${height}px`, overflow: "hidden" }}
+      onTouchStart={handleTouchStart}
+    >
       <iframe
+        ref={iframeRef}
         title="advertisement"
         srcDoc={srcDoc}
         sandbox="allow-scripts allow-same-origin allow-popups"
@@ -93,10 +132,15 @@ export default function AdBanner({
           border: "none",
           display: "block",
           overflow: "hidden",
+          touchAction: "pan-y",
+          // Default to non-interactive so vertical scroll gestures
+          // always reach .chats. Briefly toggled to "auto" on
+          // touchstart (see handleTouchStart) to allow real taps.
+          pointerEvents: "none",
         }}
         scrolling="no"
         loading="lazy"
       />
     </div>
   );
-}
+          }
