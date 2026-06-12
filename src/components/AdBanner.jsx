@@ -1,26 +1,28 @@
-import { useEffect, useRef } from "react";
+import { useMemo } from "react";
 
 /**
- * AdBanner — isolation strategy
+ * AdBanner — full iframe isolation (AdSense-recommended SPA pattern)
  *
- * Root cause of the cross-navigation corruption: adsbygoogle.push({})
- * mutates the <ins> element directly (injects an iframe, sets
- * data-adsbygoogle-status="done", writes inline width/height styles).
- * React's virtual DOM has no knowledge of these mutations. On the next
- * render where this component's JSX would normally produce an
- * equivalent <ins>, React either:
- *   - reuses the same DOM node (if key is stable) -> AdSense throws
- *     "already have ads" and the stale injected styles/iframe remain, or
- *   - tries to reconcile a node whose actual DOM no longer matches
- *     React's last known VDOM for it, causing layout to be computed
- *     against stale dimensions.
+ * Why this is different from previous attempts:
+ *   - The <ins class="adsbygoogle"> and the adsbygoogle.js script live
+ *     INSIDE a separate HTML document, loaded via srcdoc into a sandboxed
+ *     iframe. They never exist in the parent DOM at all.
+ *   - React never sees, creates, diffs, or reuses the <ins>/script —
+ *     there is nothing for AdSense to mutate that React (or this app's
+ *     CSS layout) has any awareness of.
+ *   - The iframe element itself has a fixed width/height set by us. The
+ *     iframe's *content* can do anything it wants internally (resize
+ *     its own document, AdSense can inject whatever) — none of that can
+ *     ever leak out and resize the iframe element in the parent page.
+ *   - Navigating between conversations / tiers simply mounts or unmounts
+ *     this <iframe> element like any other element. There is no shared
+ *     mutable state between instances, so nothing can be "poisoned"
+ *     across navigations. A fresh mount = a fresh document = a fresh
+ *     adsbygoogle context every time.
  *
- * Fix: build the ad markup with a plain DOM API call inside a wrapper
- * div whose children React never touches again. The wrapper's *size*
- * is fixed by CSS (.response-ad-middle / .response-ad-bottom), so
- * layout never depends on the ad's content, and on unmount we remove
- * the AdSense-managed <ins> entirely so nothing mutated lingers for
- * React to encounter on the next mount.
+ * This is the pattern Google's own SPA/AdSense guidance recommends for
+ * frameworks (React/Vue/Angular) where ads are mounted/unmounted
+ * frequently during client-side navigation.
  */
 export default function AdBanner({
   adSlot,
@@ -28,65 +30,73 @@ export default function AdBanner({
   adLayoutKey = null,
   fullWidthResponsive = true,
   className = "",
+  height = 100, // px — must match the CSS box height for this slot
 }) {
-  const containerRef = useRef(null);
-  const initializedRef = useRef(false);
+  const client = process.env.REACT_APP_ADSENSE_CLIENT;
 
-  useEffect(() => {
-    if (initializedRef.current) return;
-    const container = containerRef.current;
-    if (!container) return;
+  const insAttrs = adLayoutKey
+    ? `data-ad-layout-key="${adLayoutKey}"`
+    : `data-full-width-responsive="${fullWidthResponsive.toString()}"`;
 
-    // Build the <ins> entirely outside React's tree.
-    const ins = document.createElement("ins");
-    ins.className = "adsbygoogle";
-    ins.style.display = "block";
-    ins.style.width = "100%";
-    ins.style.height = "100%";
-
-    ins.setAttribute("data-ad-client", process.env.REACT_APP_ADSENSE_CLIENT);
-    ins.setAttribute("data-ad-slot", adSlot);
-    ins.setAttribute("data-ad-format", adFormat);
-
-    if (adLayoutKey) {
-      ins.setAttribute("data-ad-layout-key", adLayoutKey);
-    } else {
-      ins.setAttribute("data-full-width-responsive", fullWidthResponsive.toString());
-    }
-
-    container.appendChild(ins);
-    initializedRef.current = true;
-
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error("AdSense error:", err);
-    }
-
-    // Cleanup: remove the AdSense-managed node entirely on unmount so
-    // nothing AdSense-mutated lingers in the DOM for React to encounter
-    // again. A fresh <ins> is created on the next mount.
-    return () => {
-      try {
-        if (container && ins.parentNode === container) {
-          container.removeChild(ins);
-        }
-      } catch (_) {
-        /* no-op */
+  const srcDoc = useMemo(() => `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
       }
-      initializedRef.current = false;
-    };
-  }, [adSlot, adFormat, adLayoutKey, fullWidthResponsive]);
+      .ad-wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      ins.adsbygoogle {
+        display: block;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ad-wrap">
+      <ins class="adsbygoogle"
+           style="display:block; width:100%; height:100%;"
+           data-ad-client="${client}"
+           data-ad-slot="${adSlot}"
+           data-ad-format="${adFormat}"
+           ${insAttrs}></ins>
+    </div>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}"></script>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </body>
+</html>
+  `, [client, adSlot, adFormat, adLayoutKey, fullWidthResponsive, insAttrs]);
 
   return (
-    <div
-      className={className}
-      ref={containerRef}
-      // Fixed-size box (sizes come from CSS .response-ad-middle /
-      // .response-ad-bottom) -- the ad's actual content can never
-      // change this box's dimensions, so .chats layout is stable
-      // regardless of when/how AdSense renders inside it.
-      suppressHydrationWarning
-    />
+    <div className={className} style={{ width: "100%", height: `${height}px`, overflow: "hidden" }}>
+      <iframe
+        title="advertisement"
+        srcDoc={srcDoc}
+        sandbox="allow-scripts allow-same-origin allow-popups"
+        style={{
+          width: "100%",
+          height: "100%",
+          border: "none",
+          display: "block",
+          overflow: "hidden",
+        }}
+        scrolling="no"
+        loading="lazy"
+      />
+    </div>
   );
 }
