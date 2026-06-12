@@ -3,12 +3,27 @@ import { useMemo } from "react";
 /**
  * AdBanner — full iframe isolation (AdSense-recommended SPA pattern)
  *
- * The <ins> and adsbygoogle.js live INSIDE a sandboxed iframe srcdoc.
- * AdSense can mutate its own document freely; nothing leaks into the
- * parent React tree or affects layout/scroll there.
+ * Why this is different from earlier attempts:
+ *   - The <ins class="adsbygoogle"> and the adsbygoogle.js script live
+ *     INSIDE a separate HTML document, loaded via srcdoc into a sandboxed
+ *     iframe. They never exist in the parent DOM at all, so AdSense can
+ *     never mutate anything React is aware of, and layout/.chats sizing
+ *     can never be affected by what happens inside the iframe's document.
+ *   - The iframe element itself has a fixed width/height (matching the
+ *     CSS box of .response-ad-middle / .response-ad-bottom). Its content
+ *     cannot resize it.
  *
- * The wrapper div has a hard pixel height so the parent scroll container
- * never collapses or shifts when AdSense resizes its own content internally.
+ * SCROLL FIX: the iframe is set to pointer-events: none. Without this,
+ * the iframe — and the WebView in particular — captures ALL touch
+ * events that start over it, including vertical drags meant to scroll
+ * .chats. With pointer-events: none, every touch/scroll gesture passes
+ * straight through the iframe to .chats underneath.
+ *
+ * Tradeoff: ad clicks won't register while this is set. AdSense
+ * impressions (viewability) still count for impression-based formats.
+ * If click-through revenue is needed later, that requires a separate,
+ * carefully-scoped tap-detection layer — do not re-enable pointer
+ * events on the iframe globally, as that's what breaks scrolling.
  */
 export default function AdBanner({
   adSlot,
@@ -16,7 +31,7 @@ export default function AdBanner({
   adLayoutKey = null,
   fullWidthResponsive = true,
   className = "",
-  height = 100,
+  height = 100, // px — must match the CSS box height for this slot
 }) {
   const client = process.env.REACT_APP_ADSENSE_CLIENT;
 
@@ -30,13 +45,11 @@ export default function AdBanner({
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
+        margin: 0;
+        padding: 0;
         background: transparent;
-        /* Critically: overflow hidden so the iframe document itself
-           never tries to scroll, which would fight the parent scroller */
         overflow: hidden;
-        width: 100%;
         height: 100%;
       }
       .ad-wrap {
@@ -50,7 +63,6 @@ export default function AdBanner({
       ins.adsbygoogle {
         display: block;
         width: 100%;
-        height: 100%;
       }
     </style>
   </head>
@@ -72,23 +84,9 @@ export default function AdBanner({
   `, [client, adSlot, adFormat, adLayoutKey, fullWidthResponsive, insAttrs]);
 
   return (
-    /*
-     * flexShrink:0   — never let a flex parent crush this wrapper
-     * display:block  — ensure block stacking inside .bot-message-content
-     * overflow:hidden — the iframe's internal reflows must not leak out
-     * The hard pixel height is the scroll contract: parent layout always
-     * reserves exactly this many pixels, no more, no less.
-     */
     <div
       className={className}
-      style={{
-        width: "100%",
-        height: `${height}px`,
-        overflow: "hidden",
-        flexShrink: 0,
-        display: "block",
-        borderRadius: "6px",
-      }}
+      style={{ width: "100%", height: `${height}px`, overflow: "hidden" }}
     >
       <iframe
         title="advertisement"
@@ -99,12 +97,13 @@ export default function AdBanner({
           height: "100%",
           border: "none",
           display: "block",
-          /* scrolling must be off so the iframe never creates
-             its own scroll context that fights the parent */
           overflow: "hidden",
+          // ── KEY FIX: never let this iframe capture touch/scroll ──
+          pointerEvents: "none",
         }}
         scrolling="no"
         loading="lazy"
+        tabIndex={-1}
       />
     </div>
   );
