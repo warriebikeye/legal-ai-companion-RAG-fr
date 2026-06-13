@@ -338,7 +338,8 @@ body {
 }
 
 /* =========================================================
-   FILE UPLOAD
+   FILE UPLOAD — hidden input trigger only
+   (preview UI replaced by .attachment-tray below)
 ========================================================= */
 
 .filein {
@@ -351,32 +352,92 @@ body {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.file-preview {
+/* =========================================================
+   ATTACHMENT TRAY
+   Floats above the .inp input bar inside .chatfooter.
+   Files appear as dismissible chips in a horizontally
+   scrolling row — never wraps, never bloats footer height.
+========================================================= */
+
+.attachment-tray {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 0.4rem 0.2rem;
+  width: 100%;
+  max-height: 80px;
+  align-items: center;
+}
+
+.attachment-tray::-webkit-scrollbar {
+  display: none;
+}
+
+.attachment-chip {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
-  max-height: 100px;
-  overflow-y: auto;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-  background: rgba(28, 30, 58, 0.5);
-  border-radius: 0.5rem;
+  background: rgba(90, 75, 255, 0.15);
+  border: 1px solid rgba(90, 75, 255, 0.35);
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  max-width: 160px;
 }
 
-.file-thumb {
-  width: 50px;
-  height: 50px;
+.image-chip {
+  padding: 0.3rem;
+}
+
+.chip-thumb {
+  width: 44px;
+  height: 44px;
   object-fit: cover;
-  border-radius: 0.3rem;
-  border: 1px solid #ccc;
+  border-radius: 0.4rem;
+  display: block;
 }
 
-.file-item {
-  padding: 0.3rem 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0.3rem;
+.chip-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.chip-name {
+  font-size: 1.2rem;
+  color: rgba(222, 222, 222, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 90px;
+}
+
+.chip-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.85);
+  border: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.chip-remove:hover {
+  background: #f87171;
 }
 
 /* =========================================================
@@ -969,6 +1030,7 @@ body {
     transform: rotate(360deg);
   }
 }
+
 /* =========================================================
    MOBILE
 ========================================================= */
@@ -1167,5 +1229,20 @@ body {
   .response-ad-bottom {
     height: 80px;
     margin: 8px 0 2px 0;
+  }
+
+  /* ── Attachment tray — mobile tweaks ── */
+  .attachment-chip {
+    max-width: 130px;
+  }
+
+  .chip-thumb {
+    width: 38px;
+    height: 38px;
+  }
+
+  .chip-name {
+    max-width: 70px;
+    font-size: 1.1rem;
   }
 }

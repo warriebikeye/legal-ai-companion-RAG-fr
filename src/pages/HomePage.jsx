@@ -306,7 +306,13 @@ function HomePage() {
   /* =========================================================
      FILE UPLOAD
   ========================================================= */
-  const handleFileUpload      = useCallback((e) => setFiles([...e.target.files]), []);
+  const handleFileUpload = useCallback((e) => setFiles([...e.target.files]), []);
+
+  const removeFile = useCallback(
+    (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx)),
+    []
+  );
+
   const handleFileButtonClick = useCallback(() => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -595,6 +601,45 @@ function HomePage() {
 
         {/* ── Chat footer ───────────────────────────────── */}
         <div className="chatfooter">
+
+          {/* ── Attachment tray — renders above input bar when files are selected ── */}
+          {files.length > 0 && (
+            <div className="attachment-tray">
+              {files.map((file, idx) =>
+                file.type.startsWith("image/") ? (
+                  <div key={idx} className="attachment-chip image-chip">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="chip-thumb"
+                    />
+                    <button
+                      className="chip-remove"
+                      onClick={() => removeFile(idx)}
+                      title="Remove"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div key={idx} className="attachment-chip file-chip">
+                    <span className="chip-icon">📄</span>
+                    <span className="chip-name">{file.name}</span>
+                    <button
+                      className="chip-remove"
+                      onClick={() => removeFile(idx)}
+                      title="Remove"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+
           <div className="inp">
 
             <input
@@ -619,18 +664,6 @@ function HomePage() {
             >
               +
             </button>
-
-            {files.length > 0 && (
-              <div className="file-preview">
-                {files.map((file, idx) =>
-                  file.type.startsWith("image/") ? (
-                    <img key={idx} src={URL.createObjectURL(file)} alt="" className="file-thumb" />
-                  ) : (
-                    <div key={idx} className="file-item">📄 {file.name}</div>
-                  )
-                )}
-              </div>
-            )}
 
             <textarea
               placeholder="Send a message"
