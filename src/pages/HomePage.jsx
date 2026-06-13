@@ -1,28 +1,24 @@
 import '../App.css';
+import { encryptedFetch } from "../utils/encryption";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from 'react-markdown';
-import gptLogo from '../assets/DeeBees.svg';
-import addBtn from '../assets/add-30.png';
-import home from '../assets/home.svg';
-import rocket from '../assets/rocket.svg';
-import sendBtn from '../assets/send.svg';
-import gptimglogo from '../assets/DeeBees.svg';
-import logout from '../assets/logout.svg';
+import gptLogo        from '../assets/DeeBees.svg';
+import addBtn         from '../assets/add-30.png';
+import home           from '../assets/home.svg';
+import rocket         from '../assets/rocket.svg';
+import sendBtn        from '../assets/send.svg';
+import gptimglogo     from '../assets/DeeBees.svg';
+import logout         from '../assets/logout.svg';
 import defaultUserIcon from '../assets/user-icon.png';
 
-import { useRAGStream } from '../hooks/useRAGStream';
-import AuthModal from '../components/AuthModal';
-import AdBanner from '../components/AdBanner';
+import { useRAGStream }  from '../hooks/useRAGStream';
+import AuthModal         from '../components/AuthModal';
+import AdBanner          from '../components/AdBanner';
 import { readAuthCookie } from '../hooks/useAuthCookie';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
-// ── AdSense slot IDs ──────────────────────────────────────
-// Set these in your .env:
-//   REACT_APP_ADSENSE_CLIENT = ca-pub-XXXXXXXXXXXXXXXX
-//   REACT_APP_AD_SLOT_TOP    = 1234567890
-//   REACT_APP_AD_SLOT_BOTTOM = 0987654321
 /* =========================================================
    DEFAULT BOT MESSAGE
 ========================================================= */
@@ -36,9 +32,9 @@ const DEFAULT_BOT_MESSAGE = {
    COUNTRIES
 ========================================================= */
 const countries = [
-  { name: "Nigeria", flag: "🇳🇬" },
-  { name: "Kenya", flag: "🇰🇪" },
-  { name: "Ghana", flag: "🇬🇭" },
+  { name: "Nigeria",      flag: "🇳🇬" },
+  { name: "Kenya",        flag: "🇰🇪" },
+  { name: "Ghana",        flag: "🇬🇭" },
   { name: "South Africa", flag: "🇿🇦" },
   { name: "United States", flag: "🇺🇸" },
 ];
@@ -48,122 +44,90 @@ const countries = [
 ========================================================= */
 function HomePage() {
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const navigate = useNavigate();
+  const fileInputRef   = useRef(null);
+  const navigate       = useNavigate();
 
   /* ── state ────────────────────────────────────────────── */
-  const [input, setInput] = useState("");
-  const [files, setFiles] = useState([]);
-  const [userLocation, setUserLocation] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(
-    window.innerWidth > 768
-  );
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [userEmail, setUserEmail] = useState(null);
-  const [userName, setUserName] = useState(null);
-  const [userImage, setUserImage] = useState(null);
+  const [input,               setInput]               = useState("");
+  const [files,               setFiles]               = useState([]);
+  const [userLocation,        setUserLocation]        = useState("");
+  const [sidebarOpen,         setSidebarOpen]         = useState(window.innerWidth > 768);
+  const [isAuthenticated,     setIsAuthenticated]     = useState(false);
+  const [authChecked,         setAuthChecked]         = useState(false);
+  const [userEmail,           setUserEmail]           = useState(null);
+  const [userName,            setUserName]            = useState(null);
+  const [userImage,           setUserImage]           = useState(null);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [recentConversations, setRecentConversations] = useState([]);
+  const [subscriptionTier,    setSubscriptionTier]    = useState("free");
+  const [subscriptionStatus,  setSubscriptionStatus]  = useState("inactive");
+  const [messages,            setMessages]            = useState([DEFAULT_BOT_MESSAGE]);
 
-  /* ── subscription ─────────────────────────────────────── */
-  const [subscriptionTier, setSubscriptionTier] = useState("free");
-  const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
-
-  /* ── messages ─────────────────────────────────────────── */
-  const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
-
-  /* ── derived: show ads only to free-tier users ────────── */
+  /* ── derived ──────────────────────────────────────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
 
   /* ── stream hook ──────────────────────────────────────── */
   const {
     ask, cancel,
-    answer: streamAnswer,
-    sources: streamSources,
+    answer:         streamAnswer,
+    sources:        streamSources,
     clauseAnalysis: streamClause,
-    status: streamStatus,
-    error: streamError,
+    status:         streamStatus,
+    error:          streamError,
     conversationId: streamConvoId,
   } = useRAGStream();
 
-  const isSending = streamStatus === "preparing" || streamStatus === "streaming";
-  const isStreaming = streamStatus === "streaming";
+  const isSending   = streamStatus === "preparing" || streamStatus === "streaming";
+  const isStreaming  = streamStatus === "streaming";
 
   /* =========================================================
-     AUTO SCROLL
+     HELPERS
   ========================================================= */
-  const closeSidebarOnMobile = () => {
-    if (window.innerWidth <= 768) {
-      setSidebarOpen(false);
-    }
-  };
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) {
-        setSidebarOpen(true);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-  /* =========================================================
-     COUNTRY AUTO-DETECT
-  ========================================================= */
-  useEffect(() => {
-    const autoDetectCountry = async () => {
-      try {
-        const res = await fetch("https://ipapi.co/json/");
-        const data = await res.json();
-        const found = countries.find((c) => c.name === data.country_name);
-        if (found) setUserLocation(found.name);
-      } catch (err) {
-        console.warn("Auto-location failed:", err);
-      }
-    };
-    autoDetectCountry();
+  const closeSidebarOnMobile = useCallback(() => {
+    if (window.innerWidth <= 768) setSidebarOpen(false);
   }, []);
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
-  };
+  }, []);
 
   /* =========================================================
      FETCH CONVERSATIONS
+     NOTE: encryptedFetch already returns the final, decrypted
+     JSON data (NOT a fetch Response). Do not call `.ok` or
+     `.json()` on its result — and on non-2xx responses it
+     throws, so use try/catch.
   ========================================================= */
-  const fetchRecentConversations = async () => {
+  const fetchRecentConversations = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/conversations`, {
+      const convData = await encryptedFetch(`${API_BASE_URL}/conversations`, {
         method: "GET", credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to fetch conversations");
-      const convData = await res.json();
       setRecentConversations(
-        Array.isArray(convData) ? convData :
-          Array.isArray(convData.conversations) ? convData.conversations : []
+        Array.isArray(convData)               ? convData :
+        Array.isArray(convData?.conversations) ? convData.conversations : []
       );
     } catch (err) {
       console.error("Error fetching recent conversations:", err);
       setRecentConversations([]);
     }
-  };
+  }, []);
 
   /* =========================================================
-     AUTH — cookie-first, then /auth/me fallback
+     AUTH HELPERS
   ========================================================= */
   const applyUserData = useCallback((data) => {
     setIsAuthenticated(true);
-    setUserEmail(data.email ?? data.userEmail ?? null);
-    setUserName(data.name ?? null);
-    setUserImage(data.photo ?? data.userImage ?? defaultUserIcon);
-    setSubscriptionTier(data.subscriptionTier ?? "free");
+    setUserEmail(data.email       ?? data.userEmail ?? null);
+    setUserName(data.name         ?? null);
+    setUserImage(data.photo       ?? data.userImage ?? defaultUserIcon);
+    setSubscriptionTier(data.subscriptionTier   ?? "free");
     setSubscriptionStatus(data.subscriptionStatus ?? "inactive");
   }, []);
 
+  /* =========================================================
+     AUTH CHECK — cookie-first, then /auth/me fallback
+  ========================================================= */
   const checkAuthentication = useCallback(async () => {
     // ── Step 1: try cookie (zero network cost) ──────────────
     const cookie = readAuthCookie();
@@ -171,20 +135,20 @@ function HomePage() {
       applyUserData(cookie);
       setAuthChecked(true);
 
-      // Fire-and-forget: load conversations + silently refresh cookie
+      // Fire-and-forget: load conversations + silently refresh
       fetchRecentConversations();
       fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
           if (data?.isAuthenticated) applyUserData({
-            email: data.userEmail,
-            name: data.name,
-            photo: data.userImage,
-            subscriptionTier: data.subscriptionTier,
+            email:              data.userEmail,
+            name:               data.name,
+            photo:              data.userImage,
+            subscriptionTier:   data.subscriptionTier,
             subscriptionStatus: data.subscriptionStatus,
           });
         })
-        .catch(() => {/* silent — cookie data already shown */ });
+        .catch(() => { /* silent — cookie data already shown */ });
       return;
     }
 
@@ -204,10 +168,10 @@ function HomePage() {
 
       if (data.isAuthenticated) {
         applyUserData({
-          email: data.userEmail,
-          name: data.name,
-          photo: data.userImage,
-          subscriptionTier: data.subscriptionTier,
+          email:              data.userEmail,
+          name:               data.name,
+          photo:              data.userImage,
+          subscriptionTier:   data.subscriptionTier,
           subscriptionStatus: data.subscriptionStatus,
         });
         await fetchRecentConversations();
@@ -220,106 +184,46 @@ function HomePage() {
     } finally {
       setAuthChecked(true);
     }
-  }, [applyUserData]);
+  }, [applyUserData, fetchRecentConversations]);
 
   useEffect(() => {
     checkAuthentication();
   }, [checkAuthentication]);
 
   /* =========================================================
-     RENDER BOT MESSAGE
-     ── KEY FIX: accepts msgIndex so each AdBanner gets a
-     unique, stable key scoped to the active conversation +
-     message position. This forces React to mount a fresh
-     <ins> element per AdBanner instance instead of reusing a
-     DOM node that AdSense has already mutated (which was the
-     source of layout corruption persisting across navigation
-     / conversation loads on the free tier). ──
+     AUTO SCROLL
   ========================================================= */
-  const renderBotMessage = (message, msgIndex) => {
-    const isWelcomeMessage = message.isWelcome === true;
-    const paragraphs = message.text
-      ?.split("\n\n")
-      .filter((p) => p.trim());
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-    const middleIndex = Math.floor(paragraphs.length / 2);
-
-    return (
-      <>
-        {paragraphs.map((paragraph, index) => (
-          <div key={index}>
-            <ReactMarkdown>{paragraph}</ReactMarkdown>
-            {/* TOP AD — after first paragraph */}
-            {showAds &&
-              !isWelcomeMessage &&
-              message.isBot &&
-              !message.typing &&
-              !message.isStreaming &&
-              index === 0 && (
-                <AdBanner
-                  key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
-                  adSlot="4638051915"
-                  adFormat="auto"
-                  height={120}
-                  className="response-ad-top"
-                />
-              )}
-            {showAds &&
-              !isWelcomeMessage &&
-              message.isBot &&
-              !message.typing &&
-              !message.isStreaming &&
-              index === middleIndex && (
-                <AdBanner
-                  key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
-                  adSlot="7325824814"
-                  adFormat="fluid"
-                  adLayoutKey="-fb+5w+4e-db+86"
-                  height={100}
-                  className="response-ad-middle"
-                />
-              )}
-          </div>
-        ))}
-
-        {showAds &&
-          !isWelcomeMessage &&
-          message.isBot &&
-          !message.typing &&
-          !message.isStreaming && (
-            <AdBanner
-              key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
-              adSlot="4473601628"
-              adFormat="auto"
-              height={80}
-              className="response-ad-bottom"
-            />
-          )}
-      </>
-    );
-  };
   /* =========================================================
-     LOGOUT
+     RESIZE — keep sidebar open on desktop
   ========================================================= */
-  const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: "POST", credentials: "include",
-      });
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-    // Reset all state
-    setIsAuthenticated(false);
-    setUserEmail(null);
-    setUserName(null);
-    setUserImage(null);
-    setSubscriptionTier("free");
-    setSubscriptionStatus("inactive");
-    setRecentConversations([]);
-    setActiveConversationId(null);
-    setMessages([DEFAULT_BOT_MESSAGE]);
-  };
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) setSidebarOpen(true);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  /* =========================================================
+     COUNTRY AUTO-DETECT
+  ========================================================= */
+  useEffect(() => {
+    const autoDetectCountry = async () => {
+      try {
+        const res  = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        const found = countries.find((c) => c.name === data.country_name);
+        if (found) setUserLocation(found.name);
+      } catch (err) {
+        console.warn("Auto-location failed:", err);
+      }
+    };
+    autoDetectCountry();
+  }, []);
 
   /* =========================================================
      STREAM — sync live bot message
@@ -327,17 +231,17 @@ function HomePage() {
   useEffect(() => {
     if (streamStatus === "idle" || streamStatus === "done") return;
     setMessages((prev) => {
-      const updated = [...prev];
+      const updated    = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
       updated[lastBotIdx] = {
         ...updated[lastBotIdx],
-        text: streamAnswer || "",
-        typing: streamStatus === "preparing",
-        isStreaming: streamStatus === "streaming",
-        sources: streamSources || [],
-        clauseAnalysis: streamClause || null,
-        hasSources: (streamSources || []).length > 0,
+        text:             streamAnswer || "",
+        typing:           streamStatus === "preparing",
+        isStreaming:      streamStatus === "streaming",
+        sources:          streamSources || [],
+        clauseAnalysis:   streamClause  || null,
+        hasSources:       (streamSources || []).length > 0,
         hasClauseAnalysis: !!streamClause,
       };
       return updated;
@@ -350,23 +254,23 @@ function HomePage() {
   useEffect(() => {
     if (streamStatus !== "done") return;
     setMessages((prev) => {
-      const updated = [...prev];
+      const updated    = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
       updated[lastBotIdx] = { ...updated[lastBotIdx], isStreaming: false, typing: false };
       return updated;
     });
-    if (streamConvoId) setActiveConversationId(streamConvoId);
-    if (isAuthenticated) fetchRecentConversations();
-  }, [streamStatus, streamConvoId, isAuthenticated]);
+    if (streamConvoId)    setActiveConversationId(streamConvoId);
+    if (isAuthenticated)  fetchRecentConversations();
+  }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations]);
 
   /* =========================================================
-     STREAM — errors
+     STREAM — error
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
     setMessages((prev) => {
-      const updated = [...prev];
+      const updated    = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
       updated[lastBotIdx] = {
@@ -378,30 +282,56 @@ function HomePage() {
   }, [streamStatus, streamError]);
 
   /* =========================================================
+     LOGOUT
+  ========================================================= */
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST", credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    setIsAuthenticated(false);
+    setUserEmail(null);
+    setUserName(null);
+    setUserImage(null);
+    setSubscriptionTier("free");
+    setSubscriptionStatus("inactive");
+    setRecentConversations([]);
+    setActiveConversationId(null);
+    setMessages([DEFAULT_BOT_MESSAGE]);
+  }, []);
+
+  /* =========================================================
      FILE UPLOAD
   ========================================================= */
-  const handleFileUpload = (e) => setFiles([...e.target.files]);
-  const handleFileButtonClick = () => {
-    if (fileInputRef.current) { fileInputRef.current.value = ""; fileInputRef.current.click(); }
-  };
+  const handleFileUpload      = useCallback((e) => setFiles([...e.target.files]), []);
+  const handleFileButtonClick = useCallback(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
+    }
+  }, []);
 
   /* =========================================================
      NEW CHAT
   ========================================================= */
-  const startNewChat = () => {
+  const startNewChat = useCallback(() => {
     closeSidebarOnMobile();
-
     cancel();
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
     setFiles([]);
-  };
+  }, [cancel, closeSidebarOnMobile]);
 
   /* =========================================================
      LOAD CONVERSATION
+     NOTE: encryptedFetch returns final decrypted JSON data
+     directly — do not call `.ok` or `.json()` on it.
   ========================================================= */
-  const loadConversation = async (conversationId) => {
+  const loadConversation = useCallback(async (conversationId) => {
     closeSidebarOnMobile();
     if (!conversationId || conversationId === "undefined") return;
 
@@ -410,24 +340,22 @@ function HomePage() {
       setActiveConversationId(conversationId);
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
-      const res = await fetch(
+      const data = await encryptedFetch(
         `${API_BASE_URL}/conversations/${conversationId}/messages`,
         { method: "GET", credentials: "include" }
       );
-      if (!res.ok) throw new Error("Failed to load conversation");
 
-      const data = await res.json();
-      const rawMessages = Array.isArray(data) ? data :
-        Array.isArray(data.messages) ? data.messages : [];
+      const rawMessages = Array.isArray(data)          ? data :
+                          Array.isArray(data?.messages) ? data.messages : [];
 
       if (rawMessages.length === 0) { setMessages([DEFAULT_BOT_MESSAGE]); return; }
 
       setMessages(rawMessages.map((msg) => ({
-        text: msg.content,
-        isBot: msg.role !== "user",
-        sources: msg.sources ?? [],
-        clauseAnalysis: msg.clauseAnalysis ?? null,
-        hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
+        text:             msg.content,
+        isBot:            msg.role !== "user",
+        sources:          msg.sources      ?? [],
+        clauseAnalysis:   msg.clauseAnalysis ?? null,
+        hasSources:       Array.isArray(msg.sources) && msg.sources.length > 0,
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
@@ -436,12 +364,12 @@ function HomePage() {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
     }
-  };
+  }, [cancel, closeSidebarOnMobile]);
 
   /* =========================================================
      SEND MESSAGE
   ========================================================= */
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim() && files.length === 0) return;
     if (!userLocation) { alert("Please select your country first."); return; }
 
@@ -454,24 +382,77 @@ function HomePage() {
     setInput("");
     await ask({ query, country: userLocation, conversationId: activeConversationId, files });
     setFiles([]);
-  };
+  }, [ask, input, files, userLocation, activeConversationId]);
 
   /* =========================================================
-     RENDER LOADING UNTIL AUTH CHECK DONE (prevents flash)
+     RENDER BOT MESSAGE
+  ========================================================= */
+  const renderBotMessage = useCallback((message, msgIndex) => {
+    const isWelcomeMessage = message.isWelcome === true;
+    const paragraphs = message.text?.split("\n\n").filter((p) => p.trim()) ?? [];
+    const middleIndex = Math.floor(paragraphs.length / 2);
+
+    return (
+      <>
+        {paragraphs.map((paragraph, index) => (
+          <div key={index}>
+            <ReactMarkdown>{paragraph}</ReactMarkdown>
+
+            {/* TOP AD — after first paragraph */}
+            {showAds && !isWelcomeMessage && message.isBot &&
+              !message.typing && !message.isStreaming && index === 0 && (
+                <AdBanner
+                  key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
+                  adSlot="4638051915"
+                  adFormat="auto"
+                  height={120}
+                  className="response-ad-top"
+                />
+              )}
+
+            {/* MID AD — at middle paragraph */}
+            {showAds && !isWelcomeMessage && message.isBot &&
+              !message.typing && !message.isStreaming && index === middleIndex && (
+                <AdBanner
+                  key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
+                  adSlot="7325824814"
+                  adFormat="fluid"
+                  adLayoutKey="-fb+5w+4e-db+86"
+                  height={100}
+                  className="response-ad-middle"
+                />
+              )}
+          </div>
+        ))}
+
+        {/* BOTTOM AD */}
+        {showAds && !isWelcomeMessage && message.isBot &&
+          !message.typing && !message.isStreaming && (
+            <AdBanner
+              key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
+              adSlot="4473601628"
+              adFormat="auto"
+              height={80}
+              className="response-ad-bottom"
+            />
+          )}
+      </>
+    );
+  }, [showAds, activeConversationId]);
+
+  /* =========================================================
+     LOADING SCREEN
   ========================================================= */
   if (!authChecked) {
-  return (
-    <div className="app-loading">
-      <img src={gptLogo} alt="DeeBees" className="loading-logo" />
-
-      <h2>Clauzify</h2>
-
-      <div className="loading-spinner" />
-
-      <p>Preparing your workspace...</p>
-    </div>
-  );
-}
+    return (
+      <div className="app-loading">
+        <img src={gptLogo} alt="DeeBees" className="loading-logo" />
+        <h2>Clauzify</h2>
+        <div className="loading-spinner" />
+        <p>Preparing your workspace...</p>
+      </div>
+    );
+  }
 
   /* =========================================================
      RENDER
@@ -491,14 +472,14 @@ function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <div className={`sideBar ${sidebarOpen ? "open" : "collapsed"}`}>
 
-        <div className='upperSide'>
+        <div className="upperSide">
 
-          <div className='uppersideTop'>
-            <img src={gptLogo} alt='Logo' className='logo' />
+          <div className="uppersideTop">
+            <img src={gptLogo} alt="Logo" className="logo" />
           </div>
 
           <select
-            className='query'
+            className="query"
             value={userLocation}
             onChange={(e) => {
               setUserLocation(e.target.value);
@@ -511,48 +492,46 @@ function HomePage() {
             ))}
           </select>
 
-          <div className='upperSideButton'>
+          <div className="upperSideButton">
             <h2>Previous Chats</h2>
             {Array.isArray(recentConversations) &&
               recentConversations.map((conv) => {
                 const convId = conv._id || conv.id;
                 return (
-                  <button key={convId} className='query' onClick={() => loadConversation(convId)}>
+                  <button key={convId} className="query" onClick={() => loadConversation(convId)}>
                     <span className="queryText">{conv.title || "Untitled Chat"}</span>
                   </button>
                 );
-              })
-            }
+              })}
           </div>
         </div>
 
         {/* ── Lower sidebar ─────────────────────────────── */}
-        <div className='lowerside'>
+        <div className="lowerside">
 
-          <button className='midBtn' onClick={startNewChat}>
-            <img src={addBtn} alt='' className='addBtn' />
+          <button className="midBtn" onClick={startNewChat}>
+            <img src={addBtn} alt="" className="addBtn" />
             New Chat
           </button>
 
-          <div className='ListItems'>
-            <img src={home} alt='' />
+          <div className="ListItems">
+            <img src={home} alt="" />
             Home
           </div>
 
-          <div className='ListItems upgradeBtn' onClick={() => navigate("/upgrade")}>
-            <img src={rocket} alt='' />
+          <div className="ListItems upgradeBtn" onClick={() => navigate("/upgrade")}>
+            <img src={rocket} alt="" />
             {subscriptionTier === "premium" ? "Pro Active ✓" : "Upgrade to Pro"}
           </div>
 
-          <div className='ListItems'>
-            <img src={userImage || defaultUserIcon} alt='' />
+          <div className="ListItems">
+            <img src={userImage || defaultUserIcon} alt="" />
             {userName || userEmail || "Account"}
           </div>
 
-          {/* ✅ Logout button */}
           {isAuthenticated && (
-            <div className='ListItems logoutBtn' onClick={handleLogout}>
-              <img src={logout} alt='' />
+            <div className="ListItems logoutBtn" onClick={handleLogout}>
+              <img src={logout} alt="" />
               Sign out
             </div>
           )}
@@ -565,16 +544,16 @@ function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
 
-        <div className='chats'>
+        <div className="chats">
           {messages.map((message, i) => (
-            <div key={i} className={message.isBot ? 'chat bot' : 'chat'}>
+            <div key={i} className={message.isBot ? "chat bot" : "chat"}>
               <img
                 src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)}
-                className='chtimg'
-                alt=''
+                className="chtimg"
+                alt=""
               />
 
-              <p className='txt'>
+              <p className="txt">
                 {message.typing && !message.isStreaming ? (
                   <div className="typing-dots">
                     <span /><span /><span />
@@ -587,28 +566,24 @@ function HomePage() {
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
 
                       {message.isStreaming && (
-                        <span
-                          className="stream-cursor"
-                          aria-hidden="true"
-                        />
+                        <span className="stream-cursor" aria-hidden="true" />
                       )}
                     </div>
 
                     {message.sources?.length > 0 && (
-                      <span style={{ marginTop: '10px', display: 'block' }}>
+                      <span style={{ marginTop: "10px", display: "block" }}>
                         <strong>Sources:</strong> {message.sources.join(", ")}
                       </span>
                     )}
 
                     {message.clauseAnalysis && (
-                      <span style={{ marginTop: '10px', display: 'block' }}>
+                      <span style={{ marginTop: "10px", display: "block" }}>
                         <strong>Clause Analysis:</strong>{" "}
                         {typeof message.clauseAnalysis === "string"
                           ? message.clauseAnalysis
                           : JSON.stringify(message.clauseAnalysis)}
                       </span>
                     )}
-
                   </>
                 )}
               </p>
@@ -619,8 +594,8 @@ function HomePage() {
         </div>
 
         {/* ── Chat footer ───────────────────────────────── */}
-        <div className='chatfooter'>
-          <div className='inp'>
+        <div className="chatfooter">
+          <div className="inp">
 
             <input
               type="file"
@@ -649,7 +624,7 @@ function HomePage() {
               <div className="file-preview">
                 {files.map((file, idx) =>
                   file.type.startsWith("image/") ? (
-                    <img key={idx} src={URL.createObjectURL(file)} alt='' className="file-thumb" />
+                    <img key={idx} src={URL.createObjectURL(file)} alt="" className="file-thumb" />
                   ) : (
                     <div key={idx} className="file-item">📄 {file.name}</div>
                   )
@@ -671,10 +646,10 @@ function HomePage() {
             />
 
             {isStreaming ? (
-              <button className='send stop' onClick={cancel} title="Stop generating">■</button>
+              <button className="send stop" onClick={cancel} title="Stop generating">■</button>
             ) : (
-              <button className='send' onClick={handleSend} disabled={isSending}>
-                {isSending ? <div className="loader" /> : <img src={sendBtn} alt='' />}
+              <button className="send" onClick={handleSend} disabled={isSending}>
+                {isSending ? <div className="loader" /> : <img src={sendBtn} alt="" />}
               </button>
             )}
 
