@@ -457,9 +457,21 @@ function HomePage() {
   };
 
   /* =========================================================
-     HOLD RENDER UNTIL AUTH CHECK DONE (prevents flash)
+     RENDER LOADING UNTIL AUTH CHECK DONE (prevents flash)
   ========================================================= */
-  if (!authChecked) return null;
+  if (!authChecked) {
+  return (
+    <div className="app-loading">
+      <img src={gptLogo} alt="DeeBees" className="loading-logo" />
+
+      <h2>DeeBees AI</h2>
+
+      <div className="loading-spinner" />
+
+      <p>Preparing your workspace...</p>
+    </div>
+  );
+}
 
   /* =========================================================
      RENDER
