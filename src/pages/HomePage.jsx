@@ -655,7 +655,7 @@ function HomePage() {
 
           </div>
 
-          <p>~ Africa's Legal Intelligence Engine Pipeline ~</p>
+          <p>~ Africa's Legal Intelligence Pipeline ~</p>
         </div>
       </div>
     </div>
