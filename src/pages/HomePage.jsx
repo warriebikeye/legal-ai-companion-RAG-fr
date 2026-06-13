@@ -464,7 +464,7 @@ function HomePage() {
     <div className="app-loading">
       <img src={gptLogo} alt="DeeBees" className="loading-logo" />
 
-      <h2>DeeBees AI</h2>
+      <h2>Clauzify</h2>
 
       <div className="loading-spinner" />
 
