@@ -191,6 +191,52 @@
 }
 
 /* =========================================================
+   SCROLL TO BOTTOM BUTTON
+   Floats above the chat footer, centred in the main panel.
+   Uses position:absolute so it stays within .main's bounds
+   rather than position:fixed which would ignore the sidebar.
+========================================================= */
+
+.scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 9rem; /* sits above .chatfooter (~7rem tall) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: #5a4bff;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  animation: fadeInUp 0.18s ease;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.scroll-to-bottom-btn:hover {
+  opacity: 0.88;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* =========================================================
    BOT MESSAGE CONTENT
 ========================================================= */
 
@@ -308,38 +354,18 @@ body {
 
 /* =========================================================
    APP SHELL
-   Classic chat layout — sidebar + main side by side,
-   both locked to viewport height, no body scroll ever.
-
-   ── dvh FALLBACK ──
-   100dvh requires a fairly recent WebView (Chromium ~108+).
-   Older Android System WebView versions (common in some
-   Median/GoNative-wrapped apps) can treat an unsupported value
-   as invalid -- leaving .App/.main with NO height, collapsing
-   to content height, and breaking the .chats flex/overflow
-   chain (no bounded height -> nothing to scroll, but
-   .chatfooter still renders fine since it doesn't rely on
-   overflow).
-
-   Fix: declare 100vh first as a safe fallback, then 100dvh.
-   An invalid property value is ignored entirely (not "last
-   wins" in the cascade sense for unsupported values), so the
-   vh declaration survives in browsers without dvh support,
-   while browsers WITH dvh support use the more accurate value.
 ========================================================= */
 
 .App {
   display: flex;
   height: 100vh;
-  /* fallback for WebViews without dvh support */
   height: 100dvh;
   width: 100vw;
   overflow: hidden;
 }
 
 /* =========================================================
-   FILE UPLOAD — hidden input trigger only
-   (preview UI replaced by .attachment-tray below)
+   FILE UPLOAD
 ========================================================= */
 
 .filein {
@@ -354,9 +380,6 @@ body {
 
 /* =========================================================
    ATTACHMENT TRAY
-   Floats above the .inp input bar inside .chatfooter.
-   Files appear as dismissible chips in a horizontally
-   scrolling row — never wraps, never bloats footer height.
 ========================================================= */
 
 .attachment-tray {
@@ -452,7 +475,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  /* fallback */
   height: 100dvh;
 }
 
@@ -533,11 +555,9 @@ body {
 
 /* =========================================================
    MAIN — the chat panel
-   This is the entire right column. It is a flex column with
-   two layers:
-     .chats      — scrollable message history, grows to fill space
-     .chatfooter — fixed-height input bar, always at bottom
-   No margins that fight height. Padding handled inside children.
+   position: relative is required so the scroll-to-bottom
+   button (position: absolute) anchors to this container
+   rather than the viewport.
 ========================================================= */
 
 .main {
@@ -546,49 +566,19 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  /* fallback */
   height: 100dvh;
-  /* full viewport, no offsets */
   overflow: hidden;
-  /* only .chats scrolls */
   padding: 0 10rem;
-  /* horizontal breathing room */
+  position: relative; /* anchors .scroll-to-bottom-btn */
 }
 
 /* =========================================================
-   CHATS — the ONE scroll container
-
-   ── KEY FIX ──
-   flex: 1 + min-height: 0 only produce a scrollable container
-   if the ANCESTOR chain (.App, .main) has a guaranteed bounded
-   height. If 100dvh is unsupported and silently dropped, .App
-   and .main collapse to "auto" height (their content's height),
-   which means .chats's flex:1 has nothing to be 1-fraction-of —
-   it just renders at its content height too, never overflows,
-   and overflow-y has nothing to do. This is why .chatfooter
-   still appears (it doesn't depend on overflow) but scrolling
-   does nothing.
-
-   The 100vh/100dvh fallback pair above on .App/.main/.sideBar
-   is what actually fixes this; the rules below are the same
-   "correct in principle" rules from before, now resting on a
-   guaranteed-bounded ancestor.
-
-   overflow-y: auto (not scroll) — avoids reserving a scrollbar
-   track region that some WebViews render as a thin visible
-   strip even with scrollbar-width: none.
-
-   -webkit-overflow-scrolling: touch — enables momentum/inertial
-   scrolling in older WebKit/WebView engines; without it some
-   WebViews require the touch to track 1:1 with finger movement
-   and can feel "stuck" or unresponsive to flick gestures.
+   CHATS
 ========================================================= */
 
 .chats {
   flex: 1;
-  /* fills all space above the footer */
   min-height: 0;
-  /* required — without this flex ignores overflow */
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -679,7 +669,6 @@ body {
 
 /* =========================================================
    CHAT FOOTER
-   flex-shrink: 0 so it never gets compressed by .chats.
 ========================================================= */
 
 .chatfooter {
@@ -691,7 +680,6 @@ body {
   align-items: center;
   gap: 0.8rem;
   background: rgb(3, 0, 31);
-  /* matches body so it looks pinned */
 }
 
 .chatfooter>p {
@@ -1056,9 +1044,7 @@ body {
   .App {
     display: flex;
     flex-direction: row;
-    /* sidebar still overlays, main fills all */
     height: 100vh;
-    /* fallback */
     height: 100dvh;
     width: 100vw;
     overflow: hidden;
@@ -1087,20 +1073,18 @@ body {
     overflow: hidden;
   }
 
-  /* Main fills the full screen on mobile */
   .main {
     flex: 1;
     width: 100%;
     min-width: 0;
     height: 100vh;
-    /* fallback */
     height: 100dvh;
     padding: 0 1rem;
     padding-top: 5rem;
-    /* clear the hamburger button */
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    position: relative; /* anchors .scroll-to-bottom-btn on mobile too */
   }
 
   .main.fullWidth {
@@ -1117,8 +1101,6 @@ body {
     scroll-behavior: smooth;
     scrollbar-width: none;
     padding: 1rem 0 2rem 0;
-    /* No max-height, no fixed height — flex:1 + min-height:0 is enough,
-       PROVIDED .main/.App have a valid bounded height (see dvh fallback) */
   }
 
   .chats::-webkit-scrollbar {
@@ -1244,5 +1226,13 @@ body {
   .chip-name {
     max-width: 70px;
     font-size: 1.1rem;
+  }
+
+  /* ── Scroll button — mobile tweaks ── */
+  .scroll-to-bottom-btn {
+    bottom: 8rem;
+    width: 3.6rem;
+    height: 3.6rem;
+    font-size: 1.8rem;
   }
 }
