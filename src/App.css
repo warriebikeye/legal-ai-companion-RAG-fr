@@ -718,6 +718,7 @@ body {
   overflow-y: auto;
   max-height: 120px;
   line-height: 1.4;
+  margin-top:20px;
 }
 
 .inp>input,
