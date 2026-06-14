@@ -44,6 +44,7 @@ const countries = [
 ========================================================= */
 function HomePage() {
   const messagesEndRef = useRef(null);
+  const chatsRef       = useRef(null);
   const fileInputRef   = useRef(null);
   const navigate       = useNavigate();
 
@@ -62,6 +63,7 @@ function HomePage() {
   const [subscriptionTier,    setSubscriptionTier]    = useState("free");
   const [subscriptionStatus,  setSubscriptionStatus]  = useState("inactive");
   const [messages,            setMessages]            = useState([DEFAULT_BOT_MESSAGE]);
+  const [showScrollBtn,       setShowScrollBtn]       = useState(false);
 
   /* ── derived ──────────────────────────────────────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
@@ -90,6 +92,43 @@ function HomePage() {
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
   }, []);
+
+  /* =========================================================
+     SCROLL HELPERS
+     - isNearBottom: true when user is within 120px of the bottom
+     - scrollToBottom: smoothly jumps to bottom, hides the button
+     - handleChatsScroll: fired on every scroll event; hides the
+       button once the user manually reaches the bottom
+  ========================================================= */
+  const isNearBottom = useCallback(() => {
+    const el = chatsRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollBtn(false);
+  }, []);
+
+  const handleChatsScroll = useCallback(() => {
+    if (isNearBottom()) setShowScrollBtn(false);
+  }, [isNearBottom]);
+
+  /* =========================================================
+     SMART SCROLL — runs whenever messages update.
+     If the user is already near the bottom, scroll them along.
+     If they've scrolled up to read history, show the arrow
+     instead so we don't hijack their position.
+  ========================================================= */
+  useEffect(() => {
+    if (isNearBottom()) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setShowScrollBtn(false);
+    } else {
+      setShowScrollBtn(true);
+    }
+  }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* =========================================================
      FETCH CONVERSATIONS
@@ -189,13 +228,6 @@ function HomePage() {
   useEffect(() => {
     checkAuthentication();
   }, [checkAuthentication]);
-
-  /* =========================================================
-     AUTO SCROLL
-  ========================================================= */
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   /* =========================================================
      RESIZE — keep sidebar open on desktop
@@ -330,6 +362,7 @@ function HomePage() {
     setMessages([DEFAULT_BOT_MESSAGE]);
     setInput("");
     setFiles([]);
+    setShowScrollBtn(false);
   }, [cancel, closeSidebarOnMobile]);
 
   /* =========================================================
@@ -344,6 +377,7 @@ function HomePage() {
     try {
       cancel();
       setActiveConversationId(conversationId);
+      setShowScrollBtn(false);
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
       const data = await encryptedFetch(
@@ -365,7 +399,10 @@ function HomePage() {
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        setShowScrollBtn(false);
+      }, 100);
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
@@ -386,6 +423,11 @@ function HomePage() {
       { text: "", isBot: true, typing: true, isStreaming: false },
     ]);
     setInput("");
+    // Scroll to bottom when the user sends a message
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setShowScrollBtn(false);
+    }, 50);
     await ask({ query, country: userLocation, conversationId: activeConversationId, files });
     setFiles([]);
   }, [ask, input, files, userLocation, activeConversationId]);
@@ -550,7 +592,7 @@ function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
 
-        <div className="chats">
+        <div className="chats" ref={chatsRef} onScroll={handleChatsScroll}>
           {messages.map((message, i) => (
             <div key={i} className={message.isBot ? "chat bot" : "chat"}>
               <img
@@ -599,10 +641,22 @@ function HomePage() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* ── Scroll-to-bottom button ───────────────────── */}
+        {showScrollBtn && (
+          <button
+            className="scroll-to-bottom-btn"
+            onClick={scrollToBottom}
+            aria-label="Scroll to latest message"
+            title="Jump to latest"
+          >
+            ↓
+          </button>
+        )}
+
         {/* ── Chat footer ───────────────────────────────── */}
         <div className="chatfooter">
 
-          {/* ── Attachment tray — renders above input bar when files are selected ── */}
+          {/* ── Attachment tray ── */}
           {files.length > 0 && (
             <div className="attachment-tray">
               {files.map((file, idx) =>
