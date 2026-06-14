@@ -377,7 +377,9 @@ function HomePage() {
     try {
       cancel();
       setActiveConversationId(conversationId);
-      setShowScrollBtn(false);
+      // Reset scroll position so isNearBottom() returns false after load,
+      // guaranteeing the ↓ arrow always appears instead of auto-scrolling.
+      if (chatsRef.current) chatsRef.current.scrollTop = 0;
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
       const data = await encryptedFetch(
@@ -399,10 +401,7 @@ function HomePage() {
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        setShowScrollBtn(false);
-      }, 100);
+      // Let the smart scroll useEffect decide — show arrow instead of force-scrolling
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
