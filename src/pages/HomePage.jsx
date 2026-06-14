@@ -602,7 +602,7 @@ function HomePage() {
               />
 
               <p className="txt">
-                {message.typing && !message.isStreaming ? (
+                {message.typing || (message.isStreaming && !message.text) ? (
                   <div className="typing-dots">
                     <span /><span /><span />
                   </div>
@@ -613,7 +613,7 @@ function HomePage() {
                         ? renderBotMessage(message, i)
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
 
-                      {message.isStreaming && (
+                      {message.isStreaming && message.text && (
                         <span className="stream-cursor" aria-hidden="true" />
                       )}
                     </div>
