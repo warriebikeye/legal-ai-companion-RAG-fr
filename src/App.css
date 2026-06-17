@@ -693,6 +693,7 @@ body {
   display: flex;
   align-items: center;
   border-radius: 0.5em;
+  height:60px;
   width: 100%;
 }
 
