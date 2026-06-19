@@ -3,18 +3,19 @@ import { encryptedFetch } from "../utils/encryption";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from 'react-markdown';
-import gptLogo        from '../assets/DeeBees.svg';
-import addBtn         from '../assets/add-30.png';
-import home           from '../assets/home.svg';
-import rocket         from '../assets/rocket.svg';
-import sendBtn        from '../assets/send.svg';
-import gptimglogo     from '../assets/DeeBees.svg';
-import logout         from '../assets/logout.svg';
+import gptLogo from '../assets/DeeBees.svg';
+import addBtn from '../assets/add-30.png';
+import home from '../assets/home.svg';
+import rocket from '../assets/rocket.svg';
+import sendBtn from '../assets/send.svg';
+import gptimglogo from '../assets/DeeBees.svg';
+import logout from '../assets/logout.svg';
 import defaultUserIcon from '../assets/user-icon.png';
 
-import { useRAGStream }  from '../hooks/useRAGStream';
-import AuthModal         from '../components/AuthModal';
-import AdBanner          from '../components/AdBanner';
+import { useRAGStream } from '../hooks/useRAGStream';
+import AuthModal from '../components/AuthModal';
+//import AdBanner from '../components/AdBanner';
+import AdsterraBanner from '../components/AdsterraBanner';
 import { readAuthCookie } from '../hooks/useAuthCookie';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
@@ -32,9 +33,9 @@ const DEFAULT_BOT_MESSAGE = {
    COUNTRIES
 ========================================================= */
 const countries = [
-  { name: "Nigeria",      flag: "🇳🇬" },
-  { name: "Kenya",        flag: "🇰🇪" },
-  { name: "Ghana",        flag: "🇬🇭" },
+  { name: "Nigeria", flag: "🇳🇬" },
+  { name: "Kenya", flag: "🇰🇪" },
+  { name: "Ghana", flag: "🇬🇭" },
   { name: "South Africa", flag: "🇿🇦" },
   { name: "United States", flag: "🇺🇸" },
 ];
@@ -44,26 +45,26 @@ const countries = [
 ========================================================= */
 function HomePage() {
   const messagesEndRef = useRef(null);
-  const chatsRef       = useRef(null);
-  const fileInputRef   = useRef(null);
-  const navigate       = useNavigate();
+  const chatsRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   /* ── state ────────────────────────────────────────────── */
-  const [input,               setInput]               = useState("");
-  const [files,               setFiles]               = useState([]);
-  const [userLocation,        setUserLocation]        = useState("");
-  const [sidebarOpen,         setSidebarOpen]         = useState(window.innerWidth > 768);
-  const [isAuthenticated,     setIsAuthenticated]     = useState(false);
-  const [authChecked,         setAuthChecked]         = useState(false);
-  const [userEmail,           setUserEmail]           = useState(null);
-  const [userName,            setUserName]            = useState(null);
-  const [userImage,           setUserImage]           = useState(null);
+  const [input, setInput] = useState("");
+  const [files, setFiles] = useState([]);
+  const [userLocation, setUserLocation] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
+  const [userName, setUserName] = useState(null);
+  const [userImage, setUserImage] = useState(null);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [recentConversations, setRecentConversations] = useState([]);
-  const [subscriptionTier,    setSubscriptionTier]    = useState("free");
-  const [subscriptionStatus,  setSubscriptionStatus]  = useState("inactive");
-  const [messages,            setMessages]            = useState([DEFAULT_BOT_MESSAGE]);
-  const [showScrollBtn,       setShowScrollBtn]       = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState("free");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
+  const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   /* ── derived ──────────────────────────────────────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
@@ -71,16 +72,16 @@ function HomePage() {
   /* ── stream hook ──────────────────────────────────────── */
   const {
     ask, cancel,
-    answer:         streamAnswer,
-    sources:        streamSources,
+    answer: streamAnswer,
+    sources: streamSources,
     clauseAnalysis: streamClause,
-    status:         streamStatus,
-    error:          streamError,
+    status: streamStatus,
+    error: streamError,
     conversationId: streamConvoId,
   } = useRAGStream();
 
-  const isSending   = streamStatus === "preparing" || streamStatus === "streaming";
-  const isStreaming  = streamStatus === "streaming";
+  const isSending = streamStatus === "preparing" || streamStatus === "streaming";
+  const isStreaming = streamStatus === "streaming";
 
   /* =========================================================
      HELPERS
@@ -143,8 +144,8 @@ function HomePage() {
         method: "GET", credentials: "include",
       });
       setRecentConversations(
-        Array.isArray(convData)               ? convData :
-        Array.isArray(convData?.conversations) ? convData.conversations : []
+        Array.isArray(convData) ? convData :
+          Array.isArray(convData?.conversations) ? convData.conversations : []
       );
     } catch (err) {
       console.error("Error fetching recent conversations:", err);
@@ -157,10 +158,10 @@ function HomePage() {
   ========================================================= */
   const applyUserData = useCallback((data) => {
     setIsAuthenticated(true);
-    setUserEmail(data.email       ?? data.userEmail ?? null);
-    setUserName(data.name         ?? null);
-    setUserImage(data.photo       ?? data.userImage ?? defaultUserIcon);
-    setSubscriptionTier(data.subscriptionTier   ?? "free");
+    setUserEmail(data.email ?? data.userEmail ?? null);
+    setUserName(data.name ?? null);
+    setUserImage(data.photo ?? data.userImage ?? defaultUserIcon);
+    setSubscriptionTier(data.subscriptionTier ?? "free");
     setSubscriptionStatus(data.subscriptionStatus ?? "inactive");
   }, []);
 
@@ -180,10 +181,10 @@ function HomePage() {
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
           if (data?.isAuthenticated) applyUserData({
-            email:              data.userEmail,
-            name:               data.name,
-            photo:              data.userImage,
-            subscriptionTier:   data.subscriptionTier,
+            email: data.userEmail,
+            name: data.name,
+            photo: data.userImage,
+            subscriptionTier: data.subscriptionTier,
             subscriptionStatus: data.subscriptionStatus,
           });
         })
@@ -207,10 +208,10 @@ function HomePage() {
 
       if (data.isAuthenticated) {
         applyUserData({
-          email:              data.userEmail,
-          name:               data.name,
-          photo:              data.userImage,
-          subscriptionTier:   data.subscriptionTier,
+          email: data.userEmail,
+          name: data.name,
+          photo: data.userImage,
+          subscriptionTier: data.subscriptionTier,
           subscriptionStatus: data.subscriptionStatus,
         });
         await fetchRecentConversations();
@@ -246,7 +247,7 @@ function HomePage() {
   useEffect(() => {
     const autoDetectCountry = async () => {
       try {
-        const res  = await fetch("https://ipapi.co/json/");
+        const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
         const found = countries.find((c) => c.name === data.country_name);
         if (found) setUserLocation(found.name);
@@ -263,17 +264,17 @@ function HomePage() {
   useEffect(() => {
     if (streamStatus === "idle" || streamStatus === "done") return;
     setMessages((prev) => {
-      const updated    = [...prev];
+      const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
       updated[lastBotIdx] = {
         ...updated[lastBotIdx],
-        text:             streamAnswer || "",
-        typing:           streamStatus === "preparing",
-        isStreaming:      streamStatus === "streaming",
-        sources:          streamSources || [],
-        clauseAnalysis:   streamClause  || null,
-        hasSources:       (streamSources || []).length > 0,
+        text: streamAnswer || "",
+        typing: streamStatus === "preparing",
+        isStreaming: streamStatus === "streaming",
+        sources: streamSources || [],
+        clauseAnalysis: streamClause || null,
+        hasSources: (streamSources || []).length > 0,
         hasClauseAnalysis: !!streamClause,
       };
       return updated;
@@ -286,14 +287,14 @@ function HomePage() {
   useEffect(() => {
     if (streamStatus !== "done") return;
     setMessages((prev) => {
-      const updated    = [...prev];
+      const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
       updated[lastBotIdx] = { ...updated[lastBotIdx], isStreaming: false, typing: false };
       return updated;
     });
-    if (streamConvoId)    setActiveConversationId(streamConvoId);
-    if (isAuthenticated)  fetchRecentConversations();
+    if (streamConvoId) setActiveConversationId(streamConvoId);
+    if (isAuthenticated) fetchRecentConversations();
   }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations]);
 
   /* =========================================================
@@ -302,7 +303,7 @@ function HomePage() {
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
     setMessages((prev) => {
-      const updated    = [...prev];
+      const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
       updated[lastBotIdx] = {
@@ -387,17 +388,17 @@ function HomePage() {
         { method: "GET", credentials: "include" }
       );
 
-      const rawMessages = Array.isArray(data)          ? data :
-                          Array.isArray(data?.messages) ? data.messages : [];
+      const rawMessages = Array.isArray(data) ? data :
+        Array.isArray(data?.messages) ? data.messages : [];
 
       if (rawMessages.length === 0) { setMessages([DEFAULT_BOT_MESSAGE]); return; }
 
       setMessages(rawMessages.map((msg) => ({
-        text:             msg.content,
-        isBot:            msg.role !== "user",
-        sources:          msg.sources      ?? [],
-        clauseAnalysis:   msg.clauseAnalysis ?? null,
-        hasSources:       Array.isArray(msg.sources) && msg.sources.length > 0,
+        text: msg.content,
+        isBot: msg.role !== "user",
+        sources: msg.sources ?? [],
+        clauseAnalysis: msg.clauseAnalysis ?? null,
+        hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
@@ -448,10 +449,16 @@ function HomePage() {
             {/* TOP AD — after first paragraph */}
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === 0 && (
-                <AdBanner
+                // <AdBanner
+                //   key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
+                //   adSlot="4638051915"
+                //   adFormat="auto"
+                //   height={120}
+                //   className="response-ad-top"
+                // />
+                <AdsterraBanner
                   key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
-                  adSlot="4638051915"
-                  adFormat="auto"
+                  variant="native"
                   height={120}
                   className="response-ad-top"
                 />
@@ -460,11 +467,17 @@ function HomePage() {
             {/* MID AD — at middle paragraph */}
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === middleIndex && (
-                <AdBanner
+                // <AdBanner
+                //   key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
+                //   adSlot="7325824814"
+                //   adFormat="fluid"
+                //   adLayoutKey="-fb+5w+4e-db+86"
+                //   height={100}
+                //   className="response-ad-middle"
+                // />
+                <AdsterraBanner
                   key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
-                  adSlot="7325824814"
-                  adFormat="fluid"
-                  adLayoutKey="-fb+5w+4e-db+86"
+                  variant="social-bar"
                   height={100}
                   className="response-ad-middle"
                 />
@@ -475,11 +488,19 @@ function HomePage() {
         {/* BOTTOM AD */}
         {showAds && !isWelcomeMessage && message.isBot &&
           !message.typing && !message.isStreaming && (
-            <AdBanner
+            // <AdBanner
+            //   key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
+            //   adSlot="4473601628"
+            //   adFormat="auto"
+            //   height={80}
+            //   className="response-ad-bottom"
+            // />
+            <AdsterraBanner
               key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
-              adSlot="4473601628"
-              adFormat="auto"
-              height={80}
+              variant="banner"
+              width={320}
+              adHeight={50}
+              height={50}
               className="response-ad-bottom"
             />
           )}
