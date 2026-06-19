@@ -499,8 +499,8 @@ function HomePage() {
               key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
               variant="banner"
               width={320}
-              adHeight={50}
-              height={50}
+              adHeight={100}
+              height={90}
               className="response-ad-bottom"
             />
           )}
