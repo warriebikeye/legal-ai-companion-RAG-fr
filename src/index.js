@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { scheduleDailyReset } from "./cron/dailyReset.js";
+scheduleDailyReset();
 import {
   BrowserRouter,
 } from 'react-router-dom';

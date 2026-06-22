@@ -1,3 +1,5 @@
+import { useNotificationPrompt, oneSignalLogin, oneSignalLogout } from '../hooks/useNotificationPrompt';
+import NotificationPrompt from '../components/NotificationPrompt';
 import '../App.css';
 import { encryptedFetch } from "../utils/encryption";
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -14,7 +16,6 @@ import defaultUserIcon from '../assets/user-icon.png';
 
 import { useRAGStream } from '../hooks/useRAGStream';
 import AuthModal from '../components/AuthModal';
-//import AdBanner from '../components/AdBanner';
 import AdsterraBanner from '../components/AdsterraBanner';
 import { readAuthCookie } from '../hooks/useAuthCookie';
 
@@ -83,6 +84,17 @@ function HomePage() {
   const isSending = streamStatus === "preparing" || streamStatus === "streaming";
   const isStreaming = streamStatus === "streaming";
 
+  /* ── notification hook ────────────────────────────────── */
+  const {
+    promptVisible,
+    promptScenario,
+    onQuerySuccess,
+    onQueryLimitHit,
+    onScanComplete, // ready for when you build the doc scan component
+    handleAllow,
+    handleDismiss,
+  } = useNotificationPrompt();
+
   /* =========================================================
      HELPERS
   ========================================================= */
@@ -96,10 +108,6 @@ function HomePage() {
 
   /* =========================================================
      SCROLL HELPERS
-     - isNearBottom: true when user is within 120px of the bottom
-     - scrollToBottom: smoothly jumps to bottom, hides the button
-     - handleChatsScroll: fired on every scroll event; hides the
-       button once the user manually reaches the bottom
   ========================================================= */
   const isNearBottom = useCallback(() => {
     const el = chatsRef.current;
@@ -117,10 +125,7 @@ function HomePage() {
   }, [isNearBottom]);
 
   /* =========================================================
-     SMART SCROLL — runs whenever messages update.
-     If the user is already near the bottom, scroll them along.
-     If they've scrolled up to read history, show the arrow
-     instead so we don't hijack their position.
+     SMART SCROLL
   ========================================================= */
   useEffect(() => {
     if (isNearBottom()) {
@@ -133,10 +138,6 @@ function HomePage() {
 
   /* =========================================================
      FETCH CONVERSATIONS
-     NOTE: encryptedFetch already returns the final, decrypted
-     JSON data (NOT a fetch Response). Do not call `.ok` or
-     `.json()` on its result — and on non-2xx responses it
-     throws, so use try/catch.
   ========================================================= */
   const fetchRecentConversations = useCallback(async () => {
     try {
@@ -231,7 +232,7 @@ function HomePage() {
   }, [checkAuthentication]);
 
   /* =========================================================
-     RESIZE — keep sidebar open on desktop
+     RESIZE
   ========================================================= */
   useEffect(() => {
     const handleResize = () => {
@@ -283,6 +284,7 @@ function HomePage() {
 
   /* =========================================================
      STREAM — done
+     ✅ fires onQuerySuccess to count toward the soft prompt
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "done") return;
@@ -295,10 +297,14 @@ function HomePage() {
     });
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
-  }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations]);
+
+    // ✅ count this successful query — prompt fires after the 3rd
+    if (isAuthenticated) onQuerySuccess();
+  }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations, onQuerySuccess]);
 
   /* =========================================================
      STREAM — error
+     ✅ detects query limit errors and fires the limit-hit prompt
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
@@ -312,10 +318,22 @@ function HomePage() {
       };
       return updated;
     });
-  }, [streamStatus, streamError]);
+
+    // ✅ if this was a rate-limit / quota error, show the limit-hit prompt
+    if (
+      isAuthenticated && (
+        streamError.toLowerCase().includes("limit") ||
+        streamError.toLowerCase().includes("quota") ||
+        streamError.toLowerCase().includes("daily")
+      )
+    ) {
+      onQueryLimitHit();
+    }
+  }, [streamStatus, streamError, onQueryLimitHit]);
 
   /* =========================================================
      LOGOUT
+     ✅ unlinks this device from the user in OneSignal
   ========================================================= */
   const handleLogout = useCallback(async () => {
     try {
@@ -325,6 +343,10 @@ function HomePage() {
     } catch (err) {
       console.error("Logout error:", err);
     }
+
+    // ✅ unlink OneSignal device from this user
+    oneSignalLogout();
+
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);
@@ -368,8 +390,6 @@ function HomePage() {
 
   /* =========================================================
      LOAD CONVERSATION
-     NOTE: encryptedFetch returns final decrypted JSON data
-     directly — do not call `.ok` or `.json()` on it.
   ========================================================= */
   const loadConversation = useCallback(async (conversationId) => {
     closeSidebarOnMobile();
@@ -378,8 +398,6 @@ function HomePage() {
     try {
       cancel();
       setActiveConversationId(conversationId);
-      // Reset scroll position so isNearBottom() returns false after load,
-      // guaranteeing the ↓ arrow always appears instead of auto-scrolling.
       if (chatsRef.current) chatsRef.current.scrollTop = 0;
       setMessages([{ text: "Loading conversation...", isBot: true, typing: true }]);
 
@@ -402,7 +420,6 @@ function HomePage() {
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
 
-      // Let the smart scroll useEffect decide — show arrow instead of force-scrolling
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
@@ -423,7 +440,6 @@ function HomePage() {
       { text: "", isBot: true, typing: true, isStreaming: false },
     ]);
     setInput("");
-    // Scroll to bottom when the user sends a message
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       setShowScrollBtn(false);
@@ -449,13 +465,6 @@ function HomePage() {
             {/* TOP AD — after first paragraph */}
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === 0 && (
-                // <AdBanner
-                //   key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
-                //   adSlot="4638051915"
-                //   adFormat="auto"
-                //   height={120}
-                //   className="response-ad-top"
-                // />
                 <AdsterraBanner
                   key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
                   variant="native"
@@ -467,14 +476,6 @@ function HomePage() {
             {/* MID AD — at middle paragraph */}
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === middleIndex && (
-                // <AdBanner
-                //   key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
-                //   adSlot="7325824814"
-                //   adFormat="fluid"
-                //   adLayoutKey="-fb+5w+4e-db+86"
-                //   height={100}
-                //   className="response-ad-middle"
-                // />
                 <AdsterraBanner
                   key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
                   variant="social-bar"
@@ -488,13 +489,6 @@ function HomePage() {
         {/* BOTTOM AD */}
         {showAds && !isWelcomeMessage && message.isBot &&
           !message.typing && !message.isStreaming && (
-            // <AdBanner
-            //   key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
-            //   adSlot="4473601628"
-            //   adFormat="auto"
-            //   height={80}
-            //   className="response-ad-bottom"
-            // />
             <AdsterraBanner
               key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
               variant="banner"
@@ -531,6 +525,15 @@ function HomePage() {
       {/* ── Login wall ───────────────────────────────────── */}
       {!isAuthenticated && (
         <AuthModal onAuthenticated={checkAuthentication} />
+      )}
+
+      {/* ✅ Notification soft-ask prompt — all 3 scenarios */}
+      {promptVisible && (
+        <NotificationPrompt
+          scenario={promptScenario}
+          onAllow={handleAllow}
+          onDismiss={handleDismiss}
+        />
       )}
 
       <button className="sidebarToggle" onClick={toggleSidebar}>☰</button>

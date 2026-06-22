@@ -1,10 +1,10 @@
+// src/components/AuthModal.jsx
+// Changes from original: oneSignalLogin() called after successful login and verify
+
 import { useState } from "react";
+import { oneSignalLogin } from "../hooks/useNotificationPrompt"; // ✅ NEW
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
-
-/* =========================================================
-   VIEWS: "signup" | "verify" | "login"
-========================================================= */
 
 export default function AuthModal({ onAuthenticated }) {
   const [view, setView] = useState("signup");
@@ -16,8 +16,6 @@ export default function AuthModal({ onAuthenticated }) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [message, setMessage]   = useState("");
-
-  // ✅ NEW: password visibility toggle
   const [showPassword, setShowPassword] = useState(false);
 
   const clearFeedback = () => { setError(""); setMessage(""); };
@@ -63,6 +61,11 @@ export default function AuthModal({ onAuthenticated }) {
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Verification failed.");
+
+      // ✅ NEW: link this device to the user in OneSignal
+      // Verify = new user just joined — register them immediately
+      oneSignalLogin(email);
+
       onAuthenticated();
     } catch {
       setError("Network error. Try again.");
@@ -87,6 +90,10 @@ export default function AuthModal({ onAuthenticated }) {
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Login failed.");
+
+      // ✅ NEW: link this device to the user in OneSignal
+      oneSignalLogin(email);
+
       onAuthenticated();
     } catch {
       setError("Network error. Try again.");
@@ -113,7 +120,6 @@ export default function AuthModal({ onAuthenticated }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-
             <input
               className="auth-input"
               type="email"
@@ -121,8 +127,6 @@ export default function AuthModal({ onAuthenticated }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-
-            {/* ✅ PASSWORD TOGGLE (SIGNUP) */}
             <div className="password-wrapper">
               <input
                 className="auth-input"
@@ -131,7 +135,6 @@ export default function AuthModal({ onAuthenticated }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-
               <button
                 type="button"
                 className="show-password-btn"
@@ -144,19 +147,12 @@ export default function AuthModal({ onAuthenticated }) {
             {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
-            <button
-              className="auth-btn primary"
-              onClick={handleRegister}
-              disabled={loading}
-            >
+            <button className="auth-btn primary" onClick={handleRegister} disabled={loading}>
               {loading ? <span className="auth-loader" /> : "Create Account"}
             </button>
-
             <p className="auth-switch">
               Already have an account?{" "}
-              <span onClick={() => { clearFeedback(); setView("login"); }}>
-                Sign in
-              </span>
+              <span onClick={() => { clearFeedback(); setView("login"); }}>Sign in</span>
             </p>
           </>
         )}
@@ -168,7 +164,6 @@ export default function AuthModal({ onAuthenticated }) {
             <p className="auth-subtitle">
               We sent a 6-digit code to <strong>{email}</strong>
             </p>
-
             <input
               className="auth-input token-input"
               type="text"
@@ -182,19 +177,12 @@ export default function AuthModal({ onAuthenticated }) {
             {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
-            <button
-              className="auth-btn primary"
-              onClick={handleVerify}
-              disabled={loading}
-            >
+            <button className="auth-btn primary" onClick={handleVerify} disabled={loading}>
               {loading ? <span className="auth-loader" /> : "Verify"}
             </button>
-
             <p className="auth-switch">
               Wrong email?{" "}
-              <span onClick={() => { clearFeedback(); setView("signup"); }}>
-                Go back
-              </span>
+              <span onClick={() => { clearFeedback(); setView("signup"); }}>Go back</span>
             </p>
           </>
         )}
@@ -212,8 +200,6 @@ export default function AuthModal({ onAuthenticated }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-
-            {/* ✅ PASSWORD TOGGLE (LOGIN) */}
             <div className="password-wrapper">
               <input
                 className="auth-input"
@@ -223,7 +209,6 @@ export default function AuthModal({ onAuthenticated }) {
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               />
-
               <button
                 type="button"
                 className="show-password-btn"
@@ -236,19 +221,12 @@ export default function AuthModal({ onAuthenticated }) {
             {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
-            <button
-              className="auth-btn primary"
-              onClick={handleLogin}
-              disabled={loading}
-            >
+            <button className="auth-btn primary" onClick={handleLogin} disabled={loading}>
               {loading ? <span className="auth-loader" /> : "Sign In"}
             </button>
-
             <p className="auth-switch">
               No account?{" "}
-              <span onClick={() => { clearFeedback(); setView("signup"); }}>
-                Create one
-              </span>
+              <span onClick={() => { clearFeedback(); setView("signup"); }}>Create one</span>
             </p>
           </>
         )}
