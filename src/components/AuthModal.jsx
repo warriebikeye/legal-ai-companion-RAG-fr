@@ -1,30 +1,29 @@
 // src/components/AuthModal.jsx
-// Changes from original: oneSignalLogin() called after successful login and verify
+// oneSignalLogin() wired after successful login and email verify.
+// Uses waitForMedian internally so it works even if the bridge
+// isn't ready at the exact moment the user taps Sign In.
 
 import { useState } from "react";
-import { oneSignalLogin } from "../hooks/useNotificationPrompt"; // ✅ NEW
+import { oneSignalLogin } from "../hooks/useNotificationPrompt";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 export default function AuthModal({ onAuthenticated }) {
   const [view, setView] = useState("signup");
-
-  const [name, setName]         = useState("");
-  const [email, setEmail]       = useState("");
-  const [password, setPassword]  = useState("");
-  const [token, setToken]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const [message, setMessage]   = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const clearFeedback = () => { setError(""); setMessage(""); };
 
   /* ── REGISTER ─────────────────────────────────────────── */
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      return setError("All fields are required.");
-    }
+    if (!name || !email || !password) return setError("All fields are required.");
     clearFeedback();
     setLoading(true);
     try {
@@ -47,9 +46,7 @@ export default function AuthModal({ onAuthenticated }) {
 
   /* ── VERIFY ───────────────────────────────────────────── */
   const handleVerify = async () => {
-    if (!token || token.length !== 6) {
-      return setError("Enter the 6-digit code.");
-    }
+    if (!token || token.length !== 6) return setError("Enter the 6-digit code.");
     clearFeedback();
     setLoading(true);
     try {
@@ -62,8 +59,7 @@ export default function AuthModal({ onAuthenticated }) {
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Verification failed.");
 
-      // ✅ NEW: link this device to the user in OneSignal
-      // Verify = new user just joined — register them immediately
+      // ✅ Link this device to the new user in OneSignal
       oneSignalLogin(email);
 
       onAuthenticated();
@@ -76,9 +72,7 @@ export default function AuthModal({ onAuthenticated }) {
 
   /* ── LOGIN ────────────────────────────────────────────── */
   const handleLogin = async () => {
-    if (!email || !password) {
-      return setError("Email and password are required.");
-    }
+    if (!email || !password) return setError("Email and password are required.");
     clearFeedback();
     setLoading(true);
     try {
@@ -91,9 +85,9 @@ export default function AuthModal({ onAuthenticated }) {
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Login failed.");
 
-      // ✅ NEW: link this device to the user in OneSignal
+      // ✅ Link this device to the returning user in OneSignal
       oneSignalLogin(email);
-      console.log("Median OneSignal available:", !!window.median?.onesignal);
+
       onAuthenticated();
     } catch {
       setError("Network error. Try again.");
@@ -113,33 +107,20 @@ export default function AuthModal({ onAuthenticated }) {
             <h2 className="auth-title">Create Account</h2>
             <p className="auth-subtitle">Africa's Legal Intelligence Engine</p>
 
-            <input
-              className="auth-input"
-              type="text"
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              className="auth-input"
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <input className="auth-input" type="text" placeholder="Full name"
+              value={name} onChange={(e) => setName(e.target.value)} />
+
+            <input className="auth-input" type="email" placeholder="Email address"
+              value={email} onChange={(e) => setEmail(e.target.value)} />
+
             <div className="password-wrapper">
-              <input
-                className="auth-input"
+              <input className="auth-input"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="show-password-btn"
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
+                onChange={(e) => setPassword(e.target.value)} />
+              <button type="button" className="show-password-btn"
+                onClick={() => setShowPassword((p) => !p)}>
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
@@ -164,15 +145,10 @@ export default function AuthModal({ onAuthenticated }) {
             <p className="auth-subtitle">
               We sent a 6-digit code to <strong>{email}</strong>
             </p>
-            <input
-              className="auth-input token-input"
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="000000"
+            <input className="auth-input token-input" type="text"
+              inputMode="numeric" maxLength={6} placeholder="000000"
               value={token}
-              onChange={(e) => setToken(e.target.value.replace(/\D/, ""))}
-            />
+              onChange={(e) => setToken(e.target.value.replace(/\D/, ""))} />
 
             {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
@@ -193,27 +169,18 @@ export default function AuthModal({ onAuthenticated }) {
             <h2 className="auth-title">Welcome back</h2>
             <p className="auth-subtitle">Sign in to continue</p>
 
-            <input
-              className="auth-input"
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <input className="auth-input" type="email" placeholder="Email address"
+              value={email} onChange={(e) => setEmail(e.target.value)} />
+
             <div className="password-wrapper">
-              <input
-                className="auth-input"
+              <input className="auth-input"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              />
-              <button
-                type="button"
-                className="show-password-btn"
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
+              <button type="button" className="show-password-btn"
+                onClick={() => setShowPassword((p) => !p)}>
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
