@@ -90,7 +90,7 @@ function HomePage() {
     promptScenario,
     onQuerySuccess,
     onQueryLimitHit,
-    onScanComplete, // ready for when you build the doc scan component
+    onScanComplete, // ready for when you wire up the doc scan component
     handleAllow,
     handleDismiss,
   } = useNotificationPrompt();
@@ -170,13 +170,10 @@ function HomePage() {
      AUTH CHECK — cookie-first, then /auth/me fallback
   ========================================================= */
   const checkAuthentication = useCallback(async () => {
-    // ── Step 1: try cookie (zero network cost) ──────────────
     const cookie = readAuthCookie();
     if (cookie) {
       applyUserData(cookie);
       setAuthChecked(true);
-
-      // Fire-and-forget: load conversations + silently refresh
       fetchRecentConversations();
       fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
         .then((r) => r.ok ? r.json() : null)
@@ -188,25 +185,21 @@ function HomePage() {
             subscriptionTier: data.subscriptionTier,
             subscriptionStatus: data.subscriptionStatus,
           });
+          // ✅ Re-link OneSignal on returning session (cookie login)
+          if (data?.isAuthenticated && data?.userEmail) {
+            oneSignalLogin(data.userEmail);
+          }
         })
-        .catch(() => { /* silent — cookie data already shown */ });
+        .catch(() => {});
       return;
     }
 
-    // ── Step 2: no cookie — hit the server ──────────────────
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET", credentials: "include",
       });
-
-      if (!res.ok) {
-        setIsAuthenticated(false);
-        setAuthChecked(true);
-        return;
-      }
-
+      if (!res.ok) { setIsAuthenticated(false); setAuthChecked(true); return; }
       const data = await res.json();
-
       if (data.isAuthenticated) {
         applyUserData({
           email: data.userEmail,
@@ -215,6 +208,8 @@ function HomePage() {
           subscriptionTier: data.subscriptionTier,
           subscriptionStatus: data.subscriptionStatus,
         });
+        // ✅ Re-link OneSignal on returning session (server login)
+        if (data.userEmail) oneSignalLogin(data.userEmail);
         await fetchRecentConversations();
       } else {
         setIsAuthenticated(false);
@@ -284,7 +279,7 @@ function HomePage() {
 
   /* =========================================================
      STREAM — done
-     ✅ fires onQuerySuccess to count toward the soft prompt
+     ✅ fires onQuerySuccess — prompt appears after 3rd query
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "done") return;
@@ -298,13 +293,14 @@ function HomePage() {
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
 
-    // ✅ count this successful query — prompt fires after the 3rd
+    // ✅ Scenario 1: count successful query
     if (isAuthenticated) onQuerySuccess();
+
   }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations, onQuerySuccess]);
 
   /* =========================================================
      STREAM — error
-     ✅ detects query limit errors and fires the limit-hit prompt
+     ✅ fires onQueryLimitHit when daily limit is reached
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
@@ -319,7 +315,7 @@ function HomePage() {
       return updated;
     });
 
-    // ✅ if this was a rate-limit / quota error, show the limit-hit prompt
+    // ✅ Scenario 2: detect limit/quota errors
     if (
       isAuthenticated && (
         streamError.toLowerCase().includes("limit") ||
@@ -329,11 +325,11 @@ function HomePage() {
     ) {
       onQueryLimitHit();
     }
-  }, [streamStatus, streamError, onQueryLimitHit]);
+  }, [streamStatus, streamError, isAuthenticated, onQueryLimitHit]);
 
   /* =========================================================
      LOGOUT
-     ✅ unlinks this device from the user in OneSignal
+     ✅ unlinks device from user in OneSignal
   ========================================================= */
   const handleLogout = useCallback(async () => {
     try {
@@ -344,7 +340,7 @@ function HomePage() {
       console.error("Logout error:", err);
     }
 
-    // ✅ unlink OneSignal device from this user
+    // ✅ Unlink OneSignal device from this user
     oneSignalLogout();
 
     setIsAuthenticated(false);
@@ -394,7 +390,6 @@ function HomePage() {
   const loadConversation = useCallback(async (conversationId) => {
     closeSidebarOnMobile();
     if (!conversationId || conversationId === "undefined") return;
-
     try {
       cancel();
       setActiveConversationId(conversationId);
@@ -419,7 +414,6 @@ function HomePage() {
         hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
         hasClauseAnalysis: !!msg.clauseAnalysis,
       })));
-
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
@@ -462,7 +456,6 @@ function HomePage() {
           <div key={index}>
             <ReactMarkdown>{paragraph}</ReactMarkdown>
 
-            {/* TOP AD — after first paragraph */}
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === 0 && (
                 <AdsterraBanner
@@ -473,7 +466,6 @@ function HomePage() {
                 />
               )}
 
-            {/* MID AD — at middle paragraph */}
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === middleIndex && (
                 <AdsterraBanner
@@ -486,7 +478,6 @@ function HomePage() {
           </div>
         ))}
 
-        {/* BOTTOM AD */}
         {showAds && !isWelcomeMessage && message.isBot &&
           !message.typing && !message.isStreaming && (
             <AdsterraBanner
@@ -527,7 +518,7 @@ function HomePage() {
         <AuthModal onAuthenticated={checkAuthentication} />
       )}
 
-      {/* ✅ Notification soft-ask prompt — all 3 scenarios */}
+      {/* ✅ Notification informational prompt — all 3 scenarios */}
       {promptVisible && (
         <NotificationPrompt
           scenario={promptScenario}
@@ -542,21 +533,13 @@ function HomePage() {
           SIDEBAR
       ═══════════════════════════════════════════════════ */}
       <div className={`sideBar ${sidebarOpen ? "open" : "collapsed"}`}>
-
         <div className="upperSide">
-
           <div className="uppersideTop">
             <img src={gptLogo} alt="Logo" className="logo" />
           </div>
 
-          <select
-            className="query"
-            value={userLocation}
-            onChange={(e) => {
-              setUserLocation(e.target.value);
-              closeSidebarOnMobile();
-            }}
-          >
+          <select className="query" value={userLocation}
+            onChange={(e) => { setUserLocation(e.target.value); closeSidebarOnMobile(); }}>
             <option value="">-- Select Country --</option>
             {countries.map((c) => (
               <option key={c.name} value={c.name}>{c.flag} {c.name}</option>
@@ -577,9 +560,7 @@ function HomePage() {
           </div>
         </div>
 
-        {/* ── Lower sidebar ─────────────────────────────── */}
         <div className="lowerside">
-
           <button className="midBtn" onClick={startNewChat}>
             <img src={addBtn} alt="" className="addBtn" />
             New Chat
@@ -606,7 +587,6 @@ function HomePage() {
               Sign out
             </div>
           )}
-
         </div>
       </div>
 
@@ -614,28 +594,22 @@ function HomePage() {
           MAIN CHAT AREA
       ═══════════════════════════════════════════════════ */}
       <div className={`main ${sidebarOpen ? "" : "fullWidth"}`}>
-
         <div className="chats" ref={chatsRef} onScroll={handleChatsScroll}>
           {messages.map((message, i) => (
             <div key={i} className={message.isBot ? "chat bot" : "chat"}>
               <img
                 src={message.isBot ? gptimglogo : (userImage || defaultUserIcon)}
-                className="chtimg"
-                alt=""
+                className="chtimg" alt=""
               />
-
               <p className="txt">
                 {message.typing || (message.isStreaming && !message.text) ? (
-                  <div className="typing-dots">
-                    <span /><span /><span />
-                  </div>
+                  <div className="typing-dots"><span /><span /><span /></div>
                 ) : (
                   <>
                     <div className="bot-message-content">
                       {message.isBot
                         ? renderBotMessage(message, i)
                         : <ReactMarkdown>{message.text}</ReactMarkdown>}
-
                       {message.isStreaming && message.text && (
                         <span className="stream-cursor" aria-hidden="true" />
                       )}
@@ -660,57 +634,32 @@ function HomePage() {
               </p>
             </div>
           ))}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Scroll-to-bottom button ───────────────────── */}
         {showScrollBtn && (
-          <button
-            className="scroll-to-bottom-btn"
-            onClick={scrollToBottom}
-            aria-label="Scroll to latest message"
-            title="Jump to latest"
-          >
+          <button className="scroll-to-bottom-btn" onClick={scrollToBottom}
+            aria-label="Scroll to latest message" title="Jump to latest">
             ↓
           </button>
         )}
 
-        {/* ── Chat footer ───────────────────────────────── */}
         <div className="chatfooter">
-
-          {/* ── Attachment tray ── */}
           {files.length > 0 && (
             <div className="attachment-tray">
               {files.map((file, idx) =>
                 file.type.startsWith("image/") ? (
                   <div key={idx} className="attachment-chip image-chip">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt={file.name}
-                      className="chip-thumb"
-                    />
-                    <button
-                      className="chip-remove"
-                      onClick={() => removeFile(idx)}
-                      title="Remove"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      ×
-                    </button>
+                    <img src={URL.createObjectURL(file)} alt={file.name} className="chip-thumb" />
+                    <button className="chip-remove" onClick={() => removeFile(idx)}
+                      title="Remove" aria-label={`Remove ${file.name}`}>×</button>
                   </div>
                 ) : (
                   <div key={idx} className="attachment-chip file-chip">
                     <span className="chip-icon">📄</span>
                     <span className="chip-name">{file.name}</span>
-                    <button
-                      className="chip-remove"
-                      onClick={() => removeFile(idx)}
-                      title="Remove"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      ×
-                    </button>
+                    <button className="chip-remove" onClick={() => removeFile(idx)}
+                      title="Remove" aria-label={`Remove ${file.name}`}>×</button>
                   </div>
                 )
               )}
@@ -718,42 +667,25 @@ function HomePage() {
           )}
 
           <div className="inp">
+            <input type="file" multiple accept="*/*" ref={fileInputRef}
+              style={{ display: "none" }} onChange={handleFileUpload} />
 
-            <input
-              type="file"
-              multiple
-              accept="*/*"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              onChange={handleFileUpload}
-            />
-
-            <button
-              type="button"
-              className="file-label"
-              onClick={handleFileButtonClick}
+            <button type="button" className="file-label" onClick={handleFileButtonClick}
               style={{
                 display: "flex", justifyContent: "center", alignItems: "center",
                 width: "50px", height: "50px", fontSize: "30px",
                 color: "#fff", cursor: "pointer", borderRadius: "4px",
                 background: "none", border: "none",
-              }}
-            >
-              +
-            </button>
+              }}>+</button>
 
-            <textarea
-              placeholder="Send a message"
-              value={input}
+            <textarea placeholder="Send a message" value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !isSending) {
-                  e.preventDefault();
-                  handleSend();
+                  e.preventDefault(); handleSend();
                 }
               }}
-              className="chat-input"
-            />
+              className="chat-input" />
 
             {isStreaming ? (
               <button className="send stop" onClick={cancel} title="Stop generating">■</button>
@@ -762,7 +694,6 @@ function HomePage() {
                 {isSending ? <div className="loader" /> : <img src={sendBtn} alt="" />}
               </button>
             )}
-
           </div>
 
           <p>~ Africa's Legal Intelligence Pipeline ~</p>
