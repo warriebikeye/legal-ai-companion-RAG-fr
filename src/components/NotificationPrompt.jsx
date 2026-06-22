@@ -1,35 +1,37 @@
+
 /* src/components/NotificationPrompt.jsx
  *
- * Soft-ask UI shown before the real OS permission dialog.
- * Rendered by HomePage when promptVisible === true.
- * Matches the existing Clauzify dark modal aesthetic.
+ * Automatic Registration mode — this prompt is purely informational.
+ * Median already handled the OS permission dialog on first launch.
+ * We're just telling the user what they'll receive and why.
+ * Slides up from the bottom — native mobile feel.
  */
 
 export default function NotificationPrompt({ scenario, onAllow, onDismiss }) {
   const content = {
     first_query: {
       icon: "⚖️",
-      heading: "Stay ahead of your queries",
-      body: "Get notified the moment your daily legal queries reset — so you're never left waiting.",
-      allow: "Notify Me",
+      heading: "You're all set for notifications",
+      body: "We'll notify you the moment your daily legal queries reset — so you never miss a day.",
+      allow: "Got It",
     },
     limit_hit: {
       icon: "🔔",
       heading: "You've used today's queries",
-      body: "We'll send you a notification the moment your limit resets at midnight. Don't miss it.",
-      allow: "Yes, Notify Me",
+      body: "Your limit resets at midnight. We'll send you a notification the moment you're ready to go again.",
+      allow: "Perfect",
     },
     scan_done: {
       icon: "📄",
       heading: "Document scan complete",
-      body: "Want a heads-up for future scan results and query resets? We'll only notify when it matters.",
-      allow: "Allow Notifications",
+      body: "You'll receive notifications for future scan results and daily query resets.",
+      allow: "Got It",
     },
   }[scenario] ?? {
     icon: "🔔",
-    heading: "Stay informed",
-    body: "Get notified about your query resets and document results.",
-    allow: "Allow",
+    heading: "Notifications enabled",
+    body: "We'll notify you about your query resets and document results.",
+    allow: "Got It",
   };
 
   return (
@@ -43,7 +45,7 @@ export default function NotificationPrompt({ scenario, onAllow, onDismiss }) {
             {content.allow}
           </button>
           <button style={styles.dismissBtn} onClick={onDismiss}>
-            Not Now
+            Dismiss
           </button>
         </div>
       </div>
@@ -57,7 +59,7 @@ const styles = {
     inset: 0,
     background: "rgba(0,0,0,0.65)",
     display: "flex",
-    alignItems: "flex-end",        // slides up from bottom — mobile-native feel
+    alignItems: "flex-end",
     justifyContent: "center",
     zIndex: 9999,
     padding: "0 0 24px 0",
@@ -70,7 +72,6 @@ const styles = {
     width: "calc(100% - 32px)",
     textAlign: "center",
     boxShadow: "0 -4px 32px rgba(0,0,0,0.4)",
-    animation: "slideUp 0.28s ease-out",
   },
   icon: {
     fontSize: "2.4rem",
