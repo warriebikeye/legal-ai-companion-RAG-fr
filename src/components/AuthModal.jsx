@@ -93,7 +93,7 @@ export default function AuthModal({ onAuthenticated }) {
 
       // ✅ NEW: link this device to the user in OneSignal
       oneSignalLogin(email);
-
+      console.log("Median OneSignal available:", !!window.median?.onesignal);
       onAuthenticated();
     } catch {
       setError("Network error. Try again.");
