@@ -461,6 +461,7 @@ function HomePage() {
                 <AdsterraBanner
                   key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
                   variant="native"
+                  width={400}
                   height={120}
                   className="response-ad-top"
                 />
@@ -471,6 +472,7 @@ function HomePage() {
                 <AdsterraBanner
                   key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
                   variant="social-bar"
+                  width={400}
                   height={100}
                   className="response-ad-middle"
                 />
@@ -483,9 +485,9 @@ function HomePage() {
             <AdsterraBanner
               key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
               variant="banner"
-              width={320}
-              adHeight={100}
-              height={90}
+              width={400}
+              adHeight={110}
+              height={120}
               className="response-ad-bottom"
             />
           )}
@@ -619,7 +621,14 @@ function HomePage() {
                       <span style={{ marginTop: "10px", display: "block" }}>
                         <strong>Sources:</strong>{" "}
                         {message.sources
-                          .map((s) => s.replace(/\.pdf$/i, ""))
+                          .map((s) =>
+                            s.replace(/\.pdf$/i, "")
+                              .replace(/â€™/g, "'")
+                              .replace(/â€œ/g, '"')
+                              .replace(/â€/g, '"')
+                              .replace(/âS/g, "'S")
+                              .replace(/â/g, "'")
+                          )
                           .join(", ")}
                       </span>
                     )}
