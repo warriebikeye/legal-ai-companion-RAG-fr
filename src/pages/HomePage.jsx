@@ -190,7 +190,7 @@ function HomePage() {
             oneSignalLogin(data.userEmail);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
       return;
     }
 
@@ -617,7 +617,10 @@ function HomePage() {
 
                     {message.sources?.length > 0 && (
                       <span style={{ marginTop: "10px", display: "block" }}>
-                        <strong>Sources:</strong> {message.sources.join(", ")}
+                        <strong>Sources:</strong>{" "}
+                        {message.sources
+                          .map((s) => s.replace(/\.pdf$/i, ""))
+                          .join(", ")}
                       </span>
                     )}
 
