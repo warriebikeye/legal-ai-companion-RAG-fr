@@ -1,5 +1,6 @@
 import { useNotificationPrompt, oneSignalLogin, oneSignalLogout } from '../hooks/useNotificationPrompt';
 import NotificationPrompt from '../components/NotificationPrompt';
+import PdfModal from '../components/PdfModal';
 import '../App.css';
 import { encryptedFetch } from "../utils/encryption";
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -67,6 +68,9 @@ function HomePage() {
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
+  // ── PDF modal state ──────────────────────────────────────
+  const [pdfModal, setPdfModal] = useState(null); // { text, sources } | null
+
   /* ── derived ──────────────────────────────────────────── */
   const showAds = isAuthenticated && subscriptionTier === "free";
 
@@ -90,7 +94,7 @@ function HomePage() {
     promptScenario,
     onQuerySuccess,
     onQueryLimitHit,
-    onScanComplete, // ready for when you wire up the doc scan component
+    onScanComplete,
     handleAllow,
     handleDismiss,
   } = useNotificationPrompt();
@@ -185,7 +189,6 @@ function HomePage() {
             subscriptionTier: data.subscriptionTier,
             subscriptionStatus: data.subscriptionStatus,
           });
-          // ✅ Re-link OneSignal on returning session (cookie login)
           if (data?.isAuthenticated && data?.userEmail) {
             oneSignalLogin(data.userEmail);
           }
@@ -208,7 +211,6 @@ function HomePage() {
           subscriptionTier: data.subscriptionTier,
           subscriptionStatus: data.subscriptionStatus,
         });
-        // ✅ Re-link OneSignal on returning session (server login)
         if (data.userEmail) oneSignalLogin(data.userEmail);
         await fetchRecentConversations();
       } else {
@@ -279,7 +281,6 @@ function HomePage() {
 
   /* =========================================================
      STREAM — done
-     ✅ fires onQuerySuccess — prompt appears after 3rd query
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "done") return;
@@ -292,15 +293,11 @@ function HomePage() {
     });
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
-
-    // ✅ Scenario 1: count successful query
     if (isAuthenticated) onQuerySuccess();
-
   }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations, onQuerySuccess]);
 
   /* =========================================================
      STREAM — error
-     ✅ fires onQueryLimitHit when daily limit is reached
   ========================================================= */
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
@@ -314,8 +311,6 @@ function HomePage() {
       };
       return updated;
     });
-
-    // ✅ Scenario 2: detect limit/quota errors
     if (
       isAuthenticated && (
         streamError.toLowerCase().includes("limit") ||
@@ -329,20 +324,14 @@ function HomePage() {
 
   /* =========================================================
      LOGOUT
-     ✅ unlinks device from user in OneSignal
   ========================================================= */
   const handleLogout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: "POST", credentials: "include",
-      });
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: "POST", credentials: "include" });
     } catch (err) {
       console.error("Logout error:", err);
     }
-
-    // ✅ Unlink OneSignal device from this user
     oneSignalLogout();
-
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);
@@ -358,17 +347,9 @@ function HomePage() {
      FILE UPLOAD
   ========================================================= */
   const handleFileUpload = useCallback((e) => setFiles([...e.target.files]), []);
-
-  const removeFile = useCallback(
-    (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx)),
-    []
-  );
-
+  const removeFile = useCallback((idx) => setFiles((prev) => prev.filter((_, i) => i !== idx)), []);
   const handleFileButtonClick = useCallback(() => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-      fileInputRef.current.click();
-    }
+    if (fileInputRef.current) { fileInputRef.current.value = ""; fileInputRef.current.click(); }
   }, []);
 
   /* =========================================================
@@ -516,16 +497,24 @@ function HomePage() {
     <div className="App">
 
       {/* ── Login wall ───────────────────────────────────── */}
-      {!isAuthenticated && (
-        <AuthModal onAuthenticated={checkAuthentication} />
-      )}
+      {!isAuthenticated && <AuthModal onAuthenticated={checkAuthentication} />}
 
-      {/* ✅ Notification informational prompt — all 3 scenarios */}
+      {/* ── Notification prompt ───────────────────────────── */}
       {promptVisible && (
         <NotificationPrompt
           scenario={promptScenario}
           onAllow={handleAllow}
           onDismiss={handleDismiss}
+        />
+      )}
+
+      {/* ── PDF modal ─────────────────────────────────────── */}
+      {pdfModal && (
+        <PdfModal
+          responseText={pdfModal.text}
+          sources={pdfModal.sources}
+          logoUrl={gptimglogo}   // ← add this
+          onClose={() => setPdfModal(null)}
         />
       )}
 
@@ -568,10 +557,7 @@ function HomePage() {
             New Chat
           </button>
 
-          <div className="ListItems">
-            <img src={home} alt="" />
-            Home
-          </div>
+          <div className="ListItems"><img src={home} alt="" />Home</div>
 
           <div className="ListItems upgradeBtn" onClick={() => navigate("/upgrade")}>
             <img src={rocket} alt="" />
@@ -617,6 +603,7 @@ function HomePage() {
                       )}
                     </div>
 
+                    {/* Sources */}
                     {message.sources?.length > 0 && (
                       <span style={{ marginTop: "10px", display: "block" }}>
                         <strong>Sources:</strong>{" "}
@@ -633,6 +620,7 @@ function HomePage() {
                       </span>
                     )}
 
+                    {/* Clause analysis */}
                     {message.clauseAnalysis && (
                       <span style={{ marginTop: "10px", display: "block" }}>
                         <strong>Clause Analysis:</strong>{" "}
@@ -641,6 +629,33 @@ function HomePage() {
                           : JSON.stringify(message.clauseAnalysis)}
                       </span>
                     )}
+
+                    {/* ── PDF export button — only on completed bot responses ── */}
+                    {message.isBot && !message.isWelcome &&
+                      !message.typing && !message.isStreaming &&
+                      message.text && (
+                        <button
+                          onClick={() => setPdfModal({ text: message.text, sources: message.sources || [] })}
+                          style={{
+                            marginTop: "12px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "6px 14px",
+                            background: "transparent",
+                            border: "1px solid #c8a94a",
+                            borderRadius: "6px",
+                            color: "#c8a94a",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            letterSpacing: "0.3px",
+                          }}
+                          title="Export this response as a PDF document"
+                        >
+                          📄 Export as PDF
+                        </button>
+                      )}
                   </>
                 )}
               </p>
@@ -651,9 +666,7 @@ function HomePage() {
 
         {showScrollBtn && (
           <button className="scroll-to-bottom-btn" onClick={scrollToBottom}
-            aria-label="Scroll to latest message" title="Jump to latest">
-            ↓
-          </button>
+            aria-label="Scroll to latest message" title="Jump to latest">↓</button>
         )}
 
         <div className="chatfooter">
