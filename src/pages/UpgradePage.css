@@ -33,10 +33,8 @@
 
 .pricingGrid {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(320px, 1fr)
-  );
+  grid-template-columns: repeat(auto-fit,
+      minmax(320px, 1fr));
   gap: 3rem;
 }
 
@@ -46,7 +44,7 @@
   padding: 4rem 3rem;
   position: relative;
   transition: all 0.3s ease;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .pricingCard:hover {
@@ -56,12 +54,12 @@
 .featuredPlan {
   border: 1px solid #6f61ff;
   box-shadow:
-    0 0 25px rgba(111,97,255,0.25);
+    0 0 25px rgba(111, 97, 255, 0.25);
 }
 
 .planBadge {
   display: inline-block;
-  background: rgba(111,97,255,0.18);
+  background: rgba(111, 97, 255, 0.18);
   color: #a99fff;
   padding: 0.8rem 1.4rem;
   border-radius: 999px;
@@ -118,11 +116,9 @@
 }
 
 .premiumBtn {
-  background: linear-gradient(
-    135deg,
-    #6f61ff,
-    #8b7cff
-  );
+  background: linear-gradient(135deg,
+      #6f61ff,
+      #8b7cff);
 }
 
 .upgradeFooter {
@@ -146,6 +142,7 @@
     font-size: 4rem;
   }
 }
+
 /* =========================================================
    MOBILE FRIENDLY UPGRADE PAGE
 ========================================================= */
@@ -175,7 +172,7 @@
   text-align: center;
 
   box-shadow:
-    0 0 40px rgba(0,0,0,0.35);
+    0 0 40px rgba(0, 0, 0, 0.35);
 }
 
 .upgradeCard h1 {
@@ -200,7 +197,7 @@
 
 .priceCard {
   background:
-    rgba(255,255,255,0.05);
+    rgba(255, 255, 255, 0.05);
 
   padding: 3rem;
 
@@ -209,7 +206,7 @@
   transition: all 0.3s ease;
 
   border:
-    1px solid rgba(255,255,255,0.08);
+    1px solid rgba(255, 255, 255, 0.08);
 }
 
 .priceCard:hover {
@@ -260,6 +257,34 @@
 .upgradeButton:hover {
   opacity: 0.92;
   transform: scale(1.02);
+}
+
+.priceBlock {
+  margin: 1rem 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.3rem;
+  padding: 2px 0;
+}
+
+.priceCurrency {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.priceAmount {
+  color: #c8a94a;
+  font-weight: 700;
+  font-size: 1.4rem;
 }
 
 /* =========================================================

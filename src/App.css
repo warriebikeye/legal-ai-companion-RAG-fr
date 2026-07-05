@@ -4,6 +4,70 @@
   box-sizing: border-box;
 }
 
+.walletDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(200, 169, 74, 0.1);
+  border: 1px solid rgba(200, 169, 74, 0.3);
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.walletIcon {
+  font-size: 16px;
+}
+
+.walletTokens {
+  font-weight: 700;
+  color: #c8a94a;
+}
+
+/* ── Token error message ─────────────────────────────── */
+.token-error-message {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topup-prompt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  background: #c8a94a;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: fit-content;
+  transition: background 0.2s;
+}
+
+.topup-prompt-btn:hover {
+  background: #d4b85a;
+}
+
+.token-hint {
+  font-size: 11px;
+  opacity: 0.6;
+  margin: 0;
+}
+
+.freeTokenBadge {
+  font-size: 10px;
+  background: rgba(200, 169, 74, 0.2);
+  color: #c8a94a;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
 /* =========================================================
    AUTH MODAL
 ========================================================= */
@@ -199,7 +263,8 @@
 
 .scroll-to-bottom-btn {
   position: absolute;
-  bottom: 9rem; /* sits above .chatfooter (~7rem tall) */
+  bottom: 9rem;
+  /* sits above .chatfooter (~7rem tall) */
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
@@ -230,6 +295,7 @@
     opacity: 0;
     transform: translateX(-50%) translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -569,7 +635,8 @@ body {
   height: 100dvh;
   overflow: hidden;
   padding: 0 10rem;
-  position: relative; /* anchors .scroll-to-bottom-btn */
+  position: relative;
+  /* anchors .scroll-to-bottom-btn */
 }
 
 /* =========================================================
@@ -693,7 +760,7 @@ body {
   display: flex;
   align-items: center;
   border-radius: 0.5em;
-  height:60px;
+  height: 60px;
   width: 100%;
 }
 
@@ -719,7 +786,7 @@ body {
   overflow-y: auto;
   max-height: 120px;
   line-height: 1.4;
-  margin-top:20px;
+  margin-top: 20px;
 }
 
 .inp>input,
@@ -885,6 +952,7 @@ body {
   border-radius: 6px;
   flex-shrink: 0;
 }
+
 .response-ad-middle {
   width: 100%;
   height: 100px;
@@ -990,6 +1058,7 @@ body {
   opacity: 0.9;
   transform: scale(1.03);
 }
+
 .app-loading {
   height: 100vh;
   display: flex;
@@ -1009,7 +1078,7 @@ body {
   width: 40px;
   height: 40px;
   margin: 15px 0;
-  border: 3px solid rgba(255,255,255,0.2);
+  border: 3px solid rgba(255, 255, 255, 0.2);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -1086,7 +1155,8 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    position: relative; /* anchors .scroll-to-bottom-btn on mobile too */
+    position: relative;
+    /* anchors .scroll-to-bottom-btn on mobile too */
   }
 
   .main.fullWidth {

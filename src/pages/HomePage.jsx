@@ -67,13 +67,15 @@ function HomePage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [messages, setMessages] = useState([DEFAULT_BOT_MESSAGE]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
-
+  /* ── wallet state — Phase 1 ──────────────────────────── */
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [dailyFreeTokens, setDailyFreeTokens] = useState(4);
   // ── PDF modal state ──────────────────────────────────────
   const [pdfModal, setPdfModal] = useState(null); // { text, sources } | null
 
   /* ── derived ──────────────────────────────────────────── */
-  const showAds = isAuthenticated && subscriptionTier === "free";
 
+  const showAds = isAuthenticated && walletBalance === 0 && dailyFreeTokens === 0;
   /* ── stream hook ──────────────────────────────────────── */
   const {
     ask, cancel,
@@ -159,6 +161,24 @@ function HomePage() {
   }, []);
 
   /* =========================================================
+     FETCH WALLET BALANCE
+  ========================================================= */
+  const fetchWalletBalance = useCallback(async () => {
+    try {
+      const data = await encryptedFetch(`${API_BASE_URL}/api/wallet/balance`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (data?.success) {
+        setWalletBalance(data.wallet);
+        setDailyFreeTokens(data.dailyFreeTokens);
+      }
+    } catch (err) {
+      console.error("[fetchWalletBalance]", err);
+    }
+  }, []);
+
+  /* =========================================================
      AUTH HELPERS
   ========================================================= */
   const applyUserData = useCallback((data) => {
@@ -179,6 +199,7 @@ function HomePage() {
       applyUserData(cookie);
       setAuthChecked(true);
       fetchRecentConversations();
+      fetchWalletBalance();
       fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
@@ -213,6 +234,7 @@ function HomePage() {
         });
         if (data.userEmail) oneSignalLogin(data.userEmail);
         await fetchRecentConversations();
+        await fetchWalletBalance();
       } else {
         setIsAuthenticated(false);
       }
@@ -293,34 +315,59 @@ function HomePage() {
     });
     if (streamConvoId) setActiveConversationId(streamConvoId);
     if (isAuthenticated) fetchRecentConversations();
+    if (isAuthenticated) fetchWalletBalance();
     if (isAuthenticated) onQuerySuccess();
   }, [streamStatus, streamConvoId, isAuthenticated, fetchRecentConversations, onQuerySuccess]);
 
   /* =========================================================
      STREAM — error
   ========================================================= */
+  /* =========================================================
+   STREAM — error
+========================================================= */
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
+
     setMessages((prev) => {
       const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
       if (lastBotIdx === -1) return prev;
+
+      // ── Insufficient tokens — show top-up prompt ──
+      if (streamError === "insufficient_tokens") {
+        updated[lastBotIdx] = {
+          isBot: true,
+          text: "",
+          typing: false,
+          isStreaming: false,
+          isTokenError: true,
+          sources: [],
+          clauseAnalysis: null,
+        };
+        return updated;
+      }
+
       updated[lastBotIdx] = {
         isBot: true, text: `⚠️ ${streamError}`,
         typing: false, isStreaming: false, sources: [], clauseAnalysis: null,
       };
       return updated;
     });
+
+    // Refresh wallet on any error — free token may have been consumed
+    if (isAuthenticated) fetchWalletBalance();
+
     if (
       isAuthenticated && (
         streamError.toLowerCase().includes("limit") ||
         streamError.toLowerCase().includes("quota") ||
-        streamError.toLowerCase().includes("daily")
+        streamError.toLowerCase().includes("daily") ||
+        streamError === "insufficient_tokens"
       )
     ) {
       onQueryLimitHit();
     }
-  }, [streamStatus, streamError, isAuthenticated, onQueryLimitHit]);
+  }, [streamStatus, streamError, isAuthenticated, onQueryLimitHit, fetchWalletBalance]);
 
   /* =========================================================
      LOGOUT
@@ -338,6 +385,8 @@ function HomePage() {
     setUserImage(null);
     setSubscriptionTier("free");
     setSubscriptionStatus("inactive");
+    setWalletBalance(null);
+    setDailyFreeTokens(4);
     setRecentConversations([]);
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
@@ -427,6 +476,26 @@ function HomePage() {
      RENDER BOT MESSAGE
   ========================================================= */
   const renderBotMessage = useCallback((message, msgIndex) => {
+
+    /* ── Insufficient tokens — show top-up prompt ── */
+    if (message.isTokenError) {
+      return (
+        <div className="token-error-message">
+          <p>⚠️ You don't have enough tokens for this action.</p>
+          <button
+            className="topup-prompt-btn"
+            onClick={() => navigate("/upgrade")}
+          >
+            Top Up Wallet
+          </button>
+          <p className="token-hint">
+            {dailyFreeTokens > 0
+              ? `${dailyFreeTokens} free Q&A${dailyFreeTokens > 1 ? "s" : ""} remaining today · Contract reviews need 65 tokens`
+              : "Free Q&As exhausted for today · Contract reviews need 65 tokens"}
+          </p>
+        </div>
+      );
+    }
     const isWelcomeMessage = message.isWelcome === true;
     const paragraphs = message.text?.split("\n\n").filter((p) => p.trim()) ?? [];
     const middleIndex = Math.floor(paragraphs.length / 2);
@@ -474,7 +543,7 @@ function HomePage() {
           )}
       </>
     );
-  }, [showAds, activeConversationId]);
+  }, [showAds, activeConversationId, dailyFreeTokens, navigate]);
 
   /* =========================================================
      LOADING SCREEN
@@ -559,9 +628,23 @@ function HomePage() {
 
           <div className="ListItems"><img src={home} alt="" />Home</div>
 
+          {/* ── Wallet balance display ─────────────────────── */}
+          {isAuthenticated && (
+            <div className="walletDisplay">
+              <span className="walletIcon">🪙</span>
+              <span className="walletTokens">
+                {walletBalance !== null ? `${walletBalance} tokens` : "—"}
+              </span>
+              {dailyFreeTokens > 0 && (
+                <span className="freeTokenBadge">+{dailyFreeTokens} free</span>
+              )}
+            </div>
+          )}
+
+          {/* ── Top Up Wallet button ────────────────────────── */}
           <div className="ListItems upgradeBtn" onClick={() => navigate("/upgrade")}>
             <img src={rocket} alt="" />
-            {subscriptionTier === "premium" ? "Pro Active ✓" : "Upgrade to Pro"}
+            Top Up Wallet
           </div>
 
           <div className="ListItems">
@@ -633,6 +716,7 @@ function HomePage() {
                     {/* ── PDF export button — only on completed bot responses ── */}
                     {message.isBot && !message.isWelcome &&
                       !message.typing && !message.isStreaming &&
+                      !message.isTokenError &&
                       message.text && (
                         <button
                           onClick={() => setPdfModal({ text: message.text, sources: message.sources || [] })}

@@ -12,14 +12,25 @@
   font-family: 'Poppins', sans-serif;
 }
 
+.walletSummary {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(200, 169, 74, 0.1);
+  border: 1px solid rgba(200, 169, 74, 0.3);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #c8a94a;
+}
+
 .paymentCard {
   width: 100%;
   max-width: 420px;
 
   background: rgba(28, 30, 58, 1);
 
-  border: 1px solid
-    rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
   border-radius: 2rem;
 
@@ -28,8 +39,7 @@
   text-align: center;
 
   box-shadow:
-    0 20px 50px
-    rgba(0, 0, 0, 0.35);
+    0 20px 50px rgba(0, 0, 0, 0.35);
 }
 
 .paymentLogo {
@@ -47,8 +57,7 @@
   border-radius: 50%;
 
   border:
-    5px solid
-    rgba(255, 255, 255, 0.15);
+    5px solid rgba(255, 255, 255, 0.15);
 
   border-top-color: #5a4bff;
 
