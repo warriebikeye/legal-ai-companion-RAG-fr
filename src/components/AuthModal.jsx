@@ -1,23 +1,24 @@
 // src/components/AuthModal.jsx
-// oneSignalLogin() wired after successful login and email verify.
-// Uses waitForMedian internally so it works even if the bridge
-// isn't ready at the exact moment the user taps Sign In.
-
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { oneSignalLogin } from "../hooks/useNotificationPrompt";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 export default function AuthModal({ onAuthenticated }) {
-  const [view, setView] = useState("signup");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [view, setView]               = useState("signup");
+  const [name, setName]               = useState("");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
+  const [token, setToken]             = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState("");
+  const [message, setMessage]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // ── Phase 4: read referral code from URL ──
+  const [searchParams] = useSearchParams();
+  const refCode = searchParams.get("ref") || "";
 
   const clearFeedback = () => { setError(""); setMessage(""); };
 
@@ -28,14 +29,25 @@ export default function AuthModal({ onAuthenticated }) {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          referralCode: refCode, // ← pass ref code to backend
+        }),
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Registration failed.");
-      setMessage("Code sent! Check your email.");
+
+      // Show referral bonus message if ref was valid
+      if (data.hasReferral) {
+        setMessage("Code sent! Check your email. 🎁 75 bonus tokens will be added after verification.");
+      } else {
+        setMessage("Code sent! Check your email.");
+      }
       setView("verify");
     } catch {
       setError("Network error. Try again.");
@@ -51,17 +63,14 @@ export default function AuthModal({ onAuthenticated }) {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, token }),
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Verification failed.");
-
-      // ✅ Link this device to the new user in OneSignal
       oneSignalLogin(email);
-
       onAuthenticated();
     } catch {
       setError("Network error. Try again.");
@@ -77,17 +86,14 @@ export default function AuthModal({ onAuthenticated }) {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Login failed.");
-
-      // ✅ Link this device to the returning user in OneSignal
       oneSignalLogin(email);
-
       onAuthenticated();
     } catch {
       setError("Network error. Try again.");
@@ -107,6 +113,21 @@ export default function AuthModal({ onAuthenticated }) {
             <h2 className="auth-title">Create Account</h2>
             <p className="auth-subtitle">Africa's Legal Intelligence Engine</p>
 
+            {/* Referral banner */}
+            {refCode && (
+              <div style={{
+                background:   "rgba(200,169,74,0.1)",
+                border:       "1px solid rgba(200,169,74,0.3)",
+                borderRadius: "0.75rem",
+                padding:      "1rem 1.4rem",
+                fontSize:     "1.3rem",
+                color:        "#c8a94a",
+                textAlign:    "center",
+              }}>
+                🎁 You were referred! Sign up to get <strong>75 bonus tokens</strong>
+              </div>
+            )}
+
             <input className="auth-input" type="text" placeholder="Full name"
               value={name} onChange={(e) => setName(e.target.value)} />
 
@@ -118,14 +139,16 @@ export default function AuthModal({ onAuthenticated }) {
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)} />
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleRegister()}
+              />
               <button type="button" className="show-password-btn"
                 onClick={() => setShowPassword((p) => !p)}>
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            {error   && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
             <button className="auth-btn primary" onClick={handleRegister} disabled={loading}>
@@ -148,9 +171,11 @@ export default function AuthModal({ onAuthenticated }) {
             <input className="auth-input token-input" type="text"
               inputMode="numeric" maxLength={6} placeholder="000000"
               value={token}
-              onChange={(e) => setToken(e.target.value.replace(/\D/, ""))} />
+              onChange={(e) => setToken(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={(e) => e.key === "Enter" && handleVerify()}
+            />
 
-            {error && <p className="auth-error">{error}</p>}
+            {error   && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
             <button className="auth-btn primary" onClick={handleVerify} disabled={loading}>
@@ -178,14 +203,15 @@ export default function AuthModal({ onAuthenticated }) {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()} />
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              />
               <button type="button" className="show-password-btn"
                 onClick={() => setShowPassword((p) => !p)}>
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            {error   && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}
 
             <button className="auth-btn primary" onClick={handleLogin} disabled={loading}>

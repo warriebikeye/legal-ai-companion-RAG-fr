@@ -72,6 +72,8 @@ function HomePage() {
   const [dailyFreeTokens, setDailyFreeTokens] = useState(4);
   // ── PDF modal state ──────────────────────────────────────
   const [pdfModal, setPdfModal] = useState(null); // { text, sources } | null
+  const [referralCode, setReferralCode] = useState(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   /* ── derived ──────────────────────────────────────────── */
 
@@ -172,6 +174,7 @@ function HomePage() {
       if (data?.success) {
         setWalletBalance(data.wallet);
         setDailyFreeTokens(data.dailyFreeTokens);
+        if (data.referralCode) setReferralCode(data.referralCode);
       }
     } catch (err) {
       console.error("[fetchWalletBalance]", err);
@@ -387,11 +390,48 @@ function HomePage() {
     setSubscriptionStatus("inactive");
     setWalletBalance(null);
     setDailyFreeTokens(4);
+    setReferralCode(null);
     setRecentConversations([]);
     setActiveConversationId(null);
     setMessages([DEFAULT_BOT_MESSAGE]);
   }, []);
+  /* =========================================================
+     REFERRAL — copy link
+  ========================================================= */
+  const handleCopyReferral = useCallback(() => {
+    if (!referralCode) return;
+    const baseUrl = process.env.REACT_APP_BASE_CLIENT_URL || window.location.origin;
+    const link = `${baseUrl}/signup?ref=${referralCode}`;
 
+    function fallbackCopy(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        setReferralCopied(true);
+        setTimeout(() => setReferralCopied(false), 2500);
+      } catch (err) {
+        console.error("Fallback copy failed:", err);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(link)
+        .then(() => {
+          setReferralCopied(true);
+          setTimeout(() => setReferralCopied(false), 2500);
+        })
+        .catch(() => fallbackCopy(link));
+    } else {
+      fallbackCopy(link);
+    }
+  }, [referralCode]);
   /* =========================================================
      FILE UPLOAD
   ========================================================= */
@@ -640,7 +680,17 @@ function HomePage() {
               )}
             </div>
           )}
-
+          {/* ── Referral share button ──────────────────────────── */}
+          {isAuthenticated && referralCode && (
+            <div
+              className="ListItems referralBtn"
+              onClick={handleCopyReferral}
+              title="Copy your referral link"
+            >
+              <span>🔗</span>
+              {referralCopied ? "Link Copied! ✓" : "Refer & Earn 75 Tokens"}
+            </div>
+          )}
           {/* ── Top Up Wallet button ────────────────────────── */}
           <div className="ListItems upgradeBtn" onClick={() => navigate("/upgrade")}>
             <img src={rocket} alt="" />
