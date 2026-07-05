@@ -666,7 +666,7 @@ function HomePage() {
             New Chat
           </button>
 
-          <div className="ListItems"><img src={home} alt="" />Home</div>
+          {/* <div className="ListItems"><img src={home} alt="" />Home</div> */}
 
           {/* ── Wallet balance display ─────────────────────── */}
           {isAuthenticated && (

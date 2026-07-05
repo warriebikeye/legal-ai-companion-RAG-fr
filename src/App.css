@@ -622,7 +622,7 @@ body {
 }
 
 .logo {
-  height: 120px;
+  height: 90px;
   width: auto;
 }
 
@@ -813,7 +813,7 @@ body {
 }
 
 .addBtn {
-  height: 2rem;
+  height: 1rem;
   padding-right: 1.5rem;
 }
 
@@ -831,7 +831,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 3rem auto;
+  margin: 1rem auto;
   border-radius: 0.5rem;
   cursor: pointer;
 }
