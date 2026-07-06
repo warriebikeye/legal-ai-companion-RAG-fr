@@ -39,9 +39,9 @@ const countries = [
   { name: "Kenya", flag: "🇰🇪" },
   { name: "Ghana", flag: "🇬🇭" },
   { name: "South Africa", flag: "🇿🇦" },
-  { name: "United States", flag: "🇺🇸" },
+  { name: "Tanzania", flag: "TZ" },
 ];
-
+  
 /* =========================================================
    HOMEPAGE
 ========================================================= */
