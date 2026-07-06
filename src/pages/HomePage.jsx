@@ -40,6 +40,8 @@ const countries = [
   { name: "Ghana", flag: "🇬🇭" },
   { name: "South Africa", flag: "🇿🇦" },
   { name: "Tanzania", flag: "🇹🇿" },
+  { name: "Liberia", flag: "🇱🇷"},
+
 ];
 
 /* =========================================================
