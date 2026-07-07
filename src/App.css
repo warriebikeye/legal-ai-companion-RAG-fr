@@ -1145,7 +1145,7 @@ body {
     height: 100dvh;
     width: 28rem;
     z-index: 99;
-    background: rgba(28, 30, 58, 1);
+    /*background: rgba(28, 30, 58, 1);*/
     border: none;
     transition: transform 0.3s ease;
   }
