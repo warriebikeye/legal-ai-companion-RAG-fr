@@ -1146,6 +1146,7 @@ body {
     width: 28rem;
     z-index: 99;
     /*background: rgba(28, 30, 58, 1);*/
+    background: rgb(3, 0, 31);
     border: none;
     transition: transform 0.3s ease;
   }
