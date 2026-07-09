@@ -383,7 +383,7 @@ function HomePage() {
     } catch (err) {
       console.error("Logout error:", err);
     }
-    oneSignalLogout();
+    //oneSignalLogout();
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);
