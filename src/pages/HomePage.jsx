@@ -76,6 +76,8 @@ function HomePage() {
   const [pdfModal, setPdfModal] = useState(null); // { text, sources } | null
   const [referralCode, setReferralCode] = useState(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  // ── Referral nudge (in-app notification) state ──────────
+  const [referralNudge, setReferralNudge] = useState(null); // { title, body, rewardTokens } | null
 
   /* ── derived ──────────────────────────────────────────── */
 
@@ -188,16 +190,20 @@ function HomePage() {
   }, []);
 
   /* =========================================================
-     REFERRAL NUDGE — fire-and-forget, generates an in-app
-     notification server-side. No UI state depends on the
-     response, so failures are logged and swallowed.
+     REFERRAL NUDGE — generates an in-app notification
+     server-side when the user's wallet is empty. Captures the
+     response and stores it so the banner below can render it;
+     failures are logged and swallowed.
   ========================================================= */
   const fetchReferralNudge = useCallback(async () => {
     try {
-      await encryptedFetch(`${API_BASE_URL}/api/referral/nudge`, {
+      const data = await encryptedFetch(`${API_BASE_URL}/api/referral/nudge`, {
         method: "GET",
         credentials: "include",
       });
+      if (data?.show && data?.notification) {
+        setReferralNudge(data.notification);
+      }
     } catch (err) {
       console.error("[fetchReferralNudge]", err);
     }
@@ -453,6 +459,12 @@ function HomePage() {
       fallbackCopy(link);
     }
   }, [referralCode]);
+
+  /* =========================================================
+     REFERRAL NUDGE — dismiss in-app banner
+  ========================================================= */
+  const dismissReferralNudge = useCallback(() => setReferralNudge(null), []);
+
   /* =========================================================
      FILE UPLOAD
   ========================================================= */
@@ -646,6 +658,54 @@ function HomePage() {
           logoUrl={gptimglogo}   // ← add this
           onClose={() => setPdfModal(null)}
         />
+      )}
+
+      {/* ── Referral nudge (in-app notification) ────────────── */}
+      {referralNudge && (
+        <div
+          className="referral-nudge-toast"
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            maxWidth: "320px",
+            background: "#1c1c1c",
+            border: "1px solid #c8a94a",
+            borderRadius: "10px",
+            padding: "16px",
+            color: "#fff",
+            zIndex: 1000,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+          }}
+        >
+          <button
+            onClick={dismissReferralNudge}
+            aria-label="Dismiss"
+            style={{
+              position: "absolute", top: "8px", right: "10px",
+              background: "none", border: "none", color: "#aaa",
+              fontSize: "16px", cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+          <strong style={{ display: "block", marginBottom: "6px" }}>
+            {referralNudge.title}
+          </strong>
+          <p style={{ margin: "0 0 12px", fontSize: "13px", color: "#ddd" }}>
+            {referralNudge.body}
+          </p>
+          <button
+            onClick={() => { handleCopyReferral(); dismissReferralNudge(); }}
+            style={{
+              padding: "6px 14px", background: "transparent",
+              border: "1px solid #c8a94a", borderRadius: "6px",
+              color: "#c8a94a", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            🔗 Copy My Referral Link
+          </button>
+        </div>
       )}
 
       <button className="sidebarToggle" onClick={toggleSidebar}>☰</button>
