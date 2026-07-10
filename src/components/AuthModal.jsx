@@ -16,9 +16,10 @@ export default function AuthModal({ onAuthenticated }) {
   const [message, setMessage]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // ── Phase 4: read referral code from URL ──
+  // ── Referral code: pre-filled from URL (?ref=), editable by hand ──
   const [searchParams] = useSearchParams();
-  const refCode = searchParams.get("ref") || "";
+  const [refCode, setRefCode] = useState(searchParams.get("ref") || "");
+  const refCodeFromUrl = !!searchParams.get("ref");
 
   const clearFeedback = () => { setError(""); setMessage(""); };
 
@@ -36,7 +37,7 @@ export default function AuthModal({ onAuthenticated }) {
           name,
           email,
           password,
-          referralCode: refCode, // ← pass ref code to backend
+          referralCode: refCode.trim() || undefined, // optional
         }),
       });
       const data = await res.json();
@@ -113,8 +114,8 @@ export default function AuthModal({ onAuthenticated }) {
             <h2 className="auth-title">Create Account</h2>
             <p className="auth-subtitle">Africa's Legal Intelligence Engine</p>
 
-            {/* Referral banner */}
-            {refCode && (
+            {/* Referral banner — only when auto-filled from a shared link */}
+            {refCodeFromUrl && refCode && (
               <div style={{
                 background:   "rgba(200,169,74,0.1)",
                 border:       "1px solid rgba(200,169,74,0.3)",
@@ -147,6 +148,10 @@ export default function AuthModal({ onAuthenticated }) {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+
+            <input className="auth-input" type="text" placeholder="Referral code (optional)"
+              value={refCode} onChange={(e) => setRefCode(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleRegister()} />
 
             {error   && <p className="auth-error">{error}</p>}
             {message && <p className="auth-message">{message}</p>}

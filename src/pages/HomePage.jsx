@@ -23,6 +23,34 @@ import { readAuthCookie } from '../hooks/useAuthCookie';
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 /* =========================================================
+   REFERRAL NUDGE — daily cap (mirrors backend's 5/day cap so
+   we stop calling once the backend would just no-op anyway)
+========================================================= */
+const REFERRAL_NUDGE_KEY = "clauzify_referral_nudge_count";
+const REFERRAL_NUDGE_DAILY_CAP = 5;
+
+function getReferralNudgeCount() {
+  try {
+    const raw = localStorage.getItem(REFERRAL_NUDGE_KEY);
+    if (!raw) return 0;
+    const { date, count } = JSON.parse(raw);
+    return date === new Date().toISOString().slice(0, 10) ? count : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function incrementReferralNudgeCount() {
+  try {
+    const date = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(
+      REFERRAL_NUDGE_KEY,
+      JSON.stringify({ date, count: getReferralNudgeCount() + 1 })
+    );
+  } catch { /* localStorage unavailable — cap just won't persist */ }
+}
+
+/* =========================================================
    DEFAULT BOT MESSAGE
 ========================================================= */
 const DEFAULT_BOT_MESSAGE = {
@@ -196,6 +224,8 @@ function HomePage() {
      failures are logged and swallowed.
   ========================================================= */
   const fetchReferralNudge = useCallback(async () => {
+    if (getReferralNudgeCount() >= REFERRAL_NUDGE_DAILY_CAP) return;
+    incrementReferralNudgeCount();
     try {
       const data = await encryptedFetch(`${API_BASE_URL}/api/referral/nudge`, {
         method: "GET",
@@ -387,6 +417,9 @@ function HomePage() {
     // Refresh wallet on any error — free token may have been consumed
     if (isAuthenticated) fetchWalletBalance();
 
+    // Nudge toward referrals right when the user hits the paywall
+    if (isAuthenticated && streamError === "insufficient_tokens") fetchReferralNudge();
+
     if (
       isAuthenticated && (
         streamError.toLowerCase().includes("limit") ||
@@ -397,7 +430,7 @@ function HomePage() {
     ) {
       onQueryLimitHit();
     }
-  }, [streamStatus, streamError, isAuthenticated, onQueryLimitHit, fetchWalletBalance]);
+  }, [streamStatus, streamError, isAuthenticated, onQueryLimitHit, fetchWalletBalance, fetchReferralNudge]);
 
   /* =========================================================
      LOGOUT
@@ -423,12 +456,10 @@ function HomePage() {
     setMessages([DEFAULT_BOT_MESSAGE]);
   }, []);
   /* =========================================================
-     REFERRAL — copy link
+     REFERRAL — copy code
   ========================================================= */
   const handleCopyReferral = useCallback(() => {
     if (!referralCode) return;
-    const baseUrl = process.env.REACT_APP_BASE_CLIENT_URL || window.location.origin;
-    const link = `${baseUrl}/signup?ref=${referralCode}`;
 
     function fallbackCopy(text) {
       const textarea = document.createElement("textarea");
@@ -449,14 +480,14 @@ function HomePage() {
     }
 
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(link)
+      navigator.clipboard.writeText(referralCode)
         .then(() => {
           setReferralCopied(true);
           setTimeout(() => setReferralCopied(false), 2500);
         })
-        .catch(() => fallbackCopy(link));
+        .catch(() => fallbackCopy(referralCode));
     } else {
-      fallbackCopy(link);
+      fallbackCopy(referralCode);
     }
   }, [referralCode]);
 
@@ -703,7 +734,7 @@ function HomePage() {
               color: "#c8a94a", fontSize: "12px", fontWeight: 600, cursor: "pointer",
             }}
           >
-            🔗 Copy My Referral Link
+            🔗 Copy My Referral Code
           </button>
         </div>
       )}
@@ -766,10 +797,15 @@ function HomePage() {
             <div
               className="ListItems referralBtn"
               onClick={handleCopyReferral}
-              title="Copy your referral link"
+              title="Copy your referral code"
             >
               <span>🔗</span>
-              {referralCopied ? "Link Copied! ✓" : "Refer & Earn 75 Tokens"}
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.3 }}>
+                <span>{referralCopied ? "Code Copied! ✓" : "Get Your Referral Code"}</span>
+                <span style={{ fontSize: "0.7em", opacity: 0.75, fontWeight: 400 }}>
+                  Earn 75 Tokens per referral
+                </span>
+              </div>
             </div>
           )}
           {/* ── Top Up Wallet button ────────────────────────── */}
