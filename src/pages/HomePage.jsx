@@ -17,7 +17,7 @@ import defaultUserIcon from '../assets/user-icon.png';
 
 import { useRAGStream } from '../hooks/useRAGStream';
 import AuthModal from '../components/AuthModal';
-import AdsterraBanner from '../components/AdsterraBanner';
+import AdRenderer from '../components/AdRenderer';
 import { readAuthCookie } from '../hooks/useAuthCookie';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
@@ -79,7 +79,11 @@ function HomePage() {
 
   /* ── derived ──────────────────────────────────────────── */
 
-  const showAds = isAuthenticated && walletBalance === 0 && dailyFreeTokens === 0;
+  // Ads show whenever the paid wallet is empty — regardless of
+  // remaining daily free tokens. Ad presence is a monetization
+  // choice, not a compliance gate; the compliance gate (below) is
+  // still: never render on typing/streaming/welcome messages.
+  const showAds = isAuthenticated && walletBalance === 0;
   /* ── stream hook ──────────────────────────────────────── */
   const {
     ask, cancel,
@@ -184,6 +188,22 @@ function HomePage() {
   }, []);
 
   /* =========================================================
+     REFERRAL NUDGE — fire-and-forget, generates an in-app
+     notification server-side. No UI state depends on the
+     response, so failures are logged and swallowed.
+  ========================================================= */
+  const fetchReferralNudge = useCallback(async () => {
+    try {
+      await encryptedFetch(`${API_BASE_URL}/api/referral/nudge`, {
+        method: "GET",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("[fetchReferralNudge]", err);
+    }
+  }, []);
+
+  /* =========================================================
      AUTH HELPERS
   ========================================================= */
   const applyUserData = useCallback((data) => {
@@ -205,6 +225,7 @@ function HomePage() {
       setAuthChecked(true);
       fetchRecentConversations();
       fetchWalletBalance();
+      fetchReferralNudge();
       fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
@@ -240,6 +261,7 @@ function HomePage() {
         if (data.userEmail) oneSignalLogin(data.userEmail);
         await fetchRecentConversations();
         await fetchWalletBalance();
+        fetchReferralNudge();
       } else {
         setIsAuthenticated(false);
       }
@@ -249,7 +271,7 @@ function HomePage() {
     } finally {
       setAuthChecked(true);
     }
-  }, [applyUserData, fetchRecentConversations]);
+  }, [applyUserData, fetchRecentConversations, fetchWalletBalance, fetchReferralNudge]);
 
   useEffect(() => {
     checkAuthentication();
@@ -327,9 +349,6 @@ function HomePage() {
   /* =========================================================
      STREAM — error
   ========================================================= */
-  /* =========================================================
-   STREAM — error
-========================================================= */
   useEffect(() => {
     if (streamStatus !== "error" || !streamError) return;
 
@@ -550,9 +569,9 @@ function HomePage() {
 
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === 0 && (
-                <AdsterraBanner
+                <AdRenderer
                   key={`ad-top-${activeConversationId ?? "new"}-${msgIndex}`}
-                  variant="native"
+                  position="top"
                   width={400}
                   height={120}
                   className="response-ad-top"
@@ -561,9 +580,9 @@ function HomePage() {
 
             {showAds && !isWelcomeMessage && message.isBot &&
               !message.typing && !message.isStreaming && index === middleIndex && (
-                <AdsterraBanner
+                <AdRenderer
                   key={`ad-mid-${activeConversationId ?? "new"}-${msgIndex}`}
-                  variant="social-bar"
+                  position="middle"
                   width={400}
                   height={100}
                   className="response-ad-middle"
@@ -574,9 +593,9 @@ function HomePage() {
 
         {showAds && !isWelcomeMessage && message.isBot &&
           !message.typing && !message.isStreaming && (
-            <AdsterraBanner
+            <AdRenderer
               key={`ad-bottom-${activeConversationId ?? "new"}-${msgIndex}`}
-              variant="banner"
+              position="bottom"
               width={400}
               adHeight={110}
               height={120}
