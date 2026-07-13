@@ -7,7 +7,8 @@ const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 export default function AuthModal({ onAuthenticated }) {
   const [view, setView]               = useState("signup");
-  const [name, setName]               = useState("");
+  const [firstname, setFirstname]     = useState("");
+  const [lastname, setLastname]       = useState("");
   const [email, setEmail]             = useState("");
   const [password, setPassword]       = useState("");
   const [token, setToken]             = useState("");
@@ -25,7 +26,7 @@ export default function AuthModal({ onAuthenticated }) {
 
   /* ── REGISTER ─────────────────────────────────────────── */
   const handleRegister = async () => {
-    if (!name || !email || !password) return setError("All fields are required.");
+    if (!firstname || !email || !password) return setError("All fields are required.");
     clearFeedback();
     setLoading(true);
     try {
@@ -34,7 +35,8 @@ export default function AuthModal({ onAuthenticated }) {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          name,
+          firstname,
+          lastname,
           email,
           password,
           referralCode: refCode.trim() || undefined, // optional
@@ -129,8 +131,11 @@ export default function AuthModal({ onAuthenticated }) {
               </div>
             )}
 
-            <input className="auth-input" type="text" placeholder="Full name"
-              value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="auth-input" type="text" placeholder="First name"
+              value={firstname} onChange={(e) => setFirstname(e.target.value)} />
+
+            <input className="auth-input" type="text" placeholder="Last name (optional)"
+              value={lastname} onChange={(e) => setLastname(e.target.value)} />
 
             <input className="auth-input" type="email" placeholder="Email address"
               value={email} onChange={(e) => setEmail(e.target.value)} />

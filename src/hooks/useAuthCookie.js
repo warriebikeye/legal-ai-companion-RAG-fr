@@ -9,7 +9,7 @@
  *
  * Shape of returned object:
  * {
- *   id, name, email, photo,
+ *   id, firstname, lastname, email, photo,
  *   subscriptionTier,   // "free" | "premium" | …
  *   subscriptionStatus, // "active" | "inactive" | …
  *   exp,                // unix timestamp
@@ -73,7 +73,8 @@ export function readAuthCookie() {
 
     return {
       id:                 payload.id                 ?? null,
-      name:               payload.name               ?? "",
+      firstname:          payload.firstname          ?? "",
+      lastname:           payload.lastname           ?? "",
       email:              payload.email              ?? "",
       photo:              payload.photo              ?? "",
       subscriptionTier:   payload.subscriptionTier   ?? "free",

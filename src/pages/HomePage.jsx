@@ -245,7 +245,8 @@ function HomePage() {
   const applyUserData = useCallback((data) => {
     setIsAuthenticated(true);
     setUserEmail(data.email ?? data.userEmail ?? null);
-    setUserName(data.name ?? null);
+    const composedName = [data.firstname, data.lastname].filter(Boolean).join(" ") || data.name || null;
+    setUserName(composedName);
     setUserImage(data.photo ?? data.userImage ?? defaultUserIcon);
     setSubscriptionTier(data.subscriptionTier ?? "free");
     setSubscriptionStatus(data.subscriptionStatus ?? "inactive");
@@ -268,6 +269,8 @@ function HomePage() {
           if (data?.isAuthenticated) applyUserData({
             email: data.userEmail,
             name: data.name,
+            firstname: data.firstname,
+            lastname: data.lastname,
             photo: data.userImage,
             subscriptionTier: data.subscriptionTier,
             subscriptionStatus: data.subscriptionStatus,
@@ -290,6 +293,8 @@ function HomePage() {
         applyUserData({
           email: data.userEmail,
           name: data.name,
+          firstname: data.firstname,
+          lastname: data.lastname,
           photo: data.userImage,
           subscriptionTier: data.subscriptionTier,
           subscriptionStatus: data.subscriptionStatus,
