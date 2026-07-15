@@ -26,6 +26,8 @@ export function useRAGStream() {
   const [answer, setAnswer]           = useState("");
   const [sources, setSources]         = useState([]);
   const [clauseAnalysis, setClause]   = useState(null);
+  const [documentText, setDocumentText]           = useState(null);
+  const [documentTruncated, setDocumentTruncated] = useState(false);
   const [status, setStatus]           = useState("idle");
   const [error, setError]             = useState(null);
   const [conversationId, setConvoId]  = useState(null);
@@ -43,6 +45,8 @@ export function useRAGStream() {
     setAnswer("");
     setSources([]);
     setClause(null);
+    setDocumentText(null);
+    setDocumentTruncated(false);
     setError(null);
     setStatus("preparing");
     setModelUsed(null);
@@ -106,6 +110,8 @@ export function useRAGStream() {
 
             case "meta":
               setSources(event.payload.sources || []);
+              setDocumentText(event.payload.documentText || null);
+              setDocumentTruncated(event.payload.documentTruncated || false);
               break;
 
             case "chunk":
@@ -159,6 +165,8 @@ export function useRAGStream() {
     setAnswer("");
     setSources([]);
     setClause(null);
+    setDocumentText(null);
+    setDocumentTruncated(false);
     setError(null);
     setStatus("idle");
     setModelUsed(null);
@@ -172,6 +180,8 @@ export function useRAGStream() {
     answer,
     sources,
     clauseAnalysis,
+    documentText,
+    documentTruncated,
     status,
     error,
     conversationId,

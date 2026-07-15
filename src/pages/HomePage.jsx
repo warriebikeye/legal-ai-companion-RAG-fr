@@ -1,6 +1,7 @@
 import { useNotificationPrompt, oneSignalLogin, oneSignalLogout } from '../hooks/useNotificationPrompt';
 import NotificationPrompt from '../components/NotificationPrompt';
 import PdfModal from '../components/PdfModal';
+import LegalAnalysisCard from '../components/LegalAnalysisCard';
 import '../App.css';
 import { encryptedFetch } from "../utils/encryption";
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -120,6 +121,7 @@ function HomePage() {
     answer: streamAnswer,
     sources: streamSources,
     clauseAnalysis: streamClause,
+    documentText: streamDocumentText,
     status: streamStatus,
     error: streamError,
     conversationId: streamConvoId,
@@ -362,12 +364,13 @@ function HomePage() {
         isStreaming: streamStatus === "streaming",
         sources: streamSources || [],
         clauseAnalysis: streamClause || null,
+        documentText: streamDocumentText || null,
         hasSources: (streamSources || []).length > 0,
         hasClauseAnalysis: !!streamClause,
       };
       return updated;
     });
-  }, [streamAnswer, streamSources, streamClause, streamStatus]);
+  }, [streamAnswer, streamSources, streamClause, streamDocumentText, streamStatus]);
 
   /* =========================================================
      STREAM — done
@@ -545,14 +548,31 @@ function HomePage() {
 
       if (rawMessages.length === 0) { setMessages([DEFAULT_BOT_MESSAGE]); return; }
 
-      setMessages(rawMessages.map((msg) => ({
-        text: msg.content,
-        isBot: msg.role !== "user",
-        sources: msg.sources ?? [],
-        clauseAnalysis: msg.clauseAnalysis ?? null,
-        hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
-        hasClauseAnalysis: !!msg.clauseAnalysis,
-      })));
+      setMessages(rawMessages.map((msg, idx) => {
+        // documentText lives on the user message that uploaded the file,
+        // not the assistant message carrying clauseAnalysis — backfill it
+        // from the nearest preceding user message so the revised-document
+        // flow has something to work against after a reload.
+        let documentText = null;
+        if (msg.role !== "user") {
+          for (let j = idx - 1; j >= 0; j--) {
+            if (rawMessages[j].role === "user") {
+              documentText = rawMessages[j].documentText || null;
+              break;
+            }
+          }
+        }
+
+        return {
+          text: msg.content,
+          isBot: msg.role !== "user",
+          sources: msg.sources ?? [],
+          clauseAnalysis: msg.clauseAnalysis ?? null,
+          documentText,
+          hasSources: Array.isArray(msg.sources) && msg.sources.length > 0,
+          hasClauseAnalysis: !!msg.clauseAnalysis,
+        };
+      }));
     } catch (err) {
       console.error("Error loading conversation:", err);
       setMessages([{ text: "⚠️ Failed to load this conversation.", isBot: true }]);
@@ -876,13 +896,16 @@ function HomePage() {
                     )}
 
                     {/* Clause analysis */}
-                    {message.clauseAnalysis && (
-                      <span style={{ marginTop: "10px", display: "block" }}>
-                        <strong>Clause Analysis:</strong>{" "}
-                        {typeof message.clauseAnalysis === "string"
-                          ? message.clauseAnalysis
-                          : JSON.stringify(message.clauseAnalysis)}
-                      </span>
+                    {message.clauseAnalysis && typeof message.clauseAnalysis === "object" && (
+                      <div style={{ marginTop: "12px" }}>
+                        <LegalAnalysisCard
+                          clauseAnalysis={message.clauseAnalysis}
+                          documentText={message.documentText}
+                          onDownloadRevised={(revisedText) =>
+                            setPdfModal({ text: revisedText, sources: [] })
+                          }
+                        />
+                      </div>
                     )}
 
                     {/* ── PDF export button — only on completed bot responses ── */}

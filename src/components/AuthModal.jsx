@@ -45,12 +45,7 @@ export default function AuthModal({ onAuthenticated }) {
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Registration failed.");
 
-      // Show referral bonus message if ref was valid
-      if (data.hasReferral) {
-        setMessage("Code sent! Check your email. 🎁 75 bonus tokens will be added after verification.");
-      } else {
-        setMessage("Code sent! Check your email.");
-      }
+      setMessage("Code sent! Check your email.");
       setView("verify");
     } catch {
       setError("Network error. Try again.");
@@ -127,7 +122,7 @@ export default function AuthModal({ onAuthenticated }) {
                 color:        "#c8a94a",
                 textAlign:    "center",
               }}>
-                🎁 You were referred! Sign up to get <strong>75 bonus tokens</strong>
+                🎁 You were referred! Sign up and start reviewing contracts with Clauzify
               </div>
             )}
 
