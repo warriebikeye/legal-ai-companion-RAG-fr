@@ -352,7 +352,13 @@ function HomePage() {
      STREAM — sync live bot message
   ========================================================= */
   useEffect(() => {
-    if (streamStatus === "idle" || streamStatus === "done") return;
+    // Note: intentionally does NOT bail out on "done" — the backend sends
+    // the "clause" SSE event immediately before "done" with no await in
+    // between, so they usually land in the same network chunk and get
+    // batched into a single React commit. Bailing on "done" here caused
+    // clauseAnalysis/sources/documentText to never be copied onto the
+    // message when that batching happened (i.e. almost always).
+    if (streamStatus === "idle") return;
     setMessages((prev) => {
       const updated = [...prev];
       const lastBotIdx = updated.map((m) => m.isBot).lastIndexOf(true);
@@ -711,6 +717,7 @@ function HomePage() {
         <PdfModal
           responseText={pdfModal.text}
           sources={pdfModal.sources}
+          clauseAnalysis={pdfModal.clauseAnalysis}
           logoUrl={gptimglogo}   // ← add this
           onClose={() => setPdfModal(null)}
         />
@@ -914,7 +921,7 @@ function HomePage() {
                       !message.isTokenError &&
                       message.text && (
                         <button
-                          onClick={() => setPdfModal({ text: message.text, sources: message.sources || [] })}
+                          onClick={() => setPdfModal({ text: message.text, sources: message.sources || [], clauseAnalysis: message.clauseAnalysis || null })}
                           style={{
                             marginTop: "12px",
                             display: "inline-flex",

@@ -121,7 +121,7 @@ function stripMarkdown(text = "") {
 /* =========================================================
    PDF GENERATOR
 ========================================================= */
-async function generatePDF({ responseText, sources, userName, businessName, logoDataUrl }) {
+async function generatePDF({ responseText, sources, userName, businessName, logoDataUrl, clauseAnalysis }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
   const PAGE_W       = 210;
@@ -261,6 +261,37 @@ async function generatePDF({ responseText, sources, userName, businessName, logo
   doc.line(ML, y, PAGE_W - MR, y);
   y += 6;
 
+  // Contract Health Score summary — only present for document-review responses
+  if (clauseAnalysis?.healthScore != null && clauseAnalysis?.scoreBreakdown) {
+    const { healthScore, scoreBreakdown, overallRecommendation, issues = [] } = clauseAnalysis;
+    const { compliant, needsAttention, highRisk, missingMandatory } = scoreBreakdown;
+
+    writeLine(`Contract Health Score: ${healthScore}/100`, "bold", 12, NAVY);
+    writeLine(
+      `Compliant: ${compliant}    Needing Attention: ${needsAttention}    High-Risk: ${highRisk}    Missing Mandatory: ${missingMandatory}`,
+      "normal", 9, DARK_GREY
+    );
+    if (overallRecommendation) {
+      writeLine(`Overall Recommendation: ${overallRecommendation}`, "bold", 9.5, DARK_GREY);
+    }
+
+    if (issues.length > 0) {
+      y += 2; checkPageBreak(10);
+      writeLine("FLAGGED CLAUSES", "bold", 9, DARK_GREY);
+      issues.forEach((issue, idx) => {
+        y += 1;
+        writeLine(`${idx + 1}. ${issue.clause || "Clause"} — ${(issue.risk || "").toUpperCase()} RISK`, "bold", 9.5, DARK_GREY, 2);
+        if (issue.businessImpact) writeLine(`Impact: ${issue.businessImpact}`, "normal", 8.5, BLACK, 4);
+        if (issue.legalBasis) writeLine(`Legal Basis: ${issue.legalBasis}`, "italic", 8.5, MID_GREY, 4);
+      });
+    }
+
+    y += 4; checkPageBreak(6);
+    doc.setDrawColor(...LIGHT_GREY); doc.setLineWidth(0.4);
+    doc.line(ML, y, PAGE_W - MR, y);
+    y += 6;
+  }
+
   // Body
   for (const raw of stripMarkdown(responseText).split("\n")) {
     const line = raw.trim();
@@ -317,7 +348,7 @@ async function generatePDF({ responseText, sources, userName, businessName, logo
 /* =========================================================
    MODAL COMPONENT
 ========================================================= */
-export default function PdfModal({ responseText, sources = [], onClose, logoUrl }) {
+export default function PdfModal({ responseText, sources = [], onClose, logoUrl, clauseAnalysis = null }) {
   const [userName, setUserName]         = useState("");
   const [businessName, setBusinessName] = useState("");
   const [generating, setGenerating]     = useState(false);
@@ -340,7 +371,7 @@ export default function PdfModal({ responseText, sources = [], onClose, logoUrl 
 
     try {
       const logoDataUrl = logoUrl ? await svgToPngDataUrl(logoUrl, 64) : null;
-      await generatePDF({ responseText, sources, userName, businessName, logoDataUrl });
+      await generatePDF({ responseText, sources, userName, businessName, logoDataUrl, clauseAnalysis });
       if (!isPremium) markDownloadUsed();
       onClose();
     } catch (err) {
@@ -349,7 +380,7 @@ export default function PdfModal({ responseText, sources = [], onClose, logoUrl 
     } finally {
       setGenerating(false);
     }
-  }, [userName, businessName, responseText, sources, isPremium, logoUrl, onClose]);
+  }, [userName, businessName, responseText, sources, isPremium, logoUrl, clauseAnalysis, onClose]);
 
   const blocked = generating || limitHit;
 

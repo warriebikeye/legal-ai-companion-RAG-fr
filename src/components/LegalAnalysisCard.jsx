@@ -70,6 +70,12 @@ function HealthScoreBar({ clauseAnalysis }) {
           ⚠️ This analysis is based on the first ~25,000 characters of a longer document.
         </div>
       )}
+
+      <div className="health-score-bar__methodology">
+        Score = share of expected clauses that are fine, weighted by severity — compliant clauses
+        count fully, clauses needing attention count for half, and high-risk or missing mandatory
+        clauses count for none.
+      </div>
     </div>
   );
 }
