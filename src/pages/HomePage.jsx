@@ -876,6 +876,20 @@ function HomePage() {
                   <div className="typing-dots"><span /><span /><span /></div>
                 ) : (
                   <>
+                    {/* Clause analysis — shown first: busy users get the score
+                        card and flagged clauses before the full narrative answer */}
+                    {message.clauseAnalysis && typeof message.clauseAnalysis === "object" && (
+                      <div style={{ marginBottom: "14px" }}>
+                        <LegalAnalysisCard
+                          clauseAnalysis={message.clauseAnalysis}
+                          documentText={message.documentText}
+                          onDownloadRevised={(revisedText) =>
+                            setPdfModal({ text: revisedText, sources: [] })
+                          }
+                        />
+                      </div>
+                    )}
+
                     <div className="bot-message-content">
                       {message.isBot
                         ? renderBotMessage(message, i)
@@ -900,19 +914,6 @@ function HomePage() {
                           )
                           .join(", ")}
                       </span>
-                    )}
-
-                    {/* Clause analysis */}
-                    {message.clauseAnalysis && typeof message.clauseAnalysis === "object" && (
-                      <div style={{ marginTop: "12px" }}>
-                        <LegalAnalysisCard
-                          clauseAnalysis={message.clauseAnalysis}
-                          documentText={message.documentText}
-                          onDownloadRevised={(revisedText) =>
-                            setPdfModal({ text: revisedText, sources: [] })
-                          }
-                        />
-                      </div>
                     )}
 
                     {/* ── PDF export button — only on completed bot responses ── */}
