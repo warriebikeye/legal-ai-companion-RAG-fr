@@ -4,6 +4,7 @@ import PdfModal from '../components/PdfModal';
 import LegalAnalysisCard from '../components/LegalAnalysisCard';
 import '../App.css';
 import { encryptedFetch } from "../utils/encryption";
+import { COUNTRIES, USER_COUNTRY_KEY, detectCountryName } from "../utils/countries";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from 'react-markdown';
@@ -55,23 +56,10 @@ function incrementReferralNudgeCount() {
    DEFAULT BOT MESSAGE
 ========================================================= */
 const DEFAULT_BOT_MESSAGE = {
-  text: " Before you sign any Agreement or Contract, upload it here or ask me questions. I will show you problematic clause which isn't in compliance with the Law of your country.",
+  text: " Hit the + button to upload the Agreement or Contract and i will review it for you",
   isBot: true,
   isWelcome: true,
 };
-
-/* =========================================================
-   COUNTRIES
-========================================================= */
-const countries = [
-  { name: "Nigeria", flag: "🇳🇬" },
-  { name: "Kenya", flag: "🇰🇪" },
-  { name: "Ghana", flag: "🇬🇭" },
-  { name: "South Africa", flag: "🇿🇦" },
-  { name: "Tanzania", flag: "🇹🇿" },
-  { name: "Liberia", flag: "🇱🇷"},
-
-];
 
 /* =========================================================
    HOMEPAGE
@@ -85,7 +73,15 @@ function HomePage() {
   /* ── state ────────────────────────────────────────────── */
   const [input, setInput] = useState("");
   const [files, setFiles] = useState([]);
-  const [userLocation, setUserLocation] = useState("");
+  const [userLocation, setUserLocationState] = useState(
+    () => localStorage.getItem(USER_COUNTRY_KEY) || ""
+  );
+  const setUserLocation = useCallback((name) => {
+    setUserLocationState(name);
+    try {
+      if (name) localStorage.setItem(USER_COUNTRY_KEY, name);
+    } catch { /* localStorage unavailable — selection just won't persist */ }
+  }, []);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
@@ -335,17 +331,11 @@ function HomePage() {
      COUNTRY AUTO-DETECT
   ========================================================= */
   useEffect(() => {
-    const autoDetectCountry = async () => {
-      try {
-        const res = await fetch("https://ipapi.co/json/");
-        const data = await res.json();
-        const found = countries.find((c) => c.name === data.country_name);
-        if (found) setUserLocation(found.name);
-      } catch (err) {
-        console.warn("Auto-location failed:", err);
-      }
-    };
-    autoDetectCountry();
+    if (userLocation) return; // already set (e.g. from a prior visit)
+    detectCountryName().then((name) => {
+      if (name) setUserLocation(name);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* =========================================================
@@ -625,8 +615,8 @@ function HomePage() {
           </button>
           <p className="token-hint">
             {dailyFreeTokens > 0
-              ? `${dailyFreeTokens} free Q&A${dailyFreeTokens > 1 ? "s" : ""} remaining today · Contract reviews need 65 tokens`
-              : "Free Q&As exhausted for today · Contract reviews need 65 tokens"}
+              ? `${dailyFreeTokens} free Q&A${dailyFreeTokens > 1 ? "s" : ""} remaining today · Contract reviews need 30 tokens`
+              : "Free Q&As exhausted for today · Contract reviews need 30 tokens"}
           </p>
         </div>
       );
@@ -785,7 +775,7 @@ function HomePage() {
           <select className="query" value={userLocation}
             onChange={(e) => { setUserLocation(e.target.value); closeSidebarOnMobile(); }}>
             <option value="">-- Select Country --</option>
-            {countries.map((c) => (
+            {COUNTRIES.map((c) => (
               <option key={c.name} value={c.name}>{c.flag} {c.name}</option>
             ))}
           </select>

@@ -61,7 +61,7 @@
 
 .referralBtn {
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 0.5rem;
   color: #c8a94a;
   border: 1px dashed rgba(200, 169, 74, 0.4);
   border-radius: 0.6rem;
@@ -561,10 +561,10 @@ body {
 }
 
 .upperSide {
-  padding: 2rem;
+  padding: 1rem 2rem;
   flex: 1;
   min-height: 0;
- /* border-bottom: 1px solid rgb(100, 100, 100);*/
+  /* border-bottom: 1px solid rgb(100, 100, 100); */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -574,12 +574,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.0rem;
   flex-shrink: 0;
 }
 
 .upperSideButton {
-  margin-top: 1.3rem;
+  margin-top: 1.0rem;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -587,6 +587,7 @@ body {
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(160, 160, 160, 0.6) transparent;
+  /* border:1px solid #fff; */
 }
 
 .upperSideButton h2 {
@@ -622,7 +623,7 @@ body {
 }
 
 .logo {
-  height: 90px;
+  height: 80px;
   width: auto;
 }
 
@@ -900,10 +901,10 @@ body {
 }
 
 .ListItems {
-  margin: 0.75rem;
+  margin: 0.5rem;
   align-items: center;
   display: flex;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   cursor: pointer;
 }
 
@@ -989,92 +990,6 @@ body {
   flex-shrink: 0;
 }
 
-/* =========================================================
-   UPGRADE PAGE
-========================================================= */
-
-.upgradePage {
-  min-height: 100vh;
-  background: rgb(3, 0, 31);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-}
-
-.upgradeCard {
-  width: 100%;
-  max-width: 1000px;
-  background: rgba(28, 30, 58, 1);
-  border-radius: 2rem;
-  padding: 4rem;
-  text-align: center;
-}
-
-.upgradeCard h1 {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.upgradeSubtitle {
-  font-size: 1.6rem;
-  opacity: 0.8;
-  margin-bottom: 4rem;
-}
-
-.pricingGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 3rem;
-}
-
-.priceCard {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 3rem;
-  border-radius: 2rem;
-  transition: 0.3s;
-}
-
-.priceCard:hover {
-  transform: translateY(-5px);
-}
-
-.priceCard h2 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-}
-
-.priceCard h3 {
-  font-size: 4rem;
-  color: #8b7bff;
-  margin-bottom: 2rem;
-}
-
-.priceCard p {
-  font-size: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.featured {
-  border: 2px solid #5a4bff;
-}
-
-.upgradeButton {
-  background: #5a4bff;
-  border: none;
-  color: white;
-  padding: 1.5rem 3rem;
-  border-radius: 1rem;
-  font-size: 1.6rem;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.upgradeButton:hover {
-  opacity: 0.9;
-  transform: scale(1.03);
-}
-
 .app-loading {
   height: 100vh;
   display: flex;
@@ -1111,18 +1026,6 @@ body {
 ========================================================= */
 
 @media (max-width: 768px) {
-
-  .pricingGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .upgradeCard {
-    padding: 2rem;
-  }
-
-  .upgradeCard h1 {
-    font-size: 3rem;
-  }
 
   .sidebarToggle {
     display: block;

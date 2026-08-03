@@ -1,5 +1,6 @@
 .upgradePage {
   min-height: 100vh;
+  width: 100%;
   background: rgb(3, 0, 31);
   color: white;
   display: flex;
@@ -33,8 +34,7 @@
 
 .pricingGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit,
-      minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 3rem;
 }
 
@@ -53,8 +53,7 @@
 
 .featuredPlan {
   border: 1px solid #6f61ff;
-  box-shadow:
-    0 0 25px rgba(111, 97, 255, 0.25);
+  box-shadow: 0 0 25px rgba(111, 97, 255, 0.25);
 }
 
 .planBadge {
@@ -77,9 +76,24 @@
   font-size: 1.1rem;
 }
 
-.pricingCard h2 {
-  font-size: 5rem;
+.priceBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
   margin-bottom: 1rem;
+}
+
+.priceAmount {
+  font-size: 3.2rem;
+  font-weight: 700;
+  color: #c8a94a;
+}
+
+.priceCurrency {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .planDuration {
@@ -116,9 +130,7 @@
 }
 
 .premiumBtn {
-  background: linear-gradient(135deg,
-      #6f61ff,
-      #8b7cff);
+  background: linear-gradient(135deg, #6f61ff, #8b7cff);
 }
 
 .upgradeFooter {
@@ -128,270 +140,71 @@
   font-size: 1.4rem;
 }
 
-@media (max-width: 768px) {
-
-  .upgradeHeader h1 {
-    font-size: 3.5rem;
-  }
-
-  .pricingCard {
-    padding: 3rem 2rem;
-  }
-
-  .pricingCard h2 {
-    font-size: 4rem;
-  }
-}
-
-/* =========================================================
-   MOBILE FRIENDLY UPGRADE PAGE
-========================================================= */
-
-.upgradePage {
-  min-height: 100vh;
-  width: 100%;
-  background: rgb(3, 0, 31);
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  padding: 2rem;
-}
-
-.upgradeCard {
-  width: 100%;
-  max-width: 1000px;
-
-  background: rgba(28, 30, 58, 1);
-
-  border-radius: 2rem;
-
-  padding: 4rem;
-
-  text-align: center;
-
-  box-shadow:
-    0 0 40px rgba(0, 0, 0, 0.35);
-}
-
-.upgradeCard h1 {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.upgradeSubtitle {
-  font-size: 1.6rem;
-  opacity: 0.85;
-  margin-bottom: 4rem;
-}
-
-.pricingGrid {
-  display: grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap: 3rem;
-}
-
-.priceCard {
-  background:
-    rgba(255, 255, 255, 0.05);
-
-  padding: 3rem;
-
-  border-radius: 2rem;
-
-  transition: all 0.3s ease;
-
-  border:
-    1px solid rgba(255, 255, 255, 0.08);
-}
-
-.priceCard:hover {
-  transform: translateY(-5px);
-}
-
-.priceCard h2 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-}
-
-.priceCard h3 {
-  font-size: 4rem;
-  color: #8b7bff;
-  margin-bottom: 2rem;
-}
-
-.priceCard p {
-  font-size: 1.5rem;
-  margin-bottom: 3rem;
-  opacity: 0.9;
-}
-
-.featured {
-  border: 2px solid #5a4bff;
-}
-
-.upgradeButton {
-  width: 100%;
-
-  background: #5a4bff;
-
-  border: none;
-
-  color: white;
-
-  padding: 1.5rem 2rem;
-
-  border-radius: 1rem;
-
-  font-size: 1.6rem;
-
-  cursor: pointer;
-
-  transition: all 0.3s ease;
-}
-
-.upgradeButton:hover {
-  opacity: 0.92;
-  transform: scale(1.02);
-}
-
-.priceBlock {
-  margin: 1rem 0 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.priceRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.3rem;
-  padding: 2px 0;
-}
-
-.priceCurrency {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.priceAmount {
-  color: #c8a94a;
-  font-weight: 700;
-  font-size: 1.4rem;
-}
-
 /* =========================================================
    TABLET
 ========================================================= */
-
 @media (max-width: 992px) {
-
-  .upgradeCard {
-    padding: 3rem;
-  }
-
   .pricingGrid {
     gap: 2rem;
   }
 
-  .priceCard h3 {
-    font-size: 3.5rem;
+  .priceAmount {
+    font-size: 2.8rem;
   }
 }
 
 /* =========================================================
    MOBILE
 ========================================================= */
-
 @media (max-width: 768px) {
-
   .upgradePage {
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     align-items: flex-start;
   }
 
-  .upgradeCard {
-    padding: 2rem;
-    margin-top: 3rem;
-    border-radius: 1.5rem;
-  }
-
-  .upgradeCard h1 {
-    font-size: 2.8rem;
-    line-height: 1.3;
-  }
-
-  .upgradeSubtitle {
-    font-size: 1.4rem;
+  .upgradeHeader {
     margin-bottom: 3rem;
   }
 
-  .pricingGrid {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+  .upgradeHeader h1 {
+    font-size: 3.5rem;
   }
 
-  .priceCard {
-    padding: 2.2rem;
-  }
-
-  .priceCard h2 {
-    font-size: 2.2rem;
-  }
-
-  .priceCard h3 {
-    font-size: 3rem;
-  }
-
-  .priceCard p {
-    font-size: 1.4rem;
-  }
-
-  .upgradeButton {
+  .upgradeHeader p {
     font-size: 1.5rem;
-    padding: 1.4rem;
+  }
+
+  .pricingCard {
+    padding: 3rem 2rem;
+  }
+
+  .priceAmount {
+    font-size: 2.5rem;
   }
 }
 
 /* =========================================================
    SMALL PHONES
 ========================================================= */
-
 @media (max-width: 480px) {
-
   .upgradePage {
-    padding: 1rem;
+    padding: 1.5rem 1rem;
   }
 
-  .upgradeCard {
-    padding: 1.5rem;
+  .upgradeHeader h1 {
+    font-size: 2.6rem;
   }
 
-  .upgradeCard h1 {
-    font-size: 2.4rem;
-  }
-
-  .upgradeSubtitle {
+  .upgradeHeader p {
     font-size: 1.3rem;
   }
 
-  .priceCard {
-    padding: 2rem 1.5rem;
+  .pricingCard {
+    padding: 2.2rem 1.8rem;
   }
 
-  .priceCard h2 {
-    font-size: 2rem;
-  }
-
-  .priceCard h3 {
-    font-size: 2.6rem;
+  .priceAmount {
+    font-size: 2.2rem;
   }
 
   .upgradeButton {

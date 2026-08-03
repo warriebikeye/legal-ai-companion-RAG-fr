@@ -1,18 +1,20 @@
 // src/pages/UpgradePage.jsx
 import "./UpgradePage.css";
 
-/* ─── Bundle definitions — must match tokens.js exactly ─── */
+/* ─── Bundle definitions — must match tokens.js exactly ───
+   Pricing is USD-only for every visitor, regardless of country —
+   the Flutterwave links accept any currency at checkout. */
 const BUNDLES = [
   {
     id:       "starter",
     label:    "Starter",
     tokens:   75,
     badge:    null,
-    prices:   { NGN: "₦1,500", KES: "KSh 200", GHS: "GH₵ 20", ZAR: "R25" },
+    usdPrice: "$1",
     link:     process.env.REACT_APP_FLW_STARTER_LINK,
     features: [
       "75 tokens",
-      "1 contract review + PDF",
+      "2 contract reviews + PDFs",
       "18 legal Q&As",
       "No ads while balance lasts",
     ],
@@ -22,11 +24,11 @@ const BUNDLES = [
     label:    "Standard",
     tokens:   170,
     badge:    null,
-    prices:   { NGN: "₦3,500", KES: "KSh 450", GHS: "GH₵ 45", ZAR: "R55" },
+    usdPrice: "$2.50",
     link:     process.env.REACT_APP_FLW_STANDARD_LINK,
     features: [
       "170 tokens",
-      "2 contract reviews + PDFs",
+      "5 contract reviews + PDFs",
       "42 legal Q&As",
       "No ads while balance lasts",
     ],
@@ -36,11 +38,11 @@ const BUNDLES = [
     label:    "Pro",
     tokens:   400,
     badge:    "MOST POPULAR",
-    prices:   { NGN: "₦8,000", KES: "KSh 1,000", GHS: "GH₵ 100", ZAR: "R130" },
+    usdPrice: "$5",
     link:     process.env.REACT_APP_FLW_PRO_LINK,
     features: [
       "400 tokens",
-      "6 contract reviews + PDFs",
+      "13 contract reviews + PDFs",
       "100 legal Q&As",
       "No ads while balance lasts",
     ],
@@ -50,11 +52,11 @@ const BUNDLES = [
     label:    "Power",
     tokens:   900,
     badge:    "BEST VALUE",
-    prices:   { NGN: "₦18,000", KES: "KSh 2,300", GHS: "GH₵ 230", ZAR: "R300" },
+    usdPrice: "$12",
     link:     process.env.REACT_APP_FLW_POWER_LINK,
     features: [
       "900 tokens",
-      "13 contract reviews + PDFs",
+      "30 contract reviews + PDFs",
       "225 legal Q&As",
       "No ads while balance lasts",
     ],
@@ -87,14 +89,9 @@ function UpgradePage() {
 
               <div className="planBadge">{bundle.label.toUpperCase()}</div>
 
-              {/* Show all local currency prices */}
               <div className="priceBlock">
-                {Object.entries(bundle.prices).map(([currency, price]) => (
-                  <div key={currency} className="priceRow">
-                    <span className="priceCurrency">{currency}</span>
-                    <span className="priceAmount">{price}</span>
-                  </div>
-                ))}
+                <span className="priceAmount">{bundle.usdPrice}</span>
+                <span className="priceCurrency">USD</span>
               </div>
 
               <p className="planDuration">{bundle.tokens} tokens</p>
