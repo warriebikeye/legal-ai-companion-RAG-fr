@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encryptedFetch } from "../utils/encryption";
 import { readAuthCookie } from "../hooks/useAuthCookie";
+import { authHeaders, setStoredToken } from "../utils/authToken";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -74,10 +75,45 @@ function UpgradePage() {
   const [processingId, setProcessingId] = useState(null);
   const [status, setStatus] = useState(null); // { type: 'success' | 'error', text }
 
+  /* ─── Resolve the logged-in user ──────────────────────────
+     readAuthCookie() is a fast, zero-fetch path — but the
+     JS-readable `ub_ui` cookie isn't reliably readable inside
+     some wrapped-app WebViews even when the real session
+     cookie is working fine (the rest of the app stays logged
+     in). Fall back to /auth/me (same pattern HomePage.jsx
+     uses) before concluding the user really isn't logged in.
+  ───────────────────────────────────────────────────────── */
+  async function resolveAuthenticatedUser() {
+    const cookieUser = readAuthCookie();
+    if (cookieUser && cookieUser.email) return cookieUser;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        method:      "GET",
+        credentials: "include",
+        headers:     { ...authHeaders() },
+      });
+      if (!res.ok) return null;
+
+      const data = await res.json();
+      if (!data?.isAuthenticated || !data?.userEmail) return null;
+
+      setStoredToken(data.token);
+
+      return {
+        email:     data.userEmail,
+        firstname: data.firstname || "",
+        lastname:  data.lastname || "",
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async function handleUpgrade(bundle) {
     if (processingId) return;
 
-    const user = readAuthCookie();
+    const user = await resolveAuthenticatedUser();
     if (!user || !user.email) {
       setStatus({ type: "error", text: "Please log in to top up your wallet." });
       return;

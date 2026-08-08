@@ -2,7 +2,9 @@
 //
 // Confirms the Flutterwave Inline wiring: checkout opens as an in-page
 // modal (never a redirect), and the wallet-credit round trip runs off
-// the JS callback instead of a separate /payment-updating page.
+// the JS callback instead of a separate /payment-updating page. Also
+// confirms the auth-resolution fallback: readAuthCookie() alone isn't
+// trusted — /auth/me backs it up (see resolveAuthenticatedUser).
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import UpgradePage from "./UpgradePage";
@@ -29,6 +31,12 @@ function getStarterButton() {
   return screen.getByRole("button", { name: /get starter/i });
 }
 
+async function clickAndSettle(button) {
+  await act(async () => {
+    fireEvent.click(button);
+  });
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   readAuthCookie.mockReturnValue({
@@ -38,12 +46,18 @@ beforeEach(() => {
   });
   window.FlutterwaveCheckout = jest.fn();
   window.closePaymentModal = jest.fn();
+  // Safety net — only hit if a test's cookie path returns nothing,
+  // since resolveAuthenticatedUser() falls back to /auth/me then.
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: false,
+    json: async () => ({}),
+  });
 });
 
-test("opens the Flutterwave modal in-page with the correct bundle config, instead of redirecting", () => {
+test("opens the Flutterwave modal in-page with the correct bundle config, instead of redirecting", async () => {
   renderUpgradePage();
 
-  fireEvent.click(getStarterButton());
+  await clickAndSettle(getStarterButton());
 
   expect(window.FlutterwaveCheckout).toHaveBeenCalledTimes(1);
   const config = window.FlutterwaveCheckout.mock.calls[0][0];
@@ -65,7 +79,7 @@ test("credits the wallet inline on a successful payment via the JS callback, no 
   });
 
   renderUpgradePage();
-  fireEvent.click(getStarterButton());
+  await clickAndSettle(getStarterButton());
 
   const config = window.FlutterwaveCheckout.mock.calls[0][0];
 
@@ -92,7 +106,7 @@ test("shows an inline error and re-enables the button if backend verification fa
 
   renderUpgradePage();
   const button = getStarterButton();
-  fireEvent.click(button);
+  await clickAndSettle(button);
 
   const config = window.FlutterwaveCheckout.mock.calls[0][0];
 
@@ -106,7 +120,7 @@ test("shows an inline error and re-enables the button if backend verification fa
 
 test("does not call the backend if Flutterwave reports the payment was not completed", async () => {
   renderUpgradePage();
-  fireEvent.click(getStarterButton());
+  await clickAndSettle(getStarterButton());
 
   const config = window.FlutterwaveCheckout.mock.calls[0][0];
 
@@ -118,10 +132,10 @@ test("does not call the backend if Flutterwave reports the payment was not compl
   expect(screen.getByText(/payment was not completed/i)).toBeInTheDocument();
 });
 
-test("re-enables the button if the user closes the modal without paying", () => {
+test("re-enables the button if the user closes the modal without paying", async () => {
   renderUpgradePage();
   const button = getStarterButton();
-  fireEvent.click(button);
+  await clickAndSettle(button);
   expect(button).toBeDisabled();
 
   const config = window.FlutterwaveCheckout.mock.calls[0][0];
@@ -132,11 +146,39 @@ test("re-enables the button if the user closes the modal without paying", () => 
   expect(button).not.toBeDisabled();
 });
 
-test("blocks checkout with an inline error if the user isn't logged in", () => {
+test("falls back to /auth/me when the JS-readable cookie can't be read (e.g. inside a wrapped-app WebView), and still proceeds", async () => {
   readAuthCookie.mockReturnValue(null);
-  renderUpgradePage();
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      isAuthenticated: true,
+      userEmail: "webview-user@example.com",
+      firstname: "Grace",
+      lastname: "Hopper",
+    }),
+  });
 
-  fireEvent.click(getStarterButton());
+  renderUpgradePage();
+  await clickAndSettle(getStarterButton());
+
+  expect(global.fetch).toHaveBeenCalledWith(
+    expect.stringContaining("/auth/me"),
+    expect.objectContaining({ credentials: "include" })
+  );
+  expect(window.FlutterwaveCheckout).toHaveBeenCalledTimes(1);
+  const config = window.FlutterwaveCheckout.mock.calls[0][0];
+  expect(config.customer.email).toBe("webview-user@example.com");
+});
+
+test("blocks checkout with an inline error if neither the cookie nor /auth/me report a logged-in user", async () => {
+  readAuthCookie.mockReturnValue(null);
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ isAuthenticated: false }),
+  });
+
+  renderUpgradePage();
+  await clickAndSettle(getStarterButton());
 
   expect(window.FlutterwaveCheckout).not.toHaveBeenCalled();
   expect(screen.getByText(/please log in/i)).toBeInTheDocument();

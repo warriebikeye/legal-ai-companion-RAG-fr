@@ -21,6 +21,7 @@ import { useRAGStream } from '../hooks/useRAGStream';
 import AuthModal from '../components/AuthModal';
 import AdRenderer from '../components/AdRenderer';
 import { readAuthCookie } from '../hooks/useAuthCookie';
+import { authHeaders, setStoredToken, clearStoredToken } from '../utils/authToken';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -261,7 +262,7 @@ function HomePage() {
       fetchRecentConversations();
       fetchWalletBalance();
       fetchReferralNudge();
-      fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include" })
+      fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include", headers: { ...authHeaders() } })
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
           if (data?.isAuthenticated) applyUserData({
@@ -273,6 +274,7 @@ function HomePage() {
             subscriptionTier: data.subscriptionTier,
             subscriptionStatus: data.subscriptionStatus,
           });
+          if (data?.isAuthenticated) setStoredToken(data.token);
           if (data?.isAuthenticated && data?.userEmail) {
             oneSignalLogin(data.userEmail);
           }
@@ -283,7 +285,7 @@ function HomePage() {
 
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: "GET", credentials: "include",
+        method: "GET", credentials: "include", headers: { ...authHeaders() },
       });
       if (!res.ok) { setIsAuthenticated(false); setAuthChecked(true); return; }
       const data = await res.json();
@@ -297,6 +299,7 @@ function HomePage() {
           subscriptionTier: data.subscriptionTier,
           subscriptionStatus: data.subscriptionStatus,
         });
+        setStoredToken(data.token);
         if (data.userEmail) oneSignalLogin(data.userEmail);
         await fetchRecentConversations();
         await fetchWalletBalance();
@@ -441,11 +444,12 @@ function HomePage() {
   ========================================================= */
   const handleLogout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, { method: "POST", credentials: "include" });
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: "POST", credentials: "include", headers: { ...authHeaders() } });
     } catch (err) {
       console.error("Logout error:", err);
     }
     //oneSignalLogout();
+    clearStoredToken();
     setIsAuthenticated(false);
     setUserEmail(null);
     setUserName(null);

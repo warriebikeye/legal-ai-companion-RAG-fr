@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { oneSignalLogin } from "../hooks/useNotificationPrompt";
+import { authHeaders, setStoredToken } from "../utils/authToken";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -32,7 +33,7 @@ export default function AuthModal({ onAuthenticated }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({
           firstname,
@@ -62,12 +63,13 @@ export default function AuthModal({ onAuthenticated }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({ email, token }),
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Verification failed.");
+      setStoredToken(data.token);
       oneSignalLogin(email);
       onAuthenticated();
     } catch {
@@ -85,12 +87,13 @@ export default function AuthModal({ onAuthenticated }) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Login failed.");
+      setStoredToken(data.token);
       oneSignalLogin(email);
       onAuthenticated();
     } catch {

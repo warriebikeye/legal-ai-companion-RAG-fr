@@ -4,6 +4,8 @@
 // + FIXED key derivation (SHA-256, matches backend exactly)
 // + FIXED encryptedFetch (stable + consistent JSON return + error handling)
 
+import { authHeaders } from "./authToken";
+
 const SECRET = process.env.REACT_APP_ENCRYPTION_SECRET;
 
 /* =========================================================
@@ -146,7 +148,7 @@ export async function encryptedFetch(url, options = {}) {
     const { body, method = "GET", ...rest } = options;
 
     let finalBody = body;
-    let finalHeaders = { ...(options.headers || {}) };
+    let finalHeaders = { ...(options.headers || {}), ...authHeaders() };
 
     // Encrypt outgoing request body
     if (body && ["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {

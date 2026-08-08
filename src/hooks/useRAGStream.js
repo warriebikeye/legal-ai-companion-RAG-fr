@@ -10,6 +10,7 @@
 //   <div>{answer}</div>   // updates in real time as tokens arrive
 
 import { useState, useRef, useCallback } from "react";
+import { authHeaders } from "../utils/authToken";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -63,6 +64,7 @@ export function useRAGStream() {
         method: "POST",
         body,
         credentials: "include",
+        headers: { ...authHeaders() },
         signal: abortRef.current.signal,
       });
 
