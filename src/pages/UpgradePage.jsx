@@ -1,9 +1,15 @@
 // src/pages/UpgradePage.jsx
 import "./UpgradePage.css";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { encryptedFetch } from "../utils/encryption";
+import { readAuthCookie } from "../hooks/useAuthCookie";
+
+const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
 /* ─── Bundle definitions — must match tokens.js exactly ───
    Pricing is USD-only for every visitor, regardless of country —
-   the Flutterwave links accept any currency at checkout. */
+   Flutterwave Inline accepts any currency/method at checkout. */
 const BUNDLES = [
   {
     id:       "starter",
@@ -11,7 +17,7 @@ const BUNDLES = [
     tokens:   75,
     badge:    null,
     usdPrice: "$1",
-    link:     process.env.REACT_APP_FLW_STARTER_LINK,
+    amount:   1,
     features: [
       "75 tokens",
       "2 contract reviews + PDFs",
@@ -25,7 +31,7 @@ const BUNDLES = [
     tokens:   170,
     badge:    null,
     usdPrice: "$2.50",
-    link:     process.env.REACT_APP_FLW_STANDARD_LINK,
+    amount:   2.5,
     features: [
       "170 tokens",
       "5 contract reviews + PDFs",
@@ -39,7 +45,7 @@ const BUNDLES = [
     tokens:   400,
     badge:    "MOST POPULAR",
     usdPrice: "$5",
-    link:     process.env.REACT_APP_FLW_PRO_LINK,
+    amount:   5,
     features: [
       "400 tokens",
       "13 contract reviews + PDFs",
@@ -53,7 +59,7 @@ const BUNDLES = [
     tokens:   900,
     badge:    "BEST VALUE",
     usdPrice: "$12",
-    link:     process.env.REACT_APP_FLW_POWER_LINK,
+    amount:   12,
     features: [
       "900 tokens",
       "30 contract reviews + PDFs",
@@ -64,6 +70,87 @@ const BUNDLES = [
 ];
 
 function UpgradePage() {
+  const navigate = useNavigate();
+  const [processingId, setProcessingId] = useState(null);
+  const [status, setStatus] = useState(null); // { type: 'success' | 'error', text }
+
+  async function handleUpgrade(bundle) {
+    if (processingId) return;
+
+    const user = readAuthCookie();
+    if (!user || !user.email) {
+      setStatus({ type: "error", text: "Please log in to top up your wallet." });
+      return;
+    }
+
+    if (typeof window.FlutterwaveCheckout !== "function") {
+      setStatus({ type: "error", text: "Payment system is still loading — please try again in a moment." });
+      return;
+    }
+
+    setStatus(null);
+    setProcessingId(bundle.id);
+
+    window.FlutterwaveCheckout({
+      public_key: process.env.REACT_APP_FLW_PUBLIC_KEY,
+      tx_ref:     `topup-${bundle.id}-${Date.now()}`,
+      amount:     bundle.amount,
+      currency:   "USD",
+      payment_options: "card,banktransfer,mobilemoney,ussd",
+      customer: {
+        email: user.email,
+        name:  [user.firstname, user.lastname].filter(Boolean).join(" ") || user.email,
+      },
+      customizations: {
+        title:       "Clauzify",
+        description: `${bundle.label} — ${bundle.tokens} tokens`,
+      },
+      meta: { bundleId: bundle.id },
+      callback: async (response) => {
+        if (typeof window.closePaymentModal === "function") {
+          window.closePaymentModal();
+        }
+
+        if (response?.status !== "successful") {
+          setProcessingId(null);
+          setStatus({ type: "error", text: "Payment was not completed." });
+          return;
+        }
+
+        try {
+          const data = await encryptedFetch(`${API_BASE_URL}/payments/verify`, {
+            method:      "POST",
+            credentials: "include",
+            body: {
+              transactionId: response.transaction_id,
+              bundleId:      bundle.id,
+            },
+          });
+
+          setStatus({
+            type: "success",
+            text: `${data.bundle} activated — +${data.tokens} tokens added (new balance: ${data.wallet}).`,
+          });
+
+          setTimeout(() => {
+            navigate("/");
+            window.location.reload();
+          }, 2500);
+        } catch (err) {
+          setStatus({
+            type: "error",
+            text: err.message || "Payment verification failed. Please contact support with your transaction ID.",
+          });
+        } finally {
+          setProcessingId(null);
+        }
+      },
+      onclose: () => {
+        setProcessingId(null);
+      },
+    });
+  }
+
   return (
     <div className="upgradePage">
       <div className="upgradeContainer">
@@ -76,6 +163,12 @@ function UpgradePage() {
             use them at your own pace.
           </p>
         </div>
+
+        {status && (
+          <div className={`upgradeStatus ${status.type === "error" ? "upgradeStatus--error" : "upgradeStatus--success"}`}>
+            {status.text}
+          </div>
+        )}
 
         <div className="pricingGrid">
           {BUNDLES.map((bundle) => (
@@ -104,11 +197,10 @@ function UpgradePage() {
 
               <button
                 className={`upgradeButton ${bundle.badge === "MOST POPULAR" ? "premiumBtn" : ""}`}
-                onClick={() => {
-                  window.location.href = bundle.link;
-                }}
+                disabled={!!processingId}
+                onClick={() => handleUpgrade(bundle)}
               >
-                Get {bundle.label}
+                {processingId === bundle.id ? "Processing..." : `Get ${bundle.label}`}
               </button>
             </div>
           ))}

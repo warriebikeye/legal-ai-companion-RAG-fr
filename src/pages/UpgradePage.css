@@ -32,6 +32,26 @@
   line-height: 1.7;
 }
 
+.upgradeStatus {
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 1.4rem 2rem;
+  border-radius: 1rem;
+  margin-bottom: 3rem;
+}
+
+.upgradeStatus--success {
+  background: rgba(111, 97, 255, 0.15);
+  border: 1px solid #6f61ff;
+  color: #c9c4ff;
+}
+
+.upgradeStatus--error {
+  background: rgba(255, 90, 90, 0.12);
+  border: 1px solid #ff5a5a;
+  color: #ffb3b3;
+}
+
 .pricingGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -127,6 +147,12 @@
 
 .upgradeButton:hover {
   transform: translateY(-2px);
+}
+
+.upgradeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .premiumBtn {

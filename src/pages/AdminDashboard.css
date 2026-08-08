@@ -607,7 +607,8 @@
    LOGS
 ========================================================= */
 
-.logsCard {
+.logsCard,
+.transactionsCard {
   margin-bottom: 2rem;
 }
 

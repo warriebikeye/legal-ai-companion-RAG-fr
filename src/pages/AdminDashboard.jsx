@@ -83,6 +83,11 @@ function SubBadge({ status }) {
   return <span className={`badge ${cls}`}>{status}</span>;
 }
 
+function TransactionBadge({ type }) {
+  const cls = type === "credit" ? "badgePremium" : "badgeExpired";
+  return <span className={`badge ${cls}`}>{type}</span>;
+}
+
 function QueueBar({ label, value, max, colorClass }) {
   const pct = max ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
@@ -206,6 +211,52 @@ function UsersTable({ users = [], loading }) {
   );
 }
 
+function TransactionsTable({ transactions = [], loading }) {
+  if (loading) return <div className="tableEmpty">Connecting…</div>;
+  if (!transactions.length) return <div className="tableEmpty">No transactions yet.</div>;
+
+  return (
+    <div className="tableWrap">
+      <table className="usersTable">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Type</th>
+            <th>Action</th>
+            <th>Tokens</th>
+            <th>USD</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((tx) => (
+            <tr key={tx.id}>
+              <td>
+                <div className="userCell">
+                  <span className="avatar" style={{ background: avatarColor(tx.name || tx.email) }}>
+                    {initials(tx.name)}
+                  </span>
+                  <div>
+                    <span className="userName">{tx.name}</span>
+                    <span className="userEmail">{tx.email}</span>
+                  </div>
+                </div>
+              </td>
+              <td><TransactionBadge type={tx.type} /></td>
+              <td className="mutedCell">{tx.action}</td>
+              <td className="numCell">{tx.type === "credit" ? "+" : "-"}{fmt(tx.tokens)}</td>
+              <td className="numCell">{tx.usdAmount != null ? `$${fmt(tx.usdAmount)}` : "—"}</td>
+              <td><SubBadge status={tx.status === "success" ? "active" : tx.status} /></td>
+              <td className="mutedCell">{timeAgo(tx.createdAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /* =========================================================
    MAIN PAGE
 ========================================================= */
@@ -256,6 +307,7 @@ function AdminDashboard() {
   const l  = data?.latency      || {};
   const m  = data?.modelUsage   || {};
   const h  = data?.health       || {};
+  const rev = data?.revenue     || {};
 
   const allRecentUsers = data?.recentUsers || [];
 
@@ -429,6 +481,15 @@ function AdminDashboard() {
             value={l.avg ? `${(l.avg / 1000).toFixed(1)}s` : "—"}
             sub={l.p95 ? `p95 ${(l.p95 / 1000).toFixed(1)}s · p99 ${(l.p99 / 1000).toFixed(1)}s` : null}
           />
+          <StatCard
+            label="Total revenue"
+            value={`$${fmt(rev.totalUsd)}`}
+            sub={`${fmt(rev.topupCount)} top-ups`}
+          />
+          <StatCard
+            label="Tokens sold"
+            value={fmt(rev.totalTokens)}
+          />
         </div>
 
         {/* ── CHART + QUEUE ── */}
@@ -562,6 +623,15 @@ function AdminDashboard() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── TRANSACTIONS ── */}
+        <div className="dashCard transactionsCard">
+          <div className="cardHeader">
+            <span className="cardTitle">Recent transactions</span>
+            <span className="mutedCell">{fmt(rev.topupCount)} top-ups · ${fmt(rev.totalUsd)} total</span>
+          </div>
+          <TransactionsTable transactions={rev.recent} loading={!data} />
         </div>
 
         {/* ── SYSTEM LOGS ── */}
