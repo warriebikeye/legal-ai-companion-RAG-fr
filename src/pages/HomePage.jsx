@@ -713,6 +713,7 @@ function HomePage() {
           sources={pdfModal.sources}
           clauseAnalysis={pdfModal.clauseAnalysis}
           logoUrl={gptimglogo}   // ← add this
+          walletBalance={walletBalance}
           onClose={() => setPdfModal(null)}
         />
       )}
@@ -840,7 +841,7 @@ function HomePage() {
             Top Up Wallet
           </div>
 
-          <div className="ListItems">
+          <div className="ListItems" onClick={() => navigate("/profile")}>
             <img src={userImage || defaultUserIcon} alt="" />
             {userName || userEmail || "Account"}
           </div>

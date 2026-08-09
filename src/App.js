@@ -8,6 +8,7 @@ import {
 import PaymentUpdating from './pages/PaymentUpdating';
 import HomePage from './pages/HomePage';
 import UpgradePage from './pages/UpgradePage';
+import ProfilePage from './pages/ProfilePage';
 import DashBoard from './pages/AdminDashboard'
 
 //fixing routing
@@ -21,6 +22,10 @@ function App() {
       <Route
         path="/upgrade"
         element={<UpgradePage />}
+      />
+      <Route
+        path="/profile"
+        element={<ProfilePage />}
       />
       <Route
         path="/payment-updating"

@@ -348,15 +348,20 @@ async function generatePDF({ responseText, sources, userName, businessName, logo
 /* =========================================================
    MODAL COMPONENT
 ========================================================= */
-export default function PdfModal({ responseText, sources = [], onClose, logoUrl, clauseAnalysis = null }) {
+export default function PdfModal({ responseText, sources = [], onClose, logoUrl, clauseAnalysis = null, walletBalance = null }) {
   const [userName, setUserName]         = useState("");
   const [businessName, setBusinessName] = useState("");
   const [generating, setGenerating]     = useState(false);
   const [error, setError]               = useState("");
   const [limitHit, setLimitHit]         = useState(false);
 
-  const cookie    = readAuthCookie();
-  const isPremium = cookie?.subscriptionTier === "premium";
+  const cookie        = readAuthCookie();
+  const hasTokens     = (walletBalance ?? 0) > 0;
+  const isSubscribed  = cookie?.subscriptionTier === "premium";
+  // Subscribers and anyone holding a paid token balance skip the
+  // free-tier's 1-download/day cap — that cap exists to gate non-paying
+  // users, not people who've already bought tokens.
+  const isPremium = isSubscribed || hasTokens;
 
   useEffect(() => {
     if (!isPremium && hasUsedDownloadToday()) setLimitHit(true);
@@ -409,7 +414,11 @@ export default function PdfModal({ responseText, sources = [], onClose, logoUrl,
 
         {!limitHit && (
           <div style={isPremium ? styles.proBadge : styles.freeBadge}>
-            {isPremium ? "✓ Pro — unlimited downloads" : "Free plan — 1 download per day"}
+            {isSubscribed
+              ? "✓ Pro — unlimited downloads"
+              : hasTokens
+              ? "✓ Unlimited downloads while you hold tokens"
+              : "Free plan — 1 download per day"}
           </div>
         )}
 
