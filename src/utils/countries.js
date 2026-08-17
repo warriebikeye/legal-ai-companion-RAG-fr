@@ -9,6 +9,9 @@ export const COUNTRIES = [
   { name: "South Africa", flag: "🇿🇦", currency: "ZAR" },
   { name: "Tanzania",     flag: "🇹🇿", currency: "TZS" },
   { name: "Liberia",      flag: "🇱🇷", currency: "LRD" },
+  { name: "Namibia",      flag: "🇳🇦", currency: "NAD" },
+  { name: "Uganda",       flag: "🇺🇬", currency: "UGX" },
+  { name: "Botswana",     flag: "🇧🇼", currency: "BWP" },
 ];
 
 export const USER_COUNTRY_KEY = "userCountry";

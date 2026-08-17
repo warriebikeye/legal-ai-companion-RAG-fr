@@ -177,30 +177,36 @@ function IssueCard({ issue, index, applied, onApply }) {
    MAIN COMPONENT
 ========================================================= */
 
-export default function LegalAnalysisCard({ clauseAnalysis, documentText, onDownloadRevised }) {
-  const [workingDocumentText, setWorkingDocumentText] = useState(documentText || '');
+export default function LegalAnalysisCard({ clauseAnalysis, messageId, onDownloadRevised }) {
   const [appliedIndices, setAppliedIndices] = useState(() => new Set());
+  const [generating, setGenerating] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   if (!clauseAnalysis || typeof clauseAnalysis !== 'object') return null;
 
   const issues = clauseAnalysis.issues || [];
 
-  const handleApply = (issue, index) => {
-    setWorkingDocumentText((prev) => {
-      if (issue.status !== 'missing' && issue.clauseText && prev.includes(issue.clauseText)) {
-        return prev.replace(issue.clauseText, issue.suggestedRevision);
-      }
-      // Missing clause (or clause text not found verbatim) — append instead of replacing
-      const addition = `\n\n${issue.clause}\n${issue.suggestedRevision}`;
-      if (prev.includes('Added Clauses')) {
-        return prev + addition;
-      }
-      return `${prev}\n\n--- Added Clauses ---${addition}`;
-    });
+  // Revisions are no longer mutated into a plain-text blob client-side —
+  // the backend patches the original document's actual paragraph tree, so
+  // all this needs to track is *which* issues the user accepted.
+  const handleApply = (index) => {
     setAppliedIndices((prev) => new Set(prev).add(index));
   };
 
   const hasAppliedRevisions = appliedIndices.size > 0;
+
+  const handleDownloadClick = async () => {
+    if (!messageId || generating) return;
+    setDownloadError('');
+    setGenerating(true);
+    try {
+      await onDownloadRevised?.([...appliedIndices]);
+    } catch (err) {
+      setDownloadError(err?.message || 'Failed to generate document.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div className="legal-analysis">
@@ -214,19 +220,23 @@ export default function LegalAnalysisCard({ clauseAnalysis, documentText, onDown
               issue={issue}
               index={i}
               applied={appliedIndices.has(i)}
-              onApply={() => handleApply(issue, i)}
+              onApply={() => handleApply(i)}
             />
           ))}
         </div>
       )}
 
-      {hasAppliedRevisions && documentText && (
-        <button
-          className="download-revised-btn"
-          onClick={() => onDownloadRevised?.(workingDocumentText)}
-        >
-          ⬇ Download Revised Document
-        </button>
+      {hasAppliedRevisions && messageId && (
+        <>
+          <button
+            className={`download-revised-btn ${generating ? 'download-revised-btn--busy' : ''}`}
+            onClick={handleDownloadClick}
+            disabled={generating}
+          >
+            {generating ? '⏳ Generating…' : '⬇ Download Revised Document'}
+          </button>
+          {downloadError && <p className="download-revised-error">{downloadError}</p>}
+        </>
       )}
     </div>
   );

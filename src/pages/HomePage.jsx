@@ -122,6 +122,7 @@ function HomePage() {
     status: streamStatus,
     error: streamError,
     conversationId: streamConvoId,
+    messageId: streamMessageId,
   } = useRAGStream();
 
   const isSending = streamStatus === "preparing" || streamStatus === "streaming";
@@ -366,10 +367,11 @@ function HomePage() {
         documentText: streamDocumentText || null,
         hasSources: (streamSources || []).length > 0,
         hasClauseAnalysis: !!streamClause,
+        id: streamMessageId || updated[lastBotIdx].id,
       };
       return updated;
     });
-  }, [streamAnswer, streamSources, streamClause, streamDocumentText, streamStatus]);
+  }, [streamAnswer, streamSources, streamClause, streamDocumentText, streamMessageId, streamStatus]);
 
   /* =========================================================
      STREAM — done
@@ -564,6 +566,7 @@ function HomePage() {
         }
 
         return {
+          id: msg._id,
           text: msg.content,
           isBot: msg.role !== "user",
           sources: msg.sources ?? [],
@@ -600,6 +603,62 @@ function HomePage() {
     await ask({ query, country: userLocation, conversationId: activeConversationId, files });
     setFiles([]);
   }, [ask, input, files, userLocation, activeConversationId]);
+
+  /* =========================================================
+     DOWNLOAD REVISED DOCUMENT
+     Generation is async on the backend (docx patch + optional Gotenberg
+     re-render + Cloudinary upload), so this kicks the job off, polls for
+     completion, then downloads the finished file. The binary download
+     itself bypasses the JSON encryption wrapper (see encryption.js), so
+     it uses a plain fetch rather than encryptedFetch.
+  ========================================================= */
+  const handleDownloadRevised = useCallback(async (messageId, appliedIssueIndices) => {
+    if (!messageId) throw new Error("This message isn't linked to a downloadable document yet.");
+
+    const generateResp = await encryptedFetch(`${API_BASE_URL}/documents/${messageId}/generate`, {
+      method: "POST",
+      credentials: "include",
+      body: { appliedIssueIndices },
+    });
+
+    const generatedDocumentId = generateResp?.generatedDocumentId;
+    if (!generatedDocumentId) throw new Error("Failed to start document generation.");
+
+    const POLL_INTERVAL_MS = 2000;
+    const MAX_ATTEMPTS = 30; // ~60s — generation is a docx patch + optional Gotenberg re-render, expected in a few seconds
+
+    let statusResp = null;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      statusResp = await encryptedFetch(
+        `${API_BASE_URL}/documents/generated/${generatedDocumentId}/status`,
+        { method: "GET", credentials: "include" }
+      );
+      if (statusResp?.status === "completed" || statusResp?.status === "failed") break;
+    }
+
+    if (!statusResp || statusResp.status !== "completed") {
+      throw new Error(statusResp?.errorMessage || "Document generation timed out — please try again.");
+    }
+
+    const downloadRes = await fetch(
+      `${API_BASE_URL}/documents/generated/${generatedDocumentId}/download`,
+      { method: "GET", credentials: "include", headers: { ...authHeaders() } }
+    );
+    if (!downloadRes.ok) {
+      throw new Error(`Download failed (${downloadRes.status})`);
+    }
+
+    const blob = await downloadRes.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `revised-document-${generatedDocumentId}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, []);
 
   /* =========================================================
      RENDER BOT MESSAGE
@@ -877,9 +936,9 @@ function HomePage() {
                       <div style={{ marginBottom: "14px" }}>
                         <LegalAnalysisCard
                           clauseAnalysis={message.clauseAnalysis}
-                          documentText={message.documentText}
-                          onDownloadRevised={(revisedText) =>
-                            setPdfModal({ text: revisedText, sources: [] })
+                          messageId={message.id}
+                          onDownloadRevised={(appliedIssueIndices) =>
+                            handleDownloadRevised(message.id, appliedIssueIndices)
                           }
                         />
                       </div>

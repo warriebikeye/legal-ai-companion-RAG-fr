@@ -32,6 +32,7 @@ export function useRAGStream() {
   const [status, setStatus]           = useState("idle");
   const [error, setError]             = useState(null);
   const [conversationId, setConvoId]  = useState(null);
+  const [messageId, setMessageId]     = useState(null);
   const [modelUsed, setModelUsed]     = useState(null);
   const [durationMs, setDuration]     = useState(null);
 
@@ -50,6 +51,7 @@ export function useRAGStream() {
     setDocumentTruncated(false);
     setError(null);
     setStatus("preparing");
+    setMessageId(null);
     setModelUsed(null);
     setDuration(null);
 
@@ -124,6 +126,10 @@ export function useRAGStream() {
               setClause(event.payload);
               break;
 
+            case "messageId":
+              setMessageId(event.payload);
+              break;
+
             case "done":
               setModelUsed(event.payload.modelUsed || null);
               setDuration(event.payload.durationMs || null);
@@ -171,6 +177,7 @@ export function useRAGStream() {
     setDocumentTruncated(false);
     setError(null);
     setStatus("idle");
+    setMessageId(null);
     setModelUsed(null);
     setDuration(null);
   }, []);
@@ -187,6 +194,7 @@ export function useRAGStream() {
     status,
     error,
     conversationId,
+    messageId,
     modelUsed,
     durationMs,
     isStreaming: status === "streaming",
