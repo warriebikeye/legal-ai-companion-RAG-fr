@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import "./AdminDashboard.css";
 import { useAdminStream } from '../hooks/useAdminStream';
-import { authHeaders, setStoredToken } from '../utils/authToken';
+import { authFetch, setStoredToken } from '../utils/authToken';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -273,10 +273,11 @@ function AdminDashboard() {
   const [isAdmin, setIsAdmin]         = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/auth/me`, { credentials: "include", headers: { ...authHeaders() } })
+    authFetch(`${API_BASE_URL}/auth/me`, { method: "GET" })
       .then((r) => r.json())
       .then((data) => {
-        setIsAdmin(data?.user?.role === "admin");
+        // UI gate only — /admin/* routes enforce the role server-side
+        setIsAdmin(data?.isAuthenticated === true && data?.role === "admin");
         setStoredToken(data?.token);
         setAuthChecked(true);
       })

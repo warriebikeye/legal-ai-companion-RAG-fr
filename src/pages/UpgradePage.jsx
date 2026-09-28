@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encryptedFetch } from "../utils/encryption";
 import { readAuthCookie } from "../hooks/useAuthCookie";
-import { authHeaders, setStoredToken } from "../utils/authToken";
+import { authFetch, setStoredToken, cacheUserFromMe, clearAuth } from "../utils/authToken";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -88,17 +88,18 @@ function UpgradePage() {
     if (cookieUser && cookieUser.email) return cookieUser;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/me`, {
-        method:      "GET",
-        credentials: "include",
-        headers:     { ...authHeaders() },
-      });
+      const res = await authFetch(`${API_BASE_URL}/auth/me`, { method: "GET" });
       if (!res.ok) return null;
 
       const data = await res.json();
-      if (!data?.isAuthenticated || !data?.userEmail) return null;
+      if (!data?.isAuthenticated) {
+        clearAuth();
+        return null;
+      }
+      if (!data.userEmail) return null;
 
-      setStoredToken(data.token);
+      setStoredToken(data.token); // only present when migrating off a legacy credential
+      cacheUserFromMe(data);
 
       return {
         email:     data.userEmail,

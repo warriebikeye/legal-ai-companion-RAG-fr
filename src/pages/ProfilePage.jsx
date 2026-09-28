@@ -3,7 +3,14 @@ import "./ProfilePage.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { readAuthCookie } from "../hooks/useAuthCookie";
-import { authHeaders, setStoredToken } from "../utils/authToken";
+import {
+  authFetch,
+  setStoredToken,
+  getCachedUser,
+  cacheUserFromMe,
+  clearAuth,
+  AUTH_EXPIRED_EVENT,
+} from "../utils/authToken";
 import defaultUserIcon from "../assets/user-icon.png";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
@@ -46,18 +53,16 @@ function ProfilePage() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: "GET",
-        credentials: "include",
-        headers: { ...authHeaders() },
-      });
+      const res = await authFetch(`${API_BASE_URL}/auth/me`, { method: "GET" });
       if (!res.ok) {
+        // Server trouble — keep the cached view if we have one
         if (!cookie?.email) navigate("/");
         return;
       }
 
       const data = await res.json();
       if (!data?.isAuthenticated) {
+        clearAuth();
         navigate("/");
         return;
       }
@@ -67,7 +72,8 @@ function ProfilePage() {
       setLastname(data.lastname || "");
       setPhoto(data.userImage || "");
       setHasPassword(data.hasPassword ?? true);
-      setStoredToken(data.token);
+      setStoredToken(data.token); // only present when migrating off a legacy credential
+      cacheUserFromMe(data);
     } catch {
       if (!cookie?.email) navigate("/");
     } finally {
@@ -78,6 +84,30 @@ function ProfilePage() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  // Session expired mid-visit (any authFetch got a 401) — back to the
+  // home page, which shows the login modal.
+  useEffect(() => {
+    const onExpired = () => navigate("/");
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+  }, [navigate]);
+
+  /** Keep the cached profile in step with edits, so HomePage paints
+   *  the new name/avatar instantly next time. */
+  function updateCachedUser(fields) {
+    const cached = getCachedUser();
+    if (!cached) return;
+    cacheUserFromMe({
+      isAuthenticated: true,
+      userEmail: cached.email,
+      firstname: fields.firstname ?? cached.firstname,
+      lastname: fields.lastname ?? cached.lastname,
+      userImage: fields.photo ?? cached.photo,
+      subscriptionTier: cached.subscriptionTier,
+      subscriptionStatus: cached.subscriptionStatus,
+    });
+  }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -92,13 +122,9 @@ function ProfilePage() {
     setStatus(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+      const res = await authFetch(`${API_BASE_URL}/auth/profile`, {
         method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders(),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstname: firstname.trim(),
           lastname: lastname.trim(),
@@ -112,7 +138,7 @@ function ProfilePage() {
 
       setFirstname(data.firstname || "");
       setLastname(data.lastname || "");
-      setStoredToken(data.token);
+      updateCachedUser({ firstname: data.firstname || "", lastname: data.lastname || "" });
 
       setStatus({ type: "success", text: "Profile updated." });
     } catch (err) {
@@ -146,10 +172,8 @@ function ProfilePage() {
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const res = await fetch(`${API_BASE_URL}/auth/avatar`, {
+      const res = await authFetch(`${API_BASE_URL}/auth/avatar`, {
         method: "POST",
-        credentials: "include",
-        headers: { ...authHeaders() },
         body: formData,
       });
 
@@ -159,7 +183,7 @@ function ProfilePage() {
       }
 
       setPhoto(data.photo || "");
-      setStoredToken(data.token);
+      updateCachedUser({ photo: data.photo || "" });
       setStatus({ type: "success", text: "Avatar updated." });
     } catch (err) {
       setPhoto(previousPhoto);
@@ -203,13 +227,9 @@ function ProfilePage() {
     setPasswordStatus(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/password/request`, {
+      const res = await authFetch(`${API_BASE_URL}/auth/password/request`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders(),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
@@ -240,13 +260,9 @@ function ProfilePage() {
     setPasswordStatus(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/password/confirm`, {
+      const res = await authFetch(`${API_BASE_URL}/auth/password/confirm`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders(),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: confirmCode.trim() }),
       });
 

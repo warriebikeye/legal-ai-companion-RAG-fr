@@ -21,7 +21,14 @@ import { useRAGStream } from '../hooks/useRAGStream';
 import AuthModal from '../components/AuthModal';
 import AdRenderer from '../components/AdRenderer';
 import { readAuthCookie } from '../hooks/useAuthCookie';
-import { authHeaders, setStoredToken, clearStoredToken } from '../utils/authToken';
+import {
+  authHeaders,
+  authFetch,
+  setStoredToken,
+  cacheUserFromMe,
+  clearAuth,
+  AUTH_EXPIRED_EVENT,
+} from '../utils/authToken';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -69,6 +76,7 @@ function HomePage() {
   const messagesEndRef = useRef(null);
   const chatsRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatInputRef = useRef(null);
   const navigate = useNavigate();
 
   /* ── state ────────────────────────────────────────────── */
@@ -169,6 +177,18 @@ function HomePage() {
   }, [isNearBottom]);
 
   /* =========================================================
+     CHAT INPUT AUTO-GROW — starts one line tall (so the
+     placeholder sits centred in the bar) and grows with the
+     text up to the CSS max-height; shrinks back after send.
+  ========================================================= */
+  useEffect(() => {
+    const el = chatInputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  /* =========================================================
      SMART SCROLL
   ========================================================= */
   useEffect(() => {
@@ -252,73 +272,112 @@ function HomePage() {
     setSubscriptionStatus(data.subscriptionStatus ?? "inactive");
   }, []);
 
+  const resetAuthState = useCallback(() => {
+    setIsAuthenticated(false);
+    setUserEmail(null);
+    setUserName(null);
+    setUserImage(null);
+    setSubscriptionTier("free");
+    setSubscriptionStatus("inactive");
+    setWalletBalance(null);
+    setDailyFreeTokens(4);
+    setReferralCode(null);
+    setRecentConversations([]);
+    setActiveConversationId(null);
+    setMessages([DEFAULT_BOT_MESSAGE]);
+  }, []);
+
   /* =========================================================
-     AUTH CHECK — cookie-first, then /auth/me fallback
+     AUTH CHECK
+     1. Returning from Google sign-in → swap ?auth_code for a
+        session token.
+     2. Paint instantly from the cached profile and start loading
+        chats/wallet in parallel.
+     3. Confirm with /auth/me (session checked against Redis):
+          authenticated → refresh profile + cache
+          not authenticated → clear token + cache, show login
+          5xx / 429 / offline → keep what we have, retry next load
   ========================================================= */
   const checkAuthentication = useCallback(async () => {
-    const cookie = readAuthCookie();
-    if (cookie) {
-      applyUserData(cookie);
+    const params = new URLSearchParams(window.location.search);
+    const authCode = params.get("auth_code");
+    if (authCode) {
+      params.delete("auth_code");
+      params.delete("success");
+      const query = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/exchange`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: authCode }),
+        });
+        if (res.ok) {
+          clearAuth(); // drop any previous account's token/profile first
+          setStoredToken((await res.json()).token);
+        }
+      } catch (err) {
+        console.error("[auth] Google code exchange failed:", err);
+      }
+    }
+
+    const cached = readAuthCookie();
+    if (cached) {
+      applyUserData(cached);
       setAuthChecked(true);
       fetchRecentConversations();
       fetchWalletBalance();
       fetchReferralNudge();
-      fetch(`${API_BASE_URL}/auth/me`, { method: "GET", credentials: "include", headers: { ...authHeaders() } })
-        .then((r) => r.ok ? r.json() : null)
-        .then((data) => {
-          if (data?.isAuthenticated) applyUserData({
-            email: data.userEmail,
-            name: data.name,
-            firstname: data.firstname,
-            lastname: data.lastname,
-            photo: data.userImage,
-            subscriptionTier: data.subscriptionTier,
-            subscriptionStatus: data.subscriptionStatus,
-          });
-          if (data?.isAuthenticated) setStoredToken(data.token);
-          if (data?.isAuthenticated && data?.userEmail) {
-            oneSignalLogin(data.userEmail);
-          }
-        })
-        .catch(() => { });
-      return;
     }
 
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET", credentials: "include", headers: { ...authHeaders() },
       });
-      if (!res.ok) { setIsAuthenticated(false); setAuthChecked(true); return; }
+      if (!res.ok) return; // server trouble — don't log the user out over it
+
       const data = await res.json();
-      if (data.isAuthenticated) {
-        applyUserData({
-          email: data.userEmail,
-          name: data.name,
-          firstname: data.firstname,
-          lastname: data.lastname,
-          photo: data.userImage,
-          subscriptionTier: data.subscriptionTier,
-          subscriptionStatus: data.subscriptionStatus,
-        });
-        setStoredToken(data.token);
-        if (data.userEmail) oneSignalLogin(data.userEmail);
-        await fetchRecentConversations();
-        await fetchWalletBalance();
+      if (!data.isAuthenticated) {
+        clearAuth();
+        resetAuthState();
+        return;
+      }
+
+      setStoredToken(data.token); // only present when migrating off a legacy credential
+      cacheUserFromMe(data);
+      applyUserData({
+        email: data.userEmail,
+        name: data.name,
+        firstname: data.firstname,
+        lastname: data.lastname,
+        photo: data.userImage,
+        subscriptionTier: data.subscriptionTier,
+        subscriptionStatus: data.subscriptionStatus,
+      });
+      if (data.userEmail) oneSignalLogin(data.userEmail);
+
+      if (!cached) {
+        fetchRecentConversations();
+        fetchWalletBalance();
         fetchReferralNudge();
-      } else {
-        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error("Error checking authentication:", error);
-      setIsAuthenticated(false);
     } finally {
       setAuthChecked(true);
     }
-  }, [applyUserData, fetchRecentConversations, fetchWalletBalance, fetchReferralNudge]);
+  }, [applyUserData, resetAuthState, fetchRecentConversations, fetchWalletBalance, fetchReferralNudge]);
 
   useEffect(() => {
     checkAuthentication();
   }, [checkAuthentication]);
+
+  // Any API call that gets a 401 clears the token (see encryptedFetch)
+  // and fires this — drop to the logged-out UI so the login modal shows.
+  useEffect(() => {
+    window.addEventListener(AUTH_EXPIRED_EVENT, resetAuthState);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, resetAuthState);
+  }, [resetAuthState]);
 
   /* =========================================================
      RESIZE
@@ -451,20 +510,9 @@ function HomePage() {
       console.error("Logout error:", err);
     }
     //oneSignalLogout();
-    clearStoredToken();
-    setIsAuthenticated(false);
-    setUserEmail(null);
-    setUserName(null);
-    setUserImage(null);
-    setSubscriptionTier("free");
-    setSubscriptionStatus("inactive");
-    setWalletBalance(null);
-    setDailyFreeTokens(4);
-    setReferralCode(null);
-    setRecentConversations([]);
-    setActiveConversationId(null);
-    setMessages([DEFAULT_BOT_MESSAGE]);
-  }, []);
+    clearAuth();
+    resetAuthState();
+  }, [resetAuthState]);
   /* =========================================================
      REFERRAL — copy code
   ========================================================= */
@@ -641,9 +689,9 @@ function HomePage() {
       throw new Error(statusResp?.errorMessage || "Document generation timed out — please try again.");
     }
 
-    const downloadRes = await fetch(
+    const downloadRes = await authFetch(
       `${API_BASE_URL}/documents/generated/${generatedDocumentId}/download`,
-      { method: "GET", credentials: "include", headers: { ...authHeaders() } }
+      { method: "GET" }
     );
     if (!downloadRes.ok) {
       throw new Error(`Download failed (${downloadRes.status})`);
@@ -851,7 +899,7 @@ function HomePage() {
                 const convId = conv._id || conv.id;
                 return (
                   <button key={convId} className="query" onClick={() => loadConversation(convId)}>
-                    <span className="queryText">{conv.title || "Untitled Chat"}</span>
+                    <span className="queryText">{conv.title?.trimStart() || "Untitled Chat"}</span>
                   </button>
                 );
               })}
@@ -1045,6 +1093,8 @@ function HomePage() {
               }}>+</button>
 
             <textarea placeholder="Send a message" value={input}
+              ref={chatInputRef}
+              rows={1}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !isSending) {

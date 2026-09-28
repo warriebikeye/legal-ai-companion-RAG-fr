@@ -4,7 +4,7 @@
 // + FIXED key derivation (SHA-256, matches backend exactly)
 // + FIXED encryptedFetch (stable + consistent JSON return + error handling)
 
-import { authHeaders } from "./authToken";
+import { authHeaders, handleUnauthorized } from "./authToken";
 
 const SECRET = process.env.REACT_APP_ENCRYPTION_SECRET;
 
@@ -166,6 +166,9 @@ export async function encryptedFetch(url, options = {}) {
         headers: finalHeaders,
         body: finalBody,
     });
+
+    // Session expired or revoked — drop it and let the page show login.
+    handleUnauthorized(response, !!finalHeaders.Authorization);
 
     const text = await response.text();
 

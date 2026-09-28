@@ -10,7 +10,7 @@
 //   <div>{answer}</div>   // updates in real time as tokens arrive
 
 import { useState, useRef, useCallback } from "react";
-import { authHeaders } from "../utils/authToken";
+import { authFetch } from "../utils/authToken";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -57,16 +57,14 @@ export function useRAGStream() {
 
     try {
       const body = new FormData();
-      body.append("query", query || "");
+      body.append("query", (query || "").trim());
       body.append("country", country);
       if (cid) body.append("conversationId", cid);
       files.forEach((f) => body.append("files", f));
 
-      const response = await fetch(`${API_BASE_URL}/ask/stream`, {
+      const response = await authFetch(`${API_BASE_URL}/ask/stream`, {
         method: "POST",
         body,
-        credentials: "include",
-        headers: { ...authHeaders() },
         signal: abortRef.current.signal,
       });
 

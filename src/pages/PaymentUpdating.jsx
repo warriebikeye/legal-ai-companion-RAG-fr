@@ -3,7 +3,7 @@ import './PaymentUpdating.css';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import gptLogo from '../assets/DeeBees.svg';
-import { authHeaders } from '../utils/authToken';
+import { authFetch } from '../utils/authToken';
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -40,9 +40,9 @@ function PaymentUpdating() {
         }
 
         /* ─── Call backend verify ─── */
-        const response = await fetch(`${API_BASE_URL}/payments/verify`, {
+        const response = await authFetch(`${API_BASE_URL}/payments/verify`, {
           method:      'POST',
-          headers:     { 'Content-Type': 'application/json', ...authHeaders() },
+          headers:     { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             transactionId,

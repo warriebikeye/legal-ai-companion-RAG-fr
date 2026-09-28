@@ -804,6 +804,7 @@ body {
   max-height: 120px;
   line-height: 1.4;
 }
+.chat-input::placeholder { text-align: center; }
 
 .inp>input,
 .send {

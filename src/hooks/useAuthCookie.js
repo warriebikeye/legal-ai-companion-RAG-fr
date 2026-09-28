@@ -31,6 +31,8 @@
  *   remains HttpOnly as the hardened security cookie.
  */
 
+import { getCachedUser, getStoredToken } from "../utils/authToken";
+
 const UI_COOKIE_NAME = "ub_ui";
 
 function getCookieValue(name) {
@@ -52,10 +54,18 @@ function base64UrlDecode(str) {
 }
 
 /**
- * Synchronously reads and decodes the UI cookie.
- * Returns null if absent or expired.
+ * Synchronously returns the last-known user for instant paint:
+ *   1. The profile cached in localStorage by the last /auth/me
+ *      (works in the Median WebView, where cookies don't).
+ *   2. Otherwise the legacy `ub_ui` cookie, for web users who
+ *      haven't been migrated to a session token yet.
+ * Display-only — /auth/me decides whether the user is really
+ * logged in. Returns null if neither is available.
  */
 export function readAuthCookie() {
+  const cached = getCachedUser();
+  if (cached?.email && getStoredToken()) return cached;
+
   try {
     const raw = getCookieValue(UI_COOKIE_NAME);
     if (!raw) return null;

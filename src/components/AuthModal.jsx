@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { oneSignalLogin } from "../hooks/useNotificationPrompt";
-import { authHeaders, setStoredToken } from "../utils/authToken";
+import { authHeaders, setStoredToken, clearCachedUser } from "../utils/authToken";
 
 const API_BASE_URL = process.env.REACT_APP_BASEURL;
 
@@ -69,6 +69,7 @@ export default function AuthModal({ onAuthenticated }) {
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Verification failed.");
+      clearCachedUser(); // never paint a previous account's profile
       setStoredToken(data.token);
       oneSignalLogin(email);
       onAuthenticated();
@@ -93,6 +94,7 @@ export default function AuthModal({ onAuthenticated }) {
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Login failed.");
+      clearCachedUser(); // never paint a previous account's profile
       setStoredToken(data.token);
       oneSignalLogin(email);
       onAuthenticated();
